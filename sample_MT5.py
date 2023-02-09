@@ -6,23 +6,24 @@ import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 from sklearn.covariance import LedoitWolf
 from concurrent.futures import ThreadPoolExecutor
-import ekoptim
+from ekoptim import ekoptim
 
-def connect_to_metatrader(username, password, server):
+def connect_to_metatrader(path, username, password, server):
     # initialize connection to the MetaTrader 5 terminal
-    if not mt5.initialize(path="C:\\Program Files\\JFD MetaTrader 5\\terminal64.exe",
+    if not mt5.initialize(path=path,
                           login=username, server=server, password=password):
         print("initialize() failed, error code =",mt5.last_error())
         quit()
 
 
 if __name__ == "__main__":
-    # username = input("Enter your username: ")
-    # username = int(username)
-    # password = input("Enter your password: ")
-    # server = input("Enter the server name: ")
-    #connect_to_metatrader(username, password, server)
-    connect_to_metatrader(555855, "?XRyrR2#", "JFD-Live")
+    username = input("Enter your username: ")
+    username = int(username)
+    password = input("Enter your password: ")
+    server = input("Enter the server name: ")
+    path = "C:\\Program Files\\JFD MetaTrader 5\\terminal64.exe"
+    connect_to_metatrader(path, username, password, server)
+    
     print("-------------------------")
     # display data on connection status, server name and trading account
     print(mt5.terminal_info())
