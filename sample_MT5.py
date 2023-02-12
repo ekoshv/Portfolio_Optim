@@ -1,9 +1,7 @@
 import MetaTrader5 as mt5
 import numpy as np
 import pandas as pd
-import math
 import matplotlib.pyplot as plt
-from scipy.optimize import minimize
 from sklearn.covariance import LedoitWolf
 from concurrent.futures import ThreadPoolExecutor
 from ekoptim import ekoptim
