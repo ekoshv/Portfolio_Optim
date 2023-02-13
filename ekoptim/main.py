@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
                                target_SR, target_Return, target_Volat,
-                               max_weight):
+                               max_weight,toler):
         self.returns = returns
         self.target_SR = target_SR
         self.target_Return = target_Return
@@ -21,6 +21,7 @@ class ekoptim():
         self.w0 = [1/self.n] * self.n
         self.durc = self.days/252
         self.risk_free_rate = risk_free_rate*self.durc
+        self.toler = toler
         
         #define constraints
         self.bounds = [(0,1) for i in range(self.n)]
@@ -69,7 +70,8 @@ class ekoptim():
         fn = lambda x:  (math.exp(-(self.return_cnt(x))))
         result = minimize(fn, self.w0,
                           method='SLSQP', bounds=self.bounds,
-                          constraints=[self.constraints[i] for i in [0,5,6,7]])
+                          constraints=[self.constraints[i] for i in [0,5,6,7]],
+                          tol = self.toler)
         optimized_weights = result.x
         return optimized_weights
 
@@ -78,7 +80,8 @@ class ekoptim():
         fn = lambda x:  (math.exp((self.risk_cnt(x))))
         result = minimize(fn, self.w0,
                           method='SLSQP', bounds=self.bounds,
-                          constraints=[self.constraints[i] for i in [0,7]])
+                          constraints=[self.constraints[i] for i in [0,7]],
+                          tol = self.toler)
         optimized_weights = result.x
         return optimized_weights
 
@@ -88,7 +91,8 @@ class ekoptim():
                          math.exp(-self.sharpe_ratio_cnt(x)))
         result = minimize(fn, self.w0,
                           method='SLSQP', bounds=self.bounds,
-                          constraints=[self.constraints[i] for i in [0,7]])
+                          constraints=[self.constraints[i] for i in [0,7]],
+                          tol = self.toler)
         optimized_weights = result.x
         return optimized_weights
 
@@ -98,7 +102,8 @@ class ekoptim():
                          math.exp(-self.sharpe_ratio_cnt(x)))
         result = minimize(fn, self.w0,
                           method='SLSQP', bounds=self.bounds,
-                          constraints=self.constraints)
+                          constraints=self.constraints,
+                          tol = self.toler)
         optimized_weights = result.x
         return optimized_weights
 # end of class ekoptim
