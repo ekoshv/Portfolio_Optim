@@ -65,7 +65,7 @@ class ekoptim():
         portfolio_return = w.T @ self.returns.mean() * self.days - self.risk_free_rate
         return portfolio_return
 
-    def markowitz_optimization_return(self):
+    def markowitz_optimization_return_cnt(self):
         #run the optimization
         fn = lambda x:  (math.exp(-(self.return_cnt(x))))
         result = minimize(fn, self.w0,
