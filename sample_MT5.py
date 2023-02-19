@@ -40,6 +40,9 @@ if __name__ == "__main__":
     target_Volat = float(input("Target Volatility: "))
     target_Return = float(input("Target Return(%): "))/100
     max_weight = float(input("Maximum Weight Allocation(0-1): "))
+    min_tresh  = float(input("Minimum Threshold Weight Allocation(0-1): "))
+    max_numb = int(input("Number of weights greater than threshold: "))
+
     
     symbols=mt5.symbols_get(group=Group_Name)
     returns_list = []
@@ -61,9 +64,10 @@ if __name__ == "__main__":
     
     returns = pd.concat(returns_list, axis=1)
     risk_free_rate = 0.03
+    tol = None
     #-----------Optimization---------------------------------
     optimizer = ekoptim(returns, risk_free_rate, target_SR,
-                        target_Return, target_Volat, max_weight)
+                        target_Return, target_Volat, max_weight,min_tresh,max_numb,tol)
     optimized_weights = optimizer.markowitz_optimization_risk_sharpe()
     #-----------Optimization---------------------------------
     print("Sum of the weights: ", optimized_weights.sum())
@@ -98,7 +102,7 @@ if __name__ == "__main__":
     print("------------------")
     print("All the equity needed: ",equity_div_df["Allocation"].sum())
     # use Monte Carlo simulation to generate multiple sets of random weights
-    num_portfolios = 500
+    num_portfolios = 5000
     returns_listx = []
     sharpe_ratios_listx = []
     volatilities_listx = []

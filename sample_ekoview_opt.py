@@ -14,6 +14,8 @@ target_SR = float(input("Target Sharpe Ratio: "))
 target_Volat = float(input("Target Volatility: "))
 target_Return = float(input("Target Return(%): "))/100
 max_weight = float(input("Maximum Weight Allocation(0-1): "))
+min_tresh  = float(input("Minimum Threshold Weight Allocation(0-1): "))
+max_numb = int(input("Number of weights greater than threshold: "))
 
 
 Exg = 'FWB'
@@ -41,7 +43,7 @@ xreturn = returns.iloc[:,300:500]
 tolerance = None
 #-----------Optimization---------------------------------
 optimizer = ekoptim(xreturn, risk_free_rate, target_SR,
-                    target_Return, target_Volat, max_weight,tolerance)
+                    target_Return, target_Volat, max_weight,min_tresh,max_numb,tolerance)
 optimized_weights = optimizer.markowitz_optimization_risk_sharpe()
 #-----------Optimization---------------------------------
 print("Sum of the weights: ", optimized_weights.sum())

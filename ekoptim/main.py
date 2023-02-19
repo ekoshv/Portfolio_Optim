@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
                                target_SR, target_Return, target_Volat,
-                               max_weight,toler):
+                               max_weight, tresh, max_numb,toler):
         self.returns = returns
         self.target_SR = target_SR
         self.target_Return = target_Return
@@ -22,6 +22,8 @@ class ekoptim():
         self.durc = self.days/252
         self.risk_free_rate = risk_free_rate*self.durc
         self.toler = toler
+        self.tresh = tresh
+        self.max_numb = max_numb
         
         #define constraints
         self.bounds = [(0,1) for i in range(self.n)]
@@ -40,7 +42,11 @@ class ekoptim():
                             {"type":"ineq",
                              "fun":lambda x: -0.85*self.target_Volat+self.risk_cnt(x)},
                             {"type":"ineq",
-                             "fun":lambda x: self.max_weight-x}]
+                             "fun":lambda x: self.max_weight-x},
+                            {"type":"ineq",
+                             "fun":lambda x: (self.max_numb-
+                                              len([sx for sx in x 
+                                                   if sx>=self.tresh]))}]
         
         #self.constraints_weight = [{"type":"eq","fun":lambda x: x.sum() - 1},
                               #{"type":"ineq","fun":lambda x: self.max_weight-x}]
@@ -52,12 +58,14 @@ class ekoptim():
     
         
     def risk_cnt(self, w):
-        portfolio_volatility = (w.T @ LedoitWolf().fit(self.returns).covariance_ @ w)**0.5 * np.sqrt(self.days)
+        portfolio_volatility = (w.T @ LedoitWolf().fit(self.returns).
+                                covariance_ @ w)**0.5 * np.sqrt(self.days)
         return portfolio_volatility
     
     def sharpe_ratio_cnt(self, w):
         portfolio_return = w.T @ self.returns.mean() * self.days - self.risk_free_rate
-        portfolio_volatility = (w.T @ LedoitWolf().fit(self.returns).covariance_ @ w)**0.5 * np.sqrt(self.days)
+        portfolio_volatility = ((w.T @ LedoitWolf().fit(self.returns).covariance_ @ w)**0.5 *
+                                np.sqrt(self.days))
         sharpe_ratio = (portfolio_return - self.risk_free_rate) / portfolio_volatility
         return sharpe_ratio
     
@@ -70,7 +78,7 @@ class ekoptim():
         fn = lambda x:  (math.exp(-(self.return_cnt(x))))
         result = minimize(fn, self.w0,
                           method='SLSQP', bounds=self.bounds,
-                          constraints=[self.constraints[i] for i in [0,5,6,7]],
+                          constraints=[self.constraints[i] for i in [0,5,6,7,8]],
                           tol = self.toler)
         optimized_weights = result.x
         return optimized_weights
@@ -80,7 +88,7 @@ class ekoptim():
         fn = lambda x:  (math.exp((self.risk_cnt(x))))
         result = minimize(fn, self.w0,
                           method='SLSQP', bounds=self.bounds,
-                          constraints=[self.constraints[i] for i in [0,7]],
+                          constraints=[self.constraints[i] for i in [0,7,8]],
                           tol = self.toler)
         optimized_weights = result.x
         return optimized_weights
@@ -91,7 +99,7 @@ class ekoptim():
                          math.exp(-self.sharpe_ratio_cnt(x)))
         result = minimize(fn, self.w0,
                           method='SLSQP', bounds=self.bounds,
-                          constraints=[self.constraints[i] for i in [0,7]],
+                          constraints=[self.constraints[i] for i in [0,7,8]],
                           tol = self.toler)
         optimized_weights = result.x
         return optimized_weights
