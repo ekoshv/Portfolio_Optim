@@ -84,8 +84,10 @@ if __name__ == "__main__":
     #-----------Optimization---------------------------------
     print("Sum of the weights: ", optimized_weights.sum())
     threshold = min_tresh
-    portfolio_return = optimized_weights.T @ returns.mean() * History_Days - risk_free_rate*(History_Days/252)
-    portfolio_volatility = (optimized_weights.T @ LedoitWolf().fit(returns).covariance_ @ optimized_weights)**0.5 * np.sqrt(History_Days)
+    portfolio_return = (optimized_weights.T @ returns.mean() * History_Days -
+                        risk_free_rate*(History_Days/252))
+    portfolio_volatility = (optimized_weights.T @ LedoitWolf().fit(returns).
+                            covariance_ @ optimized_weights)**0.5 * np.sqrt(History_Days)
     sharpe_ratio = (portfolio_return - risk_free_rate) / portfolio_volatility
     print("***********************")
     print("Sharpe Ratio: ", sharpe_ratio)
@@ -99,14 +101,19 @@ if __name__ == "__main__":
     equity_div = []
     for i, weight in enumerate(optimized_weights):
         symbol_info = mt5.symbol_info(returns_symbols[i])
-        if (weight>threshold and not(symbol_info.volume_min*symbol_info.bid>1.1*total_equity*weight)):#
-            print("Name: ",symbol_info.name,", Bid: ",symbol_info.bid,", step: ",symbol_info.volume_step)
+        if (weight>threshold and not(symbol_info.volume_min*symbol_info.bid>
+                                     1.1*total_equity*weight)):#
+            print("Name: ",symbol_info.name,", Bid: ",
+                  symbol_info.bid,", step: ",symbol_info.volume_step)
             equity_div_x = {"symbol": symbol_info.name,"Weight":round(weight*10000)/100,
                             "Allocation": round(max(symbol_info.volume_min,
                                               round(total_equity*weight/symbol_info.bid,
-                                                    -int(np.floor(np.log10(symbol_info.volume_step))+1)+1))*symbol_info.bid),
-                            "Volume": max(symbol_info.volume_min,round(total_equity*weight/symbol_info.bid,
-                                                                      -int(np.floor(np.log10(symbol_info.volume_step))+1)+1))}
+                                                    -int(np.floor(np.log10(symbol_info.volume_step))+
+                                                         1)+1))*symbol_info.bid),
+                            "Volume": max(symbol_info.volume_min,
+                                          round(total_equity*weight/symbol_info.bid,
+                                                                      -int(np.floor(np.log10(symbol_info.volume_step))+
+                                                                           1)+1))}
             equity_div.append(equity_div_x)
     equity_div_df = pd.DataFrame(equity_div)
     equity_div_df.sort_values(by="Weight")
