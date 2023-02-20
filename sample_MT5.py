@@ -15,12 +15,13 @@ def connect_to_metatrader(path, username, password, server):
 
 
 if __name__ == "__main__":
-    username = input("Enter your username: ")
-    username = int(username)
-    password = input("Enter your password: ")
-    server = input("Enter the server name: ")
+    # username = input("Enter your username: ")
+    # username = int(username)
+    # password = input("Enter your password: ")
+    # server = input("Enter the server name: ")
     path = "C:\\Program Files\\JFD MetaTrader 5\\terminal64.exe"
-    connect_to_metatrader(path, username, password, server)
+    connect_to_metatrader(path, 555855, "?XRyrR2#", "JFD-Live")
+    #connect_to_metatrader(path, username, password, server)
     
     print("-------------------------")
     # display data on connection status, server name and trading account
@@ -35,13 +36,23 @@ if __name__ == "__main__":
     print("----Parameteres----")
     total_equity = float(input("Enter total equity: "))
     Group_Name = input("Enter your Group name: e.g.(*.D.EX): ")
-    History_Days = int(input("How many Days: "))
+    History_Days = int(input("How many historical days: "))
     target_SR = float(input("Target Sharpe Ratio: "))
     target_Volat = float(input("Target Volatility: "))
     target_Return = float(input("Target Return(%): "))/100
     max_weight = float(input("Maximum Weight Allocation(0-1): "))
-    min_tresh  = float(input("Minimum Threshold Weight Allocation(0-1): "))
-    max_numb = int(input("Number of weights greater than threshold: "))
+    print("-------------------------")
+    print("1. Optimum Return with no limit.")
+    print("2. Optimum Return with constraint Sharpe Ratio.")
+    print("3. Optimum Return with constraint Volatility.")
+    print("4. Optimum Risk with no limit.")
+    print("5. Optimum Risk with constraint Sharpe Ratio.")
+    print("6. Optimum Risk with constraint Return.")
+    print("7. Markowitz Min Risk+Max Sharp.")
+    print("-------------------------")
+    otp_sel = int(input("Which type of opt you wish: "))
+    # min_tresh  = float(input("Minimum Threshold Weight Allocation(0-1): "))
+    # max_numb = int(input("Number of weights greater than threshold: "))
 
     
     symbols=mt5.symbols_get(group=Group_Name)
@@ -67,11 +78,11 @@ if __name__ == "__main__":
     tol = None
     #-----------Optimization---------------------------------
     optimizer = ekoptim(returns, risk_free_rate, target_SR,
-                        target_Return, target_Volat, max_weight,min_tresh,max_numb,tol)
-    optimized_weights = optimizer.markowitz_optimization_risk_sharpe()
+                        target_Return, target_Volat, max_weight,tol)
+    optimized_weights = optimizer.optiselect(otp_sel)
     #-----------Optimization---------------------------------
     print("Sum of the weights: ", optimized_weights.sum())
-    threshold = 0.005
+    threshold = min_tresh
     portfolio_return = optimized_weights.T @ returns.mean() * History_Days - risk_free_rate*(History_Days/252)
     portfolio_volatility = (optimized_weights.T @ LedoitWolf().fit(returns).covariance_ @ optimized_weights)**0.5 * np.sqrt(History_Days)
     sharpe_ratio = (portfolio_return - risk_free_rate) / portfolio_volatility
