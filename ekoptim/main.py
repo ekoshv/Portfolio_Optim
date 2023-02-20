@@ -150,7 +150,7 @@ class ekoptim():
     #---selections of Stocks--------
     #-------------------------------
 
-    def otpiselect(self, sel=7):
+    def optiselect(self, sel=7):
         try:
             if sel==1:
                 return self.Optim_return_nl()
