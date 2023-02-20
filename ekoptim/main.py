@@ -53,7 +53,7 @@ class ekoptim():
     def __initial_weight(self, w0):
         self.w0 = w0
     #-------------------------------
-    #---Risk, Sharpe, Return--------
+    #---Risk, Sharpe,Sortino, Return--------
     #-------------------------------        
     def risk_cnt(self, w):
         portfolio_volatility = (w.T @ LedoitWolf().fit(self.returns).
@@ -70,6 +70,13 @@ class ekoptim():
     def return_cnt(self, w):
         portfolio_return = w.T @ self.returns.mean() * self.days - self.risk_free_rate
         return portfolio_return
+    
+    def sortino_ratio_cnt(self, w):
+        portfolio_return = w.T @ self.returns.mean() * self.days - self.risk_free_rate
+        downside_returns = self.returns[self.returns.dot(w) < 0].dot(w)
+        downside_volatility = np.sqrt((downside_returns**2).mean()) * np.sqrt(self.days)
+        sortino_ratio = (portfolio_return - self.risk_free_rate) / downside_volatility
+        return sortino_ratio
     #-------------------------------
     #---Optimizations---------------
     #-------------------------------
