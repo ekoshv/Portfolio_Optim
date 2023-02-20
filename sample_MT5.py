@@ -41,6 +41,7 @@ if __name__ == "__main__":
     target_Volat = float(input("Target Volatility: "))
     target_Return = float(input("Target Return(%): "))/100
     max_weight = float(input("Maximum Weight Allocation(0-1): "))
+    min_tresh  = float(input("Minimum Threshold Weight Allocation(0-1): "))
     print("-------------------------")
     print("1. Optimum Return with no limit.")
     print("2. Optimum Return with constraint Sharpe Ratio.")
@@ -79,7 +80,7 @@ if __name__ == "__main__":
     #-----------Optimization---------------------------------
     optimizer = ekoptim(returns, risk_free_rate, target_SR,
                         target_Return, target_Volat, max_weight,tol)
-    optimized_weights = optimizer.optiselect(otp_sel)
+    optimized_weights = optimizer.otpiselect(otp_sel)
     #-----------Optimization---------------------------------
     print("Sum of the weights: ", optimized_weights.sum())
     threshold = min_tresh
@@ -108,6 +109,7 @@ if __name__ == "__main__":
                                                                       -int(np.floor(np.log10(symbol_info.volume_step))+1)+1))}
             equity_div.append(equity_div_x)
     equity_div_df = pd.DataFrame(equity_div)
+    equity_div_df.sort_values(by="Weight")
     print("------------------")
     print(equity_div_df)
     print("------------------")
