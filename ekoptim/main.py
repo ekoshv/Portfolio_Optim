@@ -41,7 +41,7 @@ class ekoptim():
                             {"type":"ineq",#6
                              "fun":lambda x: -0.85*self.target_Volat+self.risk_cnt(x)},
                             {"type":"ineq",#7 max weight
-                             "fun":lambda x: self.max_weight-x.max()}]
+                             "fun":lambda x: self.max_weight-x}]
         
         #self.constraints_weight = [{"type":"eq","fun":lambda x: x.sum() - 1},
         #{"type":"ineq","fun":lambda x: self.max_weight-x}]

@@ -80,7 +80,7 @@ if __name__ == "__main__":
     #-----------Optimization---------------------------------
     optimizer = ekoptim(returns, risk_free_rate, target_SR,
                         target_Return, target_Volat, max_weight,tol)
-    optimized_weights = optimizer.otpiselect(otp_sel)
+    optimized_weights = optimizer.optiselect(otp_sel)
     #-----------Optimization---------------------------------
     print("Sum of the weights: ", optimized_weights.sum())
     threshold = min_tresh
@@ -116,13 +116,13 @@ if __name__ == "__main__":
                                                                            1)+1))}
             equity_div.append(equity_div_x)
     equity_div_df = pd.DataFrame(equity_div)
-    equity_div_df.sort_values(by="Weight")
+    equity_div_df.sort_values(by="Weight",inplace=True)
     print("------------------")
     print(equity_div_df)
     print("------------------")
     print("All the equity needed: ",equity_div_df["Allocation"].sum())
     # use Monte Carlo simulation to generate multiple sets of random weights
-    num_portfolios = 5000
+    num_portfolios = 500
     returns_listx = []
     sharpe_ratios_listx = []
     volatilities_listx = []
