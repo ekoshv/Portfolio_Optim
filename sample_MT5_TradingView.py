@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from sklearn.covariance import LedoitWolf
 #from concurrent.futures import ThreadPoolExecutor
 from ekoptim import ekoptim
+from ekoView import TradingViewfeed, Interval
+import datetime
 
 def connect_to_metatrader(path, username, password, server):
     # initialize connection to the MetaTrader 5 terminal
@@ -13,8 +15,18 @@ def connect_to_metatrader(path, username, password, server):
         print("initialize() failed, error code =",mt5.last_error())
         quit()
 
+def filter_symbols_by_path(symbols, path_name):
+    filtered_symbols = []
+    for s in symbols:
+        if path_name in s.path:
+            filtered_symbols.append(s)
+    return filtered_symbols
 
 if __name__ == "__main__":
+    
+    Exg = "FWB"
+    #tv = TradingViewfeed(username, password)
+    tv = TradingViewfeed()
     # username = input("Enter your username: ")
     # username = int(username)
     # password = input("Enter your password: ")
@@ -35,8 +47,16 @@ if __name__ == "__main__":
     #retrieve historical data and calculate returns
     print("----Parameteres----")
     total_equity = float(input("Enter total equity: "))
-    Group_Name = input("Enter your Group name: e.g.(*.D.EX): ")
+    filt_type = input("Type of filter(Group or Path: G/P): ")
+    if(filt_type == 'G' or filt_type == 'g'):
+        Group_Name = input("Enter your Group name: e.g.(*.D.EX): ")
+        filtered_symbols=mt5.symbols_get(group=Group_Name)
+    elif(filt_type == 'P' or filt_type == 'p'):
+        Path_Name = input("Enter your Path: e.g.('Stocks.DE\\'): ")
+        symbols = mt5.symbols_get()
+        filtered_symbols = filter_symbols_by_path(symbols, Path_Name)
     History_Days = int(input("How many historical days: "))
+    #is_weighted = bool(input("Do you want it to be weighted(True/False): "))
     target_SR = float(input("Target Sharpe Ratio: "))
     target_Volat = float(input("Target Volatility: "))
     target_Return = float(input("Target Return(%): "))/100
@@ -54,30 +74,46 @@ if __name__ == "__main__":
     otp_sel = int(input("Which type of opt you wish: "))
     # min_tresh  = float(input("Minimum Threshold Weight Allocation(0-1): "))
     # max_numb = int(input("Number of weights greater than threshold: "))
-
     
-    symbols=mt5.symbols_get(group=Group_Name)
     returns_list = []
-    returns_symbols = []  
-    def process_symbol(s):
-        rates = mt5.copy_rates_from_pos(s.name, mt5.TIMEFRAME_D1, 0, History_Days)
-        if(len(rates)==History_Days):
-            data = pd.DataFrame(data=rates, columns=["time", "open", "high", "low",
-                                                     "close", "tick_volume", "spread", "real_volume"])
-            # convert time in seconds into the datetime format
-            data['time']=pd.to_datetime(data['time'], unit='s')
-            data[s.name] = data["close"].pct_change()
-            data[s.name] = data[s.name].fillna(0)
-            returns_list.append(data[s.name])
-            returns_symbols.append(s.name)
-    
-    # with ThreadPoolExecutor() as executor:
-    #     executor.map(process_symbol, symbols)
-    
-    for s in symbols:
-        process_symbol(s)
+    rates_list = []
+    begindate = (datetime.datetime.today()-
+                 datetime.timedelta(days=(int(History_Days*365/252))))
+    i=0
+    for s in filtered_symbols:
+        try:
+            sym_list = tv.search_symbol(s.isin,exchange="FWB")
+            print("Symbol is: ", s.name,": ",sym_list[0]["symbol"])
+            rates = tv.get_hist(symbol=sym_list[0]["symbol"], 
+                                exchange=Exg, 
+                                interval= Interval.in_daily, 
+                                n_bars=History_Days,
+                                ctype="dividends")
+            #print(rates)
+            if(len(rates)>=round(0.75*History_Days) and
+               (rates.index[0] > begindate)):
+                rates[s.name] = ((rates['close']).
+                                 interpolate(method='polynomial', order=2)).pct_change()
+                rates[s.name] = rates[s.name].interpolate(method='polynomial', order=2)
+                rates[s.name] = rates[s.name].fillna(0)
+                rates_list.append(rates)
+                returns_list.append(rates[s.name])
+            #returns_symbols.append(s.name)
+            i+=1
+            print("---------")
+            print(round(10000*i/len(filtered_symbols))/100,"%")
+            print("---------")
+        except:
+            print("---------")
+            print("An exception occurred: ", s.name)
+            print("---------")
     
     returns = pd.concat(returns_list, axis=1)
+    returns.fillna(0,inplace=True)
+    
+    # if is_weighted:
+    #     maxsec = int(returns.index.max().timestamp())
+        
     risk_free_rate = 0.03
     tol = None
     #-----------Optimization---------------------------------
@@ -102,27 +138,39 @@ if __name__ == "__main__":
     # connect_to_metatrader(555855, "?XRyrR2#", "JFD-Live")
     # symbols=mt5.symbols_get(group=Group_Name)
     equity_div = []
-    for i, weight in enumerate(optimized_weights):
-        try:
-            symbol_info = mt5.symbol_info(returns_symbols[i])
-            if (weight>threshold and not(symbol_info.volume_min*symbol_info.bid>
-                                         1.1*total_equity*weight)):#
-                print("Name: ",symbol_info.name,", Bid: ",
-                      symbol_info.bid,", step: ",symbol_info.volume_step)
-                equity_div_x = {"symbol": symbol_info.name,"Weight":round(weight*10000)/100,
-                                "Allocation": round(max(symbol_info.volume_min,
-                                                  round(total_equity*weight/symbol_info.bid,
-                                                        -int(np.floor(np.log10(symbol_info.volume_step))+
-                                                             1)+1))*symbol_info.bid),
-                                "Volume": max(symbol_info.volume_min,
-                                              round(total_equity*weight/symbol_info.bid,
-                                                                          -int(np.floor(np.log10(symbol_info.volume_step))+
-                                                                               1)+1))}
-                equity_div.append(equity_div_x)
-        except:
-            print("An exception happened!")
+    
+    # for i, weight in enumerate(optimized_weights):
+    #     try:
+    #         symbol_info = mt5.symbol_info_tick(returns.columns[i])
+    #         if (weight>threshold and not(symbol_info.volume_min*symbol_info.bid>
+    #                                      1.1*total_equity*weight)):#
+    #             print("Name: ",symbol_info.name,", Bid: ",
+    #                   symbol_info.bid,", step: ",symbol_info.volume_step)
+    #             equity_div_x = {"symbol": symbol_info.name,"Weight":round(weight*10000)/100,
+    #                             "Allocation": round(max(symbol_info.volume_min,
+    #                                               round(total_equity*weight/symbol_info.bid,
+    #                                                     -int(np.floor(np.log10(symbol_info.volume_step))+
+    #                                                          1)+1))*symbol_info.bid),
+    #                             "Volume": max(symbol_info.volume_min,
+    #                                           round(total_equity*weight/symbol_info.bid,
+    #                                                                       -int(np.floor(np.log10(symbol_info.volume_step))+
+    #                                                                            1)+1))}
+    #             equity_div.append(equity_div_x)
+    #     except:
+    #         print("An exception happened!")
+    
+    returns_selected = []
+    for i, weight in enumerate(optimized_weights):    
+        if (weight>threshold):
+            equity_div_x = {"symbol": returns.columns[i],
+                            "Weight":round(weight*10000)/100,
+                            "Allocation": total_equity*weight}
+            equity_div.append(equity_div_x)
+            returns_selected.append(returns[returns.columns[i]])
+    
     equity_div_df = pd.DataFrame(equity_div)
-    equity_div_df.sort_values(by="Weight",inplace=True)
+    equity_div_df.sort_values(by="Weight",inplace=True, ignore_index=True)
+    returns_selected = pd.concat(returns_selected, axis=1)
     print("------------------")
     print(equity_div_df)
     print("------------------")
@@ -135,8 +183,10 @@ if __name__ == "__main__":
     for i in range(num_portfolios):
         weights = np.random.random(returns.shape[1])
         weights /= np.sum(weights)
-        portfolio_returnx = weights.T @ returns.mean() * History_Days - risk_free_rate*(History_Days/252)
-        portfolio_volatilityx = (weights.T @ LedoitWolf().fit(returns).covariance_ @ weights)**0.5 * np.sqrt(History_Days)
+        portfolio_returnx = (weights.T @ returns.mean() * History_Days -
+                             risk_free_rate*(History_Days/252))
+        portfolio_volatilityx = (weights.T @ LedoitWolf().fit(returns).
+                                 covariance_ @ weights)**0.5 * np.sqrt(History_Days)
         sharpe_ratiox = (portfolio_returnx - risk_free_rate) / portfolio_volatilityx
         returns_listx.append(portfolio_returnx)
         volatilities_listx.append(portfolio_volatilityx)

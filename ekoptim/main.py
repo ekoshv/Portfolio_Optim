@@ -59,6 +59,12 @@ class ekoptim():
         portfolio_volatility = (w.T @ LedoitWolf().fit(self.returns).
                                 covariance_ @ w)**0.5 * np.sqrt(self.days)
         return portfolio_volatility
+
+    def surprise_cnt(self, w):
+        aks = abs(((self.returns.pct_change()).replace([np.inf, -np.inf], 0)).fillna(0))
+        portfolio_surprise = (w.T @ LedoitWolf().fit(self.returns*aks).
+                                covariance_ @ w)**0.5 * np.sqrt(self.days)
+        return portfolio_surprise
     
     def sharpe_ratio_cnt(self, w):
         portfolio_return = w.T @ self.returns.mean() * self.days - self.risk_free_rate
@@ -153,6 +159,17 @@ class ekoptim():
         optimized_weights = result.x
         return optimized_weights
 
+    #---Surprise---
+    def surprise_sharpe_optimization(self):#8
+        #run the optimization
+        fn = lambda x:  (math.exp(self.surprise_cnt(x))+
+                         math.exp(-self.sharpe_ratio_cnt(x)))
+        result = minimize(fn, self.w0,
+                          method='SLSQP', bounds=self.bounds,
+                          constraints=[self.constraints[i] for i in [0,7]],
+                          tol = self.toler)
+        optimized_weights = result.x
+        return optimized_weights
     #-------------------------------
     #---selections of Stocks--------
     #-------------------------------
@@ -173,6 +190,8 @@ class ekoptim():
                 return self.Optim_risk_cnt_return()
             elif sel==7:
                 return self.markowitz_optimization_risk_sharpe()
+            elif sel==8:
+                return self.surprise_sharpe_optimization()
             else:
                 return -1
         except:
