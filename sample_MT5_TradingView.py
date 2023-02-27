@@ -63,14 +63,16 @@ if __name__ == "__main__":
     max_weight = float(input("Maximum Weight Allocation(0-1): "))
     min_tresh  = float(input("Minimum Threshold Weight Allocation(0-1): "))
     print("-------------------------")
-    print("1. Optimum Return with no limit.")
-    print("2. Optimum Return with constraint Sharpe Ratio.")
-    print("3. Optimum Return with constraint Volatility.")
-    print("4. Optimum Risk with no limit.")
-    print("5. Optimum Risk with constraint Sharpe Ratio.")
-    print("6. Optimum Risk with constraint Return.")
-    print("7. Markowitz Min-Risk + Max-Sharp.")
-    print("8. EKO Min-Surprise + Max-Sharp.")
+    print("1.  Optimum Return with no limit.")
+    print("2.  Optimum Return with constraint Sharpe Ratio.")
+    print("3.  Optimum Return with constraint Volatility.")
+    print("4.  Optimum Risk with no limit.")
+    print("5.  Optimum Risk with constraint Sharpe Ratio.")
+    print("6.  Optimum Risk with constraint Return.")
+    print("7.  Markowitz Min-Risk + Max-Sharp.")
+    print("8.  Markowitz Min-Risk + Max-Sortino.")
+    print("9.  EKO Min-Surprise + Max-Sharp.")
+    print("10. EKO Min-Surprise + Max-Sortino.")
     print("-------------------------")
     otp_sel = int(input("Which type of opt you wish: "))
     # min_tresh  = float(input("Minimum Threshold Weight Allocation(0-1): "))
@@ -124,15 +126,14 @@ if __name__ == "__main__":
     #-----------Optimization---------------------------------
     print("Sum of the weights: ", optimized_weights.sum())
     threshold = min_tresh
-    portfolio_return = (optimized_weights.T @ returns.mean() * History_Days -
-                        risk_free_rate*(History_Days/252))
-    portfolio_volatility = (optimized_weights.T @ LedoitWolf().fit(returns).
-                            covariance_ @ optimized_weights)**0.5 * np.sqrt(History_Days)
-    sharpe_ratio = (portfolio_return - risk_free_rate) / portfolio_volatility
+    
     print("***********************")
-    print("Sharpe Ratio: ", sharpe_ratio)
-    print("Return: ", round(portfolio_return*1000)/10, "%")
-    print("Volatility: ", portfolio_volatility)
+    metrics = optimizer.calculate_metrics()    
+    print("Sharpe Ratio: ", metrics['Sharpe'])
+    print("Return: ", round(metrics['Return']*1000)/10, "%")
+    print("Volatility: ", metrics['Risk'])
+    print("Sortino: ", metrics['Sortino'])
+    print("Surprise: ", metrics['Surprise'])
     print("***********************")
     # shut down connection to the MetaTrader 5 terminal
     # mt5.shutdown()
@@ -194,7 +195,7 @@ if __name__ == "__main__":
         sharpe_ratios_listx.append(sharpe_ratiox)
     # plot the efficient frontier
     plt.scatter(volatilities_listx, returns_listx, c=sharpe_ratios_listx)
-    plt.scatter(portfolio_volatility, portfolio_return, c='red', marker='D', s=200)
+    plt.scatter(metrics['Risk'], metrics['Return'], c='red', marker='D', s=200)
     plt.xlabel('Volatility')
     plt.ylabel('Return')
     plt.show()

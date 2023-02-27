@@ -160,11 +160,33 @@ class ekoptim():
         self.optimized_weights = result.x
         return self.optimized_weights
 
+    def markowitz_optimization_risk_sortino(self):#8
+        #run the optimization
+        fn = lambda x:  (math.exp(self.risk_cnt(x))+
+                         math.exp(-self.sortino_ratio_cnt(x)))
+        result = minimize(fn, self.w0,
+                          method='SLSQP', bounds=self.bounds,
+                          constraints=[self.constraints[i] for i in [0,7]],
+                          tol = self.toler)
+        self.optimized_weights = result.x
+        return self.optimized_weights
+
     #---Surprise---
-    def surprise_sharpe_optimization(self):#8
+    def surprise_sharpe_optimization(self):#9
         #run the optimization
         fn = lambda x:  (math.exp(self.surprise_cnt(x))+
                          math.exp(-self.sharpe_ratio_cnt(x)))
+        result = minimize(fn, self.w0,
+                          method='SLSQP', bounds=self.bounds,
+                          constraints=[self.constraints[i] for i in [0,7]],
+                          tol = self.toler)
+        self.optimized_weights = result.x
+        return self.optimized_weights
+
+    def surprise_sortino_optimization(self):#10
+        #run the optimization
+        fn = lambda x:  (math.exp(self.surprise_cnt(x))+
+                         math.exp(-self.sortino_ratio_cnt(x)))
         result = minimize(fn, self.w0,
                           method='SLSQP', bounds=self.bounds,
                           constraints=[self.constraints[i] for i in [0,7]],
@@ -192,7 +214,11 @@ class ekoptim():
             elif sel==7:
                 return self.markowitz_optimization_risk_sharpe()
             elif sel==8:
+                return self.markowitz_optimization_risk_sortino()
+            elif sel==9:
                 return self.surprise_sharpe_optimization()
+            elif sel==10:
+                return self.surprise_sortino_optimization()
             else:
                 return -1
         except:
