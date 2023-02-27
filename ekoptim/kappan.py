@@ -52,13 +52,20 @@ class ekoptim():
     #define the optimization functions    
     def __initial_weight(self, w0):
         self.w0 = w0
-    #-------------------------------
-    #---Risk, Sharpe,Sortino, Return--------
-    #-------------------------------        
+    #---------------------------------------------------
+    #---Risk, Sharpe, Sortino, Return, Surprise --------
+    #---------------------------------------------------        
     def risk_cnt(self, w):
         portfolio_volatility = (w.T @ LedoitWolf().fit(self.returns).
                                 covariance_ @ w)**0.5 * np.sqrt(self.days)
         return portfolio_volatility
+
+    def surprise_cnt(self, w):
+        aks = abs(((self.returns.pct_change()).replace([np.inf, -np.inf], 0)).fillna(0))
+        aks_log = aks.applymap(lambda x: np.log(x + 1))
+        portfolio_surprise = (w.T @ LedoitWolf().fit(self.returns*aks_log).
+                                covariance_ @ w)**0.5 * np.sqrt(self.days)
+        return portfolio_surprise
     
     def sharpe_ratio_cnt(self, w):
         portfolio_return = w.T @ self.returns.mean() * self.days - self.risk_free_rate
@@ -89,8 +96,8 @@ class ekoptim():
                           method='SLSQP', bounds=self.bounds,
                           constraints=[self.constraints[i] for i in [0,7]],
                           tol = self.toler)
-        optimized_weights = result.x
-        return optimized_weights
+        self.optimized_weights = result.x
+        return self.optimized_weights
     
     def Optim_return_cnt_sharpe(self):#2
         #run the optimization
@@ -99,8 +106,8 @@ class ekoptim():
                           method='SLSQP', bounds=self.bounds,
                           constraints=[self.constraints[i] for i in [0,3,4,7]],
                           tol = self.toler)
-        optimized_weights = result.x
-        return optimized_weights
+        self.optimized_weights = result.x
+        return self.optimized_weights
 
     def Optim_return_cnt_volat(self):#3
         #run the optimization
@@ -109,8 +116,8 @@ class ekoptim():
                           method='SLSQP', bounds=self.bounds,
                           constraints=[self.constraints[i] for i in [0,5,6,7]],
                           tol = self.toler)
-        optimized_weights = result.x
-        return optimized_weights
+        self.optimized_weights = result.x
+        return self.optimized_weights
     #---Risk---
     def Optim_risk_nl(self):#4
         #run the optimization
@@ -119,8 +126,8 @@ class ekoptim():
                           method='SLSQP', bounds=self.bounds,
                           constraints=[self.constraints[i] for i in [0,7]],
                           tol = self.toler)
-        optimized_weights = result.x
-        return optimized_weights
+        self.optimized_weights = result.x
+        return self.optimized_weights
 
     def Optim_risk_cnt_sharpe(self):#5
         #run the optimization
@@ -129,8 +136,8 @@ class ekoptim():
                           method='SLSQP', bounds=self.bounds,
                           constraints=[self.constraints[i] for i in [0,3,4,7]],
                           tol = self.toler)
-        optimized_weights = result.x
-        return optimized_weights
+        self.optimized_weights = result.x
+        return self.optimized_weights
 
     def Optim_risk_cnt_return(self):#6
         #run the optimization
@@ -139,8 +146,8 @@ class ekoptim():
                           method='SLSQP', bounds=self.bounds,
                           constraints=[self.constraints[i] for i in [0,1,2,7]],
                           tol = self.toler)
-        optimized_weights = result.x
-        return optimized_weights
+        self.optimized_weights = result.x
+        return self.optimized_weights
     #---Markowitz Original---
     def markowitz_optimization_risk_sharpe(self):#7
         #run the optimization
@@ -150,9 +157,42 @@ class ekoptim():
                           method='SLSQP', bounds=self.bounds,
                           constraints=[self.constraints[i] for i in [0,7]],
                           tol = self.toler)
-        optimized_weights = result.x
-        return optimized_weights
+        self.optimized_weights = result.x
+        return self.optimized_weights
 
+    def markowitz_optimization_risk_sortino(self):#8
+        #run the optimization
+        fn = lambda x:  (math.exp(self.risk_cnt(x))+
+                         math.exp(-self.sortino_ratio_cnt(x)))
+        result = minimize(fn, self.w0,
+                          method='SLSQP', bounds=self.bounds,
+                          constraints=[self.constraints[i] for i in [0,7]],
+                          tol = self.toler)
+        self.optimized_weights = result.x
+        return self.optimized_weights
+
+    #---Surprise---
+    def surprise_sharpe_optimization(self):#9
+        #run the optimization
+        fn = lambda x:  (math.exp(self.surprise_cnt(x))+
+                         math.exp(-self.sharpe_ratio_cnt(x)))
+        result = minimize(fn, self.w0,
+                          method='SLSQP', bounds=self.bounds,
+                          constraints=[self.constraints[i] for i in [0,7]],
+                          tol = self.toler)
+        self.optimized_weights = result.x
+        return self.optimized_weights
+
+    def surprise_sortino_optimization(self):#10
+        #run the optimization
+        fn = lambda x:  (math.exp(self.surprise_cnt(x))+
+                         math.exp(-self.sortino_ratio_cnt(x)))
+        result = minimize(fn, self.w0,
+                          method='SLSQP', bounds=self.bounds,
+                          constraints=[self.constraints[i] for i in [0,7]],
+                          tol = self.toler)
+        self.optimized_weights = result.x
+        return self.optimized_weights
     #-------------------------------
     #---selections of Stocks--------
     #-------------------------------
@@ -173,8 +213,21 @@ class ekoptim():
                 return self.Optim_risk_cnt_return()
             elif sel==7:
                 return self.markowitz_optimization_risk_sharpe()
+            elif sel==8:
+                return self.markowitz_optimization_risk_sortino()
+            elif sel==9:
+                return self.surprise_sharpe_optimization()
+            elif sel==10:
+                return self.surprise_sortino_optimization()
             else:
                 return -1
         except:
             print("An exception occurred in Optimization")
+    
+    def calculate_metrics(self):
+        return {'Risk': self.risk_cnt(self.optimized_weights),
+                'Return': self.return_cnt(self.optimized_weights),
+                'Sharpe': self.sharpe_ratio_cnt(self.optimized_weights),
+                'Sortino': self.sortino_ratio_cnt(self.optimized_weights),
+                'Surprise': self.surprise_cnt(self.optimized_weights)}
 # end of class ekoptim
