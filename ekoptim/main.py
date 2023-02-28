@@ -77,6 +77,13 @@ class ekoptim():
         downside_volatility = np.sqrt((downside_returns**2).mean()) * np.sqrt(self.days)
         sortino_ratio = (portfolio_return - self.risk_free_rate) / downside_volatility
         return sortino_ratio
+
+    def surprise_cnt(self, w):
+        aks = abs(((self.returns.pct_change()).replace([np.inf, -np.inf], 0)).fillna(0))
+        aks_log = aks.applymap(lambda x: np.log(x + 1))
+        portfolio_surprise = (w.T @ LedoitWolf().fit(self.returns*aks_log).
+                                covariance_ @ w)**0.5 * np.sqrt(self.days)
+        return portfolio_surprise
     #-------------------------------
     #---Optimizations---------------
     #-------------------------------
@@ -177,4 +184,11 @@ class ekoptim():
                 return -1
         except:
             print("An exception occurred in Optimization")
+
+    def calculate_metrics(self,w):
+        return {'Risk': self.risk_cnt(w),
+                'Return': self.return_cnt(w),
+                'Sharpe': self.sharpe_ratio_cnt(w),
+                'Sortino': self.sortino_ratio_cnt(w),
+                'Surprise': self.surprise_cnt(w)}
 # end of class ekoptim
