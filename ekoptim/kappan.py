@@ -19,6 +19,7 @@ class ekoptim():
         self.days = returns.shape[0]
         #initialize starting point
         self.w0 = [1/self.n] * self.n
+        self.optimized_weights = self.w0
         self.durc = self.days/252
         self.risk_free_rate = risk_free_rate*self.durc
         self.toler = toler
@@ -224,10 +225,10 @@ class ekoptim():
         except:
             print("An exception occurred in Optimization")
     
-    def calculate_metrics(self):
-        return {'Risk': self.risk_cnt(self.optimized_weights),
-                'Return': self.return_cnt(self.optimized_weights),
-                'Sharpe': self.sharpe_ratio_cnt(self.optimized_weights),
-                'Sortino': self.sortino_ratio_cnt(self.optimized_weights),
-                'Surprise': self.surprise_cnt(self.optimized_weights)}
+    def calculate_metrics(self,w):
+        return {'Risk': self.risk_cnt(w),
+                'Return': self.return_cnt(w),
+                'Sharpe': self.sharpe_ratio_cnt(w),
+                'Sortino': self.sortino_ratio_cnt(w),
+                'Surprise': self.surprise_cnt(w)}
 # end of class ekoptim

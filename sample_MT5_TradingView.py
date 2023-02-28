@@ -128,7 +128,7 @@ if __name__ == "__main__":
     threshold = min_tresh
     
     print("***********************")
-    metrics = optimizer.calculate_metrics()    
+    metrics = optimizer.calculate_metrics(optimized_weights)    
     print("Sharpe Ratio: ", metrics['Sharpe'])
     print("Return: ", round(metrics['Return']*1000)/10, "%")
     print("Volatility: ", metrics['Risk'])
