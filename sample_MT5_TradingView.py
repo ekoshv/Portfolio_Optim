@@ -79,7 +79,9 @@ if __name__ == "__main__":
     # max_numb = int(input("Number of weights greater than threshold: "))
     
     returns_list = []
+    returns_MT5 = []
     rates_list = []
+    rates_MT5 = []
     begindate = (datetime.datetime.today()-
                  datetime.timedelta(days=(int(History_Days*365/252))))
     i=0
@@ -92,6 +94,7 @@ if __name__ == "__main__":
                                 interval= Interval.in_daily, 
                                 n_bars=History_Days,
                                 ctype="dividends")
+            ratemt5 = mt5.copy_rates_from_pos(s.name, mt5.TIMEFRAME_D1, 0, History_Days)
             #print(rates)
             if(len(rates)>=round(0.75*History_Days) and
                (rates.index[0] > begindate)):
@@ -101,6 +104,15 @@ if __name__ == "__main__":
                 rates[s.name] = rates[s.name].fillna(0)
                 rates_list.append(rates)
                 returns_list.append(rates[s.name])
+                
+                data = pd.DataFrame(data=ratemt5, columns=["time", "open", "high", "low",
+                                                         "close", "tick_volume", "spread", "real_volume"])
+                # convert time in seconds into the datetime format
+                data['time']=pd.to_datetime(data['time'], unit='s')
+                data[s.name] = data["close"].pct_change()
+                data[s.name] = data[s.name].fillna(0)
+                rates_MT5.append(data)
+                returns_MT5.append(data[s.name])
             #returns_symbols.append(s.name)
             i+=1
             print("---------")
@@ -111,8 +123,10 @@ if __name__ == "__main__":
             print("An exception occurred: ", s.name)
             print("---------")
     
-    returns = pd.concat(returns_list, axis=1)
-    returns.fillna(0,inplace=True)
+    returnsTV = pd.concat(returns_list, axis=1)
+    returnsMT5= pd.concat(returns_MT5, axis=1)
+    returnsTV.fillna(0,inplace=True)
+    returnsMT5.fillna(0,inplace=True)
     
     # if is_weighted:
     #     maxsec = int(returns.index.max().timestamp())
@@ -120,15 +134,15 @@ if __name__ == "__main__":
     risk_free_rate = 0.03
     tol = None
     #-----------Optimization---------------------------------
-    optimizer = ekoptim(returns, risk_free_rate, target_SR,
+    optimizerTV = ekoptim(returnsTV, risk_free_rate, target_SR,
                         target_Return, target_Volat, max_weight,tol)
-    optimized_weights = optimizer.optiselect(otp_sel)
+    optimized_weights_TV = optimizerTV.optiselect(otp_sel)
     #-----------Optimization---------------------------------
-    print("Sum of the weights: ", optimized_weights.sum())
+    print("Sum of the weights: ", optimized_weights_TV.sum())
     threshold = min_tresh
     
     print("***********************")
-    metrics = optimizer.calculate_metrics(optimized_weights)    
+    metrics = optimizerTV.calculate_metrics(optimized_weights_TV)    
     print("Sharpe Ratio: ", metrics['Sharpe'])
     print("Return: ", round(metrics['Return']*1000)/10, "%")
     print("Volatility: ", metrics['Risk'])
@@ -162,13 +176,13 @@ if __name__ == "__main__":
     #         print("An exception happened!")
     
     returns_selected = []
-    for i, weight in enumerate(optimized_weights):    
+    for i, weight in enumerate(optimized_weights_TV):    
         if (weight>threshold):
-            equity_div_x = {"symbol": returns.columns[i],
+            equity_div_x = {"symbol": returnsTV.columns[i],
                             "Weight":round(weight*10000)/100,
                             "Allocation": total_equity*weight}
             equity_div.append(equity_div_x)
-            returns_selected.append(returns[returns.columns[i]])
+            returns_selected.append(returnsTV[returnsTV.columns[i]])
     
     equity_div_df = pd.DataFrame(equity_div)
     equity_div_df.sort_values(by="Weight",inplace=True, ignore_index=True)
@@ -183,11 +197,11 @@ if __name__ == "__main__":
     sharpe_ratios_listx = []
     volatilities_listx = []
     for i in range(num_portfolios):
-        weights = np.random.random(returns.shape[1])
+        weights = np.random.random(returnsTV.shape[1])
         weights /= np.sum(weights)
-        portfolio_returnx = (weights.T @ returns.mean() * History_Days -
+        portfolio_returnx = (weights.T @ returnsTV.mean() * History_Days -
                              risk_free_rate*(History_Days/252))
-        portfolio_volatilityx = (weights.T @ LedoitWolf().fit(returns).
+        portfolio_volatilityx = (weights.T @ LedoitWolf().fit(returnsTV).
                                  covariance_ @ weights)**0.5 * np.sqrt(History_Days)
         sharpe_ratiox = (portfolio_returnx - risk_free_rate) / portfolio_volatilityx
         returns_listx.append(portfolio_returnx)
