@@ -48,10 +48,12 @@ if __name__ == "__main__":
     if(filt_type == 'G' or filt_type == 'g'):
         Group_Name = input("Enter your Group name: e.g.(*.D.EX): ")
         filtered_symbols=mt5.symbols_get(group=Group_Name)
+        allsymb = [s.name for s in filtered_symbols]
     elif(filt_type == 'P' or filt_type == 'p'):
         Path_Name = input("Enter your Path: e.g.('Stocks.DE\\'): ")
         symbols = mt5.symbols_get()
         filtered_symbols = filter_symbols_by_path(symbols, Path_Name)
+        allsymb = [s.name for s in filtered_symbols]
     History_Days = int(input("How many historical days: "))
     target_SR = float(input("Target Sharpe Ratio: "))
     target_Volat = float(input("Target Volatility(Risk): "))
@@ -77,7 +79,7 @@ if __name__ == "__main__":
     returns_list = []
     returns_symbols = []  
     begindate = (datetime.datetime.today()-
-                 datetime.timedelta(days=(int(History_Days*365/252))))
+                 datetime.timedelta(days=(int(1.1*History_Days*365/252))))
 
     # with ThreadPoolExecutor() as executor:
     #     executor.map(process_symbol, symbols)
@@ -89,9 +91,11 @@ if __name__ == "__main__":
                                                  "real_volume"])
         data['time']=pd.to_datetime(data['time'], unit='s')
         data.set_index('time',inplace=True)
-        if(len(data)>=round(0.75*History_Days) and
-           (data.index[0] > begindate)):#True)
-            # convert time in seconds into the datetime format
+        # print("--------------")
+        # print("Symbol: ",s.name,", Length: ", len(data.index), ", Begin: ",data.index[0])
+        # print("--------------")
+        if(len(data.index)>=round(0.75*History_Days) and
+           (data.index[0] >= begindate)):
             data[s.name] = data["close"].pct_change()
             data[s.name] = data[s.name].fillna(0)
             returns_list.append(data[s.name])
@@ -116,13 +120,15 @@ if __name__ == "__main__":
     print("Surprise: ", metrics['Surprise'])
     print("***********************")
 
+    returns_selected = []
     equity_div = []
     for i, weight in enumerate(optimized_weights):
         try:
             symbol_info = mt5.symbol_info(returns_symbols[i])
             if (weight>threshold and not(symbol_info.volume_min*symbol_info.bid>
                                          1.1*total_equity*weight)):#
-                equity_div_x = {"symbol": symbol_info.name,"Weight":round(weight*10000)/100,
+                equity_div_x = {"symbol": symbol_info.name,
+                                "Weight":round(weight*10000)/100,
                                 "Allocation": round(max(symbol_info.volume_min,
                                                   round(total_equity*weight/symbol_info.bid,
                                                         -int(np.floor(np.log10(symbol_info.volume_step))+
@@ -132,10 +138,13 @@ if __name__ == "__main__":
                                                                           -int(np.floor(np.log10(symbol_info.volume_step))+
                                                                                1)+1))}
                 equity_div.append(equity_div_x)
+                returns_selected.append(returns[symbol_info.name])
         except:
             print("An exception happened!")
     equity_div_df = pd.DataFrame(equity_div)
     equity_div_df.sort_values(by="Weight",inplace=True, ignore_index=True)
+    returns_selected = pd.concat(returns_selected, axis=1)
+    xyz = 1000*LedoitWolf().fit(returns_selected).covariance_
     print("------------------")
     print(equity_div_df)
     print("------------------")
