@@ -21,7 +21,7 @@ class ekoptim():
         self.durc = self.days/252
         self.risk_free_rate = risk_free_rate*self.durc
         self.toler = toler
-        self.calls = 0
+        
         #define constraints
         self.bounds = [(0,1) for i in range(self.n)]
         
@@ -81,9 +81,7 @@ class ekoptim():
     #-------------------------------
     #---Optimizations---------------
     #-------------------------------
-    def clback(self,xk):
-        print(f"Iteration: {xk.nit}")
-        
+    
     #---Return---
     def Optim_return_nl(self):#1
         #run the optimization
@@ -91,8 +89,7 @@ class ekoptim():
         result = minimize(fn, self.w0,
                           method='SLSQP', bounds=self.bounds,
                           constraints=[self.constraints[i] for i in [0,7]],
-                          tol = self.toler,
-                          callback=self.clback)
+                          tol = self.toler)
         self.optimized_weights = result.x
         return self.optimized_weights
     
@@ -102,8 +99,7 @@ class ekoptim():
         result = minimize(fn, self.w0,
                           method='SLSQP', bounds=self.bounds,
                           constraints=[self.constraints[i] for i in [0,3,4,7]],
-                          tol = self.toler,
-                          callback=self.clback)
+                          tol = self.toler)
         self.optimized_weights = result.x
         return self.optimized_weights
 
@@ -113,8 +109,7 @@ class ekoptim():
         result = minimize(fn, self.w0,
                           method='SLSQP', bounds=self.bounds,
                           constraints=[self.constraints[i] for i in [0,5,6,7]],
-                          tol = self.toler,
-                          callback=self.clback)
+                          tol = self.toler)
         self.optimized_weights = result.x
         return self.optimized_weights
     #---Risk---
@@ -124,8 +119,7 @@ class ekoptim():
         result = minimize(fn, self.w0,
                           method='SLSQP', bounds=self.bounds,
                           constraints=[self.constraints[i] for i in [0,7]],
-                          tol = self.toler,
-                          callback=self.clback)
+                          tol = self.toler)
         self.optimized_weights = result.x
         return self.optimized_weights
 
@@ -135,8 +129,7 @@ class ekoptim():
         result = minimize(fn, self.w0,
                           method='SLSQP', bounds=self.bounds,
                           constraints=[self.constraints[i] for i in [0,3,4,7]],
-                          tol = self.toler,
-                          callback=self.clback)
+                          tol = self.toler)
         self.optimized_weights = result.x
         return self.optimized_weights
 
@@ -146,8 +139,7 @@ class ekoptim():
         result = minimize(fn, self.w0,
                           method='SLSQP', bounds=self.bounds,
                           constraints=[self.constraints[i] for i in [0,1,2,7]],
-                          tol = self.toler,
-                          callback=self.clback)
+                          tol = self.toler)
         self.optimized_weights = result.x
         return self.optimized_weights
     #---Markowitz Original---
@@ -158,8 +150,7 @@ class ekoptim():
         result = minimize(fn, self.w0,
                           method='SLSQP', bounds=self.bounds,
                           constraints=[self.constraints[i] for i in [0,7]],
-                          tol = self.toler,
-                          callback=self.clback)
+                          tol = self.toler)
         self.optimized_weights = result.x
         return self.optimized_weights
 
@@ -170,8 +161,7 @@ class ekoptim():
         result = minimize(fn, self.w0,
                           method='SLSQP', bounds=self.bounds,
                           constraints=[self.constraints[i] for i in [0,7]],
-                          tol = self.toler,
-                          callback=self.clback)
+                          tol = self.toler)
         self.optimized_weights = result.x
         return self.optimized_weights
 
@@ -183,8 +173,7 @@ class ekoptim():
         result = minimize(fn, self.w0,
                           method='SLSQP', bounds=self.bounds,
                           constraints=[self.constraints[i] for i in [0,7]],
-                          tol = self.toler,
-                          callback=self.clback)
+                          tol = self.toler)
         self.optimized_weights = result.x
         return self.optimized_weights
 
@@ -195,8 +184,7 @@ class ekoptim():
         result = minimize(fn, self.w0,
                           method='SLSQP', bounds=self.bounds,
                           constraints=[self.constraints[i] for i in [0,7]],
-                          tol = self.toler,
-                          callback=self.clback)
+                          tol = self.toler)
         self.optimized_weights = result.x
         return self.optimized_weights
     #-------------------------------
