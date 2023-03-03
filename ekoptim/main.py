@@ -47,7 +47,7 @@ class ekoptim():
     def __initial_weight(self, w0):
         self.w0 = w0
     
-    def cov2corr(cov):
+    def cov2corr(self,cov):
         # calculate the standard deviation of each variable
         std_dev = np.sqrt(np.diag(cov))
 

@@ -194,7 +194,7 @@ if __name__ == "__main__":
     equity_div_df = pd.DataFrame(equity_div)
     equity_div_df.sort_values(by="Weight",inplace=True, ignore_index=True)
     returns_selected = pd.concat(returns_selected, axis=1)
-    xyz = cov2corr(100*LedoitWolf().fit(returns_selected).covariance_)
+    xyz = optimizerTV.cov2corr(100*LedoitWolf().fit(returns_selected).covariance_)
     print("------------------")
     print(equity_div_df)
     print("------------------")
