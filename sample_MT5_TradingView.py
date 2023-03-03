@@ -7,6 +7,7 @@ from sklearn.covariance import LedoitWolf
 from ekoptim import ekoptim
 from ekoView import TradingViewfeed, Interval
 import datetime
+from tqdm import tqdm
 
 def connect_to_metatrader(path, username, password, server):
     # initialize connection to the MetaTrader 5 terminal
@@ -15,11 +16,13 @@ def connect_to_metatrader(path, username, password, server):
         print("initialize() failed, error code =",mt5.last_error())
         quit()
 
-def filter_symbols_by_path(symbols, path_name):
+def filter_symbols_by_path(symbols, path_names_str):
+    path_names = path_names_str.split(",")
     filtered_symbols = []
     for s in symbols:
-        if path_name in s.path:
-            filtered_symbols.append(s)
+        for pn in path_names:
+           if pn in s.path:
+            filtered_symbols.append(s)         
     return filtered_symbols
 
 if __name__ == "__main__":
@@ -51,10 +54,12 @@ if __name__ == "__main__":
     if(filt_type == 'G' or filt_type == 'g'):
         Group_Name = input("Enter your Group name: e.g.(*.D.EX): ")
         filtered_symbols=mt5.symbols_get(group=Group_Name)
+        allsymb = [s.name for s in filtered_symbols]
     elif(filt_type == 'P' or filt_type == 'p'):
         Path_Name = input("Enter your Path: e.g.('Stocks.DE\\'): ")
         symbols = mt5.symbols_get()
         filtered_symbols = filter_symbols_by_path(symbols, Path_Name)
+        allsymb = [s.name for s in filtered_symbols]
     History_Days = int(input("How many historical days: "))
     #is_weighted = bool(input("Do you want it to be weighted(True/False): "))
     target_SR = float(input("Target Sharpe Ratio: "))
@@ -83,9 +88,9 @@ if __name__ == "__main__":
     rates_list = []
     rates_MT5 = []
     begindate = (datetime.datetime.today()-
-                 datetime.timedelta(days=(int(History_Days*365/252))))
+                 datetime.timedelta(days=(int(1.1*History_Days*365/252))))
     i=0
-    for s in filtered_symbols:
+    for s in tqdm(filtered_symbols):
         try:
             sym_list = tv.search_symbol(s.isin,exchange="FWB")
             print("Symbol is: ", s.name,": ",sym_list[0]["symbol"])
@@ -97,7 +102,7 @@ if __name__ == "__main__":
             ratemt5 = mt5.copy_rates_from_pos(s.name, mt5.TIMEFRAME_D1, 0, History_Days)
             #print(rates)
             if(len(rates)>=round(0.75*History_Days) and
-               (rates.index[0] > begindate)):
+               (rates.index[0] >= begindate)):
                 rates[s.name] = ((rates['close']).
                                  interpolate(method='polynomial', order=2)).pct_change()
                 rates[s.name] = rates[s.name].interpolate(method='polynomial', order=2)
@@ -114,10 +119,10 @@ if __name__ == "__main__":
                 rates_MT5.append(data)
                 returns_MT5.append(data[s.name])
             #returns_symbols.append(s.name)
-            i+=1
-            print("---------")
-            print(round(10000*i/len(filtered_symbols))/100,"%")
-            print("---------")
+            # i+=1
+            # print("---------")
+            # print(round(10000*i/len(filtered_symbols))/100,"%")
+            # print("---------")
         except:
             print("---------")
             print("An exception occurred: ", s.name)
@@ -134,6 +139,7 @@ if __name__ == "__main__":
     risk_free_rate = 0.03
     tol = None
     #-----------Optimization---------------------------------
+    print("Optimization started, please wait...")
     optimizerTV = ekoptim(returnsTV, risk_free_rate, target_SR,
                         target_Return, target_Volat, max_weight,tol)
     optimized_weights_TV = optimizerTV.optiselect(otp_sel)
@@ -154,39 +160,41 @@ if __name__ == "__main__":
     # connect_to_metatrader(555855, "?XRyrR2#", "JFD-Live")
     # symbols=mt5.symbols_get(group=Group_Name)
     equity_div = []
-    
-    # for i, weight in enumerate(optimized_weights):
-    #     try:
-    #         symbol_info = mt5.symbol_info_tick(returns.columns[i])
-    #         if (weight>threshold and not(symbol_info.volume_min*symbol_info.bid>
-    #                                      1.1*total_equity*weight)):#
-    #             print("Name: ",symbol_info.name,", Bid: ",
-    #                   symbol_info.bid,", step: ",symbol_info.volume_step)
-    #             equity_div_x = {"symbol": symbol_info.name,"Weight":round(weight*10000)/100,
-    #                             "Allocation": round(max(symbol_info.volume_min,
-    #                                               round(total_equity*weight/symbol_info.bid,
-    #                                                     -int(np.floor(np.log10(symbol_info.volume_step))+
-    #                                                          1)+1))*symbol_info.bid),
-    #                             "Volume": max(symbol_info.volume_min,
-    #                                           round(total_equity*weight/symbol_info.bid,
-    #                                                                       -int(np.floor(np.log10(symbol_info.volume_step))+
-    #                                                                            1)+1))}
-    #             equity_div.append(equity_div_x)
-    #     except:
-    #         print("An exception happened!")
-    
     returns_selected = []
-    for i, weight in enumerate(optimized_weights_TV):    
-        if (weight>threshold):
-            equity_div_x = {"symbol": returnsTV.columns[i],
-                            "Weight":round(weight*10000)/100,
-                            "Allocation": total_equity*weight}
-            equity_div.append(equity_div_x)
-            returns_selected.append(returnsTV[returnsTV.columns[i]])
+    for i, weight in enumerate(optimized_weights_TV):
+        try:
+            symbol_info = mt5.symbol_info(returnsTV.columns[i])
+            if (weight>threshold and not(symbol_info.volume_min*symbol_info.bid>
+                                          1.1*total_equity*weight)):#
+                # print("Name: ",symbol_info.name,", Bid: ",
+                #       symbol_info.bid,", step: ",symbol_info.volume_step)
+                equity_div_x = {"symbol": symbol_info.name,"Weight":round(weight*10000)/100,
+                                "Allocation": round(max(symbol_info.volume_min,
+                                                  round(total_equity*weight/symbol_info.bid,
+                                                        -int(np.floor(np.log10(symbol_info.volume_step))+
+                                                              1)+1))*symbol_info.bid),
+                                "Volume": max(symbol_info.volume_min,
+                                              round(total_equity*weight/symbol_info.bid,
+                                                                          -int(np.floor(np.log10(symbol_info.volume_step))+
+                                                                                1)+1))}
+                returns_selected.append(returnsTV[returnsTV.columns[i]])
+                equity_div.append(equity_div_x)
+        except:
+            print("An exception happened!")
+    
+    # returns_selected = []
+    # for i, weight in enumerate(optimized_weights_TV):    
+    #     if (weight>threshold):
+    #         equity_div_x = {"symbol": returnsTV.columns[i],
+    #                         "Weight":round(weight*10000)/100,
+    #                         "Allocation": total_equity*weight}
+    #         equity_div.append(equity_div_x)
+    #         returns_selected.append(returnsTV[returnsTV.columns[i]])
     
     equity_div_df = pd.DataFrame(equity_div)
     equity_div_df.sort_values(by="Weight",inplace=True, ignore_index=True)
     returns_selected = pd.concat(returns_selected, axis=1)
+    xyz = cov2corr(100*LedoitWolf().fit(returns_selected).covariance_)
     print("------------------")
     print(equity_div_df)
     print("------------------")

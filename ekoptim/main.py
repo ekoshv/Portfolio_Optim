@@ -46,6 +46,15 @@ class ekoptim():
     #define the optimization functions    
     def __initial_weight(self, w0):
         self.w0 = w0
+    
+    def cov2corr(cov):
+        # calculate the standard deviation of each variable
+        std_dev = np.sqrt(np.diag(cov))
+
+        # calculate the correlation matrix
+        corr = cov / np.outer(std_dev, std_dev)
+
+        return corr
     #---------------------------------------------------
     #---Risk, Sharpe, Sortino, Return, Surprise --------
     #---------------------------------------------------        
@@ -57,8 +66,8 @@ class ekoptim():
     def surprise_cnt(self, w):
         aks = abs(((self.returns.pct_change()).replace([np.inf, -np.inf], 0)).fillna(0))
         aks_log = aks.applymap(lambda x: np.log(x + 1))
-        portfolio_surprise = (w.T @ LedoitWolf().fit(self.returns*aks_log).
-                                covariance_ @ w)**0.5 * np.sqrt(self.days)
+        portfolio_surprise = (w.T @ self.cov2corr(LedoitWolf().fit(self.returns*aks_log).
+                                covariance_ @ w))**0.5 * np.sqrt(self.days)
         return portfolio_surprise
     
     def sharpe_ratio_cnt(self, w):

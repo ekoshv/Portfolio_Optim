@@ -1,12 +1,11 @@
 import numpy as np
-#import pandas as pd
+import pandas as pd
+from concurrent.futures import ThreadPoolExecutor
 import math
-#import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 from sklearn.covariance import LedoitWolf
-#from concurrent.futures import ThreadPoolExecutor
 
-class ekoptim():
+class ekoptimPara():
     def __init__(self, returns, risk_free_rate,
                                target_SR, target_Return, target_Volat,
                                max_weight,toler):
@@ -19,7 +18,7 @@ class ekoptim():
         self.days = returns.shape[0]
         #initialize starting point
         self.w0 = [1/self.n] * self.n
-        self.optimized_weights = self.w0
+        self.optimized_weights = [1/self.n] * self.n
         self.durc = self.days/252
         self.risk_free_rate = risk_free_rate*self.durc
         self.toler = toler
@@ -43,11 +42,6 @@ class ekoptim():
                              "fun":lambda x: -0.85*self.target_Volat+self.risk_cnt(x)},
                             {"type":"ineq",#7 max weight
                              "fun":lambda x: self.max_weight-x}]
-        
-        #self.constraints_weight = [{"type":"eq","fun":lambda x: x.sum() - 1},
-        #{"type":"ineq","fun":lambda x: self.max_weight-x}]
-        #,{"type":"ineq","fun":lambda x: (self.max_numb-len([sx for sx in x 
-        #if sx>=self.tresh]))}
     
     
     #define the optimization functions    
@@ -200,6 +194,7 @@ class ekoptim():
 
     def optiselect(self, sel=7):
         try:
+            
             if sel==1:
                 return self.Optim_return_nl()
             elif sel==2:
