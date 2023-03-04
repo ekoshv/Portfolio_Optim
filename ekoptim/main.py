@@ -112,10 +112,11 @@ class ekoptim():
         aks = abs(delta_returns.replace([np.inf, -np.inf], 0))
         
         # Calculate the log of the absolute percentage change plus one
-        aks_log = np.log(aks + 1)
+        #aks_log = np.log(aks + 1)
+        aks_sqrt = np.sqrt(aks+1)
         
         # Calculate the correlation matrix of the log-returns adjusted for the absolute percentage change between consecutive returns
-        covar = LedoitWolf().fit(self.returns*aks_log).covariance_
+        covar = LedoitWolf().fit(self.returns*aks_sqrt).covariance_
         #corr = self.cov2corr(covar)
         
         # Calculate the portfolio surprise
