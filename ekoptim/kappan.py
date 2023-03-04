@@ -16,6 +16,7 @@ class ekoptimPara():
         self.max_weight = max_weight
         self.n = returns.shape[1]
         self.days = returns.shape[0]
+        self.kdiv = round(returns.shape[1]/np.log2(returns.shape[1]+1))+1
         #initialize starting point
         self.w0 = [1/self.n] * self.n
         self.optimized_weights = [1/self.n] * self.n

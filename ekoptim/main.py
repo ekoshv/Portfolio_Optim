@@ -1,7 +1,7 @@
 import numpy as np
-#import pandas as pd
 import math
 from scipy.optimize import minimize
+from scipy.stats import norm
 from sklearn.covariance import LedoitWolf
 
 class ekoptim():
@@ -47,14 +47,48 @@ class ekoptim():
     def __initial_weight(self, w0):
         self.w0 = w0
     
-    def cov2corr(self,cov):
-        # calculate the standard deviation of each variable
-        std_dev = np.sqrt(np.diag(cov))
+    # def cov2corr(self,cov):
+    #     # calculate the standard deviation of each variable
+    #     std_dev = np.sqrt(np.diag(cov))
 
-        # calculate the correlation matrix
-        corr = cov / np.outer(std_dev, std_dev)
+    #     # calculate the correlation matrix
+    #     corr = cov / np.outer(std_dev, std_dev)
+    #     return corr
 
+    def cov2corr(self, cov):
+        corr = np.zeros_like(cov)
+        n = cov.shape[0]
+        
+        for i in range(n):
+            corr[i, i] = 1.0
+            
+            for j in range(i + 1, n):
+                if cov[i, i] == 0.0 or cov[j, j] == 0.0:
+                    corr[i, j] = corr[j, i] = 0.0
+                else:
+                    corr[i, j] = corr[j, i] = cov[i, j] / np.sqrt(cov[i, i] * cov[j, j])
+        
         return corr
+
+    # def cvar_cnt(self, w, alpha):
+    #     # Calculate the conditional value-at-risk (CVaR) of the portfolio
+    #     # with confidence level alpha
+        
+    #     # Calculate the portfolio return and volatility
+    #     portfolio_return = w.T @ self.returns.mean() * self.days - self.risk_free_rate
+    #     portfolio_volatility = (w.T @ LedoitWolf().fit(self.returns).
+    #                             covariance_ @ w)**0.5 * np.sqrt(self.days)
+        
+    #     # Calculate the VaR of the portfolio using the normal distribution
+    #     z_alpha = norm.ppf(alpha)
+    #     portfolio_var = portfolio_return - z_alpha * portfolio_volatility
+        
+    #     # Calculate the expected shortfall (ES) of the portfolio
+    #     portfolio_es = -1/alpha * (1 - alpha) * \
+    #         norm.pdf(norm.ppf(alpha)) * portfolio_volatility
+    #     portfolio_cvar = portfolio_return - portfolio_es
+        
+    #     return portfolio_cvar, portfolio_var
     #---------------------------------------------------
     #---Risk, Sharpe, Sortino, Return, Surprise --------
     #---------------------------------------------------        
@@ -66,9 +100,31 @@ class ekoptim():
     def surprise_cnt(self, w):
         aks = abs(((self.returns.pct_change()).replace([np.inf, -np.inf], 0)).fillna(0))
         aks_log = aks.applymap(lambda x: np.log(x + 1))
-        portfolio_surprise = (w.T @ (LedoitWolf().fit(self.returns*aks_log).
+        portfolio_surprise = (w.T @ self.cov2corr(LedoitWolf().fit(self.returns*aks_log).
                                 covariance_ @ w))**0.5 * np.sqrt(self.days)
         return portfolio_surprise
+
+    # def surprise_sk_cnt(self, w, alpha=0.95):
+    #     # Calculate the "surprise" metric of the portfolio, incorporating
+    #     # skewness and kurtosis of the return distribution using the CVaR model
+    #     portfolio_volatility = (w.T @ LedoitWolf().fit(self.returns).
+    #                             covariance_ @ w)**0.5 * np.sqrt(self.days)
+    #     # Calculate the log-returns and skewness/kurtosis of the returns
+    #     log_returns = np.log(1 + abs(self.returns.pct_change())).fillna(0)
+    #     delta_returns = self.returns.pct_change().fillna(0)
+    #     delta_returns = delta_returns.replace([np.inf, -np.inf], 0)
+    #     skewness = delta_returns.skew()
+    #     kurtosis = delta_returns.kurtosis()
+        
+    #     # Calculate the portfolio CVaR using the CVaR model
+    #     portfolio_cvar, portfolio_var = self.cvar_cnt(w, alpha)
+        
+    #     # Calculate the "surprise" metric using the CVaR model
+    #     surprise = (w.T @ LedoitWolf().fit(self.returns*log_returns.cov()).covariance_ @ w)**0.5 * \
+    #                (np.sqrt(self.days) + skewness * portfolio_cvar / portfolio_volatility + \
+    #                 (kurtosis-3) / 4 * (portfolio_cvar / portfolio_volatility)**2)
+        
+    #     return surprise
     
     def sharpe_ratio_cnt(self, w):
         portfolio_return = w.T @ self.returns.mean() * self.days - self.risk_free_rate
