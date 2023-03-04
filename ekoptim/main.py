@@ -97,11 +97,29 @@ class ekoptim():
                                 covariance_ @ w)**0.5 * np.sqrt(self.days)
         return portfolio_volatility
 
+    # def surprise_cnt(self, w):
+    #     aks = abs(((self.returns.pct_change()).replace([np.inf, -np.inf], 0)).fillna(0))
+    #     aks_log = aks.applymap(lambda x: np.log(x + 1))
+    #     portfolio_surprise = (w.T @ (self.cov2corr(LedoitWolf().fit(self.returns*aks_log).
+    #                             covariance_ @ w)))**0.5 * np.sqrt(self.days)
+    #     return portfolio_surprise
+
     def surprise_cnt(self, w):
-        aks = abs(((self.returns.pct_change()).replace([np.inf, -np.inf], 0)).fillna(0))
-        aks_log = aks.applymap(lambda x: np.log(x + 1))
-        portfolio_surprise = (w.T @ (self.cov2corr(LedoitWolf().fit(self.returns*aks_log).
-                                covariance_ @ w)))**0.5 * np.sqrt(self.days)
+        # Calculate the percentage change between consecutive returns
+        delta_returns = self.returns.pct_change().fillna(0)
+        
+        # Calculate the absolute percentage change between consecutive returns
+        aks = abs(delta_returns.replace([np.inf, -np.inf], 0))
+        
+        # Calculate the log of the absolute percentage change plus one
+        aks_log = np.log(aks + 1)
+        
+        # Calculate the correlation matrix of the log-returns adjusted for the absolute percentage change between consecutive returns
+        corr = self.cov2corr(LedoitWolf().fit(self.returns*aks_log).covariance_)
+        
+        # Calculate the portfolio surprise
+        portfolio_surprise = (w.T @ corr @ w)**0.5 * np.sqrt(self.days)
+        
         return portfolio_surprise
 
     # def surprise_sk_cnt(self, w, alpha=0.95):
