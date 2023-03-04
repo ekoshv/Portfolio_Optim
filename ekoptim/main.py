@@ -100,8 +100,8 @@ class ekoptim():
     def surprise_cnt(self, w):
         aks = abs(((self.returns.pct_change()).replace([np.inf, -np.inf], 0)).fillna(0))
         aks_log = aks.applymap(lambda x: np.log(x + 1))
-        portfolio_surprise = (w.T @ self.cov2corr(LedoitWolf().fit(self.returns*aks_log).
-                                covariance_ @ w))**0.5 * np.sqrt(self.days)
+        portfolio_surprise = (w.T @ (self.cov2corr(LedoitWolf().fit(self.returns*aks_log).
+                                covariance_ @ w)))**0.5 * np.sqrt(self.days)
         return portfolio_surprise
 
     # def surprise_sk_cnt(self, w, alpha=0.95):
