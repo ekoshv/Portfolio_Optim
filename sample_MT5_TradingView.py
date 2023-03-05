@@ -118,11 +118,6 @@ if __name__ == "__main__":
                 data[s.name] = data[s.name].fillna(0)
                 rates_MT5.append(data)
                 returns_MT5.append(data[s.name])
-            #returns_symbols.append(s.name)
-            # i+=1
-            # print("---------")
-            # print(round(10000*i/len(filtered_symbols))/100,"%")
-            # print("---------")
         except:
             print("---------")
             print("An exception occurred: ", s.name)

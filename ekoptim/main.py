@@ -3,6 +3,8 @@ import math
 from scipy.optimize import minimize
 from scipy.stats import norm
 import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
 from sklearn.covariance import LedoitWolf
 
 class ekoptim():
@@ -311,7 +313,7 @@ class ekoptim():
                 'Sortino': self.sortino_ratio_cnt(w),
                 'Surprise': self.surprise_cnt(w)}
 
-    def frontPlot(self,w):
+    def frontPlot(self, w):
         # use Monte Carlo simulation to generate multiple sets of random weights
         num_portfolios = 500
         returns_listx = []
@@ -328,7 +330,9 @@ class ekoptim():
             sharpe_ratios_listx.append(sharpe_ratiox)
         # plot the efficient frontier
         metrics = self.calculate_metrics(w)#self.optimized_weights
-        plt.scatter(volatilities_listx, returns_listx, c=sharpe_ratios_listx)
+        data = {'Volatility': volatilities_listx, 'Return': returns_listx, 'Sharpe Ratio': sharpe_ratios_listx}
+        data = pd.DataFrame(data)
+        sns.scatterplot(data=data, x='Volatility', y='Return', hue='Sharpe Ratio', palette='viridis')
         plt.scatter(metrics['Risk'], metrics['Return'], c='red', marker='D', s=200)
         plt.xlabel('Volatility')
         plt.ylabel('Return')
