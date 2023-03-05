@@ -7,6 +7,7 @@ import seaborn as sns
 import pandas as pd
 import datetime
 from sklearn.covariance import LedoitWolf
+import traceback
 
 
 class ekoptim():
@@ -305,8 +306,8 @@ class ekoptim():
                 return self.surprise_sortino_optimization()
             else:
                 return -1
-        except:
-            print("An exception occurred in Optimization")
+        except Exception as e:
+            print(f'Caught an exception: {e}')
     
     def calculate_metrics(self,w):
         return {'Risk': self.risk_cnt(w),
@@ -653,8 +654,8 @@ class ekoptimGPU():
                 return self.surprise_sortino_optimization()
             else:
                 return -1
-        except:
-            print("An exception occurred in Optimization")
+        except Exception as e:
+            print(f'Caught an exception: {e}')
     
     def calculate_metrics(self,w):
         return {'Risk': self.risk_cnt(w),
