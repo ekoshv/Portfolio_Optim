@@ -1,7 +1,7 @@
 import MetaTrader5 as mt5
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from sklearn.covariance import LedoitWolf
 #from concurrent.futures import ThreadPoolExecutor
 from ekoptim import ekoptim
@@ -197,26 +197,6 @@ if __name__ == "__main__":
     print("------------------")
     print("All the equity needed: ",equity_div_df["Allocation"].sum())
     # use Monte Carlo simulation to generate multiple sets of random weights
-    num_portfolios = 500
-    returns_listx = []
-    sharpe_ratios_listx = []
-    volatilities_listx = []
-    for i in range(num_portfolios):
-        weights = np.random.random(returnsTV.shape[1])
-        weights /= np.sum(weights)
-        portfolio_returnx = (weights.T @ returnsTV.mean() * History_Days -
-                             risk_free_rate*(History_Days/252))
-        portfolio_volatilityx = (weights.T @ LedoitWolf().fit(returnsTV).
-                                 covariance_ @ weights)**0.5 * np.sqrt(History_Days)
-        sharpe_ratiox = (portfolio_returnx - risk_free_rate) / portfolio_volatilityx
-        returns_listx.append(portfolio_returnx)
-        volatilities_listx.append(portfolio_volatilityx)
-        sharpe_ratios_listx.append(sharpe_ratiox)
-    # plot the efficient frontier
-    plt.scatter(volatilities_listx, returns_listx, c=sharpe_ratios_listx)
-    plt.scatter(metrics['Risk'], metrics['Return'], c='red', marker='D', s=200)
-    plt.xlabel('Volatility')
-    plt.ylabel('Return')
-    plt.show()
+    optimizerTV.frontPlot(optimized_weights_TV)
     # shut down connection to the MetaTrader 5 terminal
     mt5.shutdown()
