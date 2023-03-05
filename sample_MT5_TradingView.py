@@ -4,7 +4,7 @@ import pandas as pd
 #import matplotlib.pyplot as plt
 from sklearn.covariance import LedoitWolf
 #from concurrent.futures import ThreadPoolExecutor
-from ekoptim import ekoptim
+from ekoptim import ekoptimGPU
 from ekoView import TradingViewfeed, Interval
 import datetime
 from tqdm import tqdm
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     tol = None
     #-----------Optimization---------------------------------
     print("Optimization started, please wait...")
-    optimizerTV = ekoptim(returnsTV, risk_free_rate, target_SR,
+    optimizerTV = ekoptimGPU(returnsTV, risk_free_rate, target_SR,
                         target_Return, target_Volat, max_weight,tol)
     optimized_weights_TV = optimizerTV.optiselect(otp_sel)
     #-----------Optimization---------------------------------

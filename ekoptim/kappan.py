@@ -355,4 +355,4 @@ class ekoptimGPU():
         file_name = f'efficient_frontier_{current_time}.png'
         plt.savefig(file_name, dpi=300)
         plt.show()
-# end of class ekoptim
+# end of class ekoptimGPU
