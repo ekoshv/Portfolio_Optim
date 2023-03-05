@@ -5,6 +5,7 @@ from scipy.stats import norm
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+import datetime
 from sklearn.covariance import LedoitWolf
 
 class ekoptim():
@@ -334,7 +335,12 @@ class ekoptim():
         data = pd.DataFrame(data)
         sns.scatterplot(data=data, x='Volatility', y='Return', hue='Sharpe Ratio', palette='viridis')
         plt.scatter(metrics['Risk'], metrics['Return'], c='red', marker='D', s=200)
+        plt.text(metrics['Risk']+0.02, metrics['Return']-0.02,
+                 f'Sharpe Ratio: {metrics["Sharpe Ratio"]:.2f}\nRisk: {metrics["Risk"]:.2f}')
         plt.xlabel('Volatility')
         plt.ylabel('Return')
+        current_time = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        file_name = f'efficient_frontier_{current_time}.png'
+        plt.savefig(file_name, dpi=300)
         plt.show()
 # end of class ekoptim
