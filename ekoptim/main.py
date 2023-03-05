@@ -307,7 +307,8 @@ class ekoptim():
             else:
                 return -1
         except Exception as e:
-            print(f'Caught an exception: {e}')
+            print("Caught an exception:")
+            traceback.print_exc()
     
     def calculate_metrics(self,w):
         return {'Risk': self.risk_cnt(w),
@@ -655,7 +656,8 @@ class ekoptimGPU():
             else:
                 return -1
         except Exception as e:
-            print(f'Caught an exception: {e}')
+            print("Caught an exception:")
+            traceback.print_exc()
     
     def calculate_metrics(self,w):
         return {'Risk': self.risk_cnt(w),
