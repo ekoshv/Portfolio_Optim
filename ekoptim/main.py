@@ -324,7 +324,7 @@ class ekoptim():
         sharpe_ratios_listx = []
         volatilities_listx = []
         for i in range(num_portfolios):
-            weights = w+(2*np.random.random(self.n)-1)/30
+            weights = w+(2*np.random.random(self.n)-1)/(3*np.sqrt(self.n)+1)
             weights /= np.sum(weights)
             portfolio_returnx = self.return_cnt(weights)
             portfolio_volatilityx = self.risk_cnt(weights)
@@ -338,9 +338,7 @@ class ekoptim():
         data = pd.DataFrame(data)
         sns.scatterplot(data=data, x='Volatility', y='Return', hue='Sharpe Ratio', palette='viridis')
         plt.scatter(metrics['Risk'], metrics['Return'], c='red', marker='D', s=200)
-        plt.text(metrics['Risk']+0.02, metrics['Return']-0.04,
-                 f'Sharpe Ratio: {metrics["Sharpe"]:.2f}\nRisk: {metrics["Risk"]:.2f}')
-        plt.xlabel('Volatility')
+        plt.xlabel('Volatility\n',f'Optimun found at Sharpe Ratio: {metrics["Sharpe"]:.2f}\nRisk: {metrics["Risk"]:.2f}')
         plt.ylabel('Return')
         current_time = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
         file_name = f'efficient_frontier_{current_time}.png'
