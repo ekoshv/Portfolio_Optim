@@ -324,7 +324,7 @@ class ekoptim():
         sharpe_ratios_listx = []
         volatilities_listx = []
         for i in range(num_portfolios):
-            weights = w+(2*np.random.random(self.n)-1)/10
+            weights = w+(2*np.random.random(self.n)-1)/30
             weights /= np.sum(weights)
             portfolio_returnx = self.return_cnt(weights)
             portfolio_volatilityx = self.risk_cnt(weights)
