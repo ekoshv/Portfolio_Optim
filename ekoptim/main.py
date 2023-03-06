@@ -317,7 +317,7 @@ class ekoptim():
                 'Sortino': self.sortino_ratio_cnt(w),
                 'Surprise': self.surprise_cnt(w)}
 
-    def frontPlot(self, w):
+    def frontPlot(self, w, save=False):
         # use Monte Carlo simulation to generate multiple sets of random weights
         num_portfolios = 500
         returns_listx = []
@@ -342,6 +342,7 @@ class ekoptim():
         plt.ylabel('Return')
         current_time = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
         file_name = f'efficient_frontier_{current_time}.png'
-        plt.savefig(file_name, dpi=300)
+        if save:
+            plt.savefig(file_name, dpi=300)
         plt.show()
 # end of class ekoptim

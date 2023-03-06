@@ -192,6 +192,6 @@ if __name__ == "__main__":
     print("------------------")
     print("All the equity needed: ",equity_div_df["Allocation"].sum())
     # use Monte Carlo simulation to generate multiple sets of random weights
-    optimizerTV.frontPlot(optimized_weights_TV)
+    optimizerTV.frontPlot(optimized_weights_TV, save=False)
     # shut down connection to the MetaTrader 5 terminal
     mt5.shutdown()
