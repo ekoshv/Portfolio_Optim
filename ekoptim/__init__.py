@@ -1,3 +1,3 @@
-from .main import ekoptim, ekoptimGPU
+from .main import ekoptim
 
-__version__ = "1.0.0"
+__version__ = "0.0.13"

@@ -316,8 +316,9 @@ class ekoptimGPU():
                 return self.surprise_sortino_optimization()
             else:
                 return -1
-        except:
-            print("An exception occurred in Optimization")
+        except Exception as e:
+            print("Caught an exception:")
+            traceback.print_exc()
     
     def calculate_metrics(self,w):
         return {'Risk': self.risk_cnt(w),
