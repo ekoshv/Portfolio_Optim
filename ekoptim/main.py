@@ -338,7 +338,7 @@ class ekoptim():
         data = pd.DataFrame(data)
         sns.scatterplot(data=data, x='Volatility', y='Return', hue='Sharpe Ratio', palette='viridis')
         plt.scatter(metrics['Risk'], metrics['Return'], c='red', marker='D', s=200)
-        plt.xlabel('Volatility\n',f'Optimun found at Sharpe Ratio: {metrics["Sharpe"]:.2f}\nRisk: {metrics["Risk"]:.2f}')
+        plt.xlabel(f'Volatility\nOptimun found at Sharpe Ratio: {metrics["Sharpe"]:.2f}\nRisk: {metrics["Risk"]:.2f}')
         plt.ylabel('Return')
         current_time = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
         file_name = f'efficient_frontier_{current_time}.png'
