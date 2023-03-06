@@ -324,7 +324,7 @@ class ekoptim():
         sharpe_ratios_listx = []
         volatilities_listx = []
         for i in range(num_portfolios):
-            weights = w+np.random.random(self.n)/10
+            weights = w+(2*np.random.random(self.n)-1)/100
             weights /= np.sum(weights)
             portfolio_returnx = self.return_cnt(weights)
             portfolio_volatilityx = self.risk_cnt(weights)
@@ -338,7 +338,7 @@ class ekoptim():
         data = pd.DataFrame(data)
         sns.scatterplot(data=data, x='Volatility', y='Return', hue='Sharpe Ratio', palette='viridis')
         plt.scatter(metrics['Risk'], metrics['Return'], c='red', marker='D', s=200)
-        plt.text(metrics['Risk']+0.02, metrics['Return']-0.02,
+        plt.text(metrics['Risk']+0.02, metrics['Return']-0.04,
                  f'Sharpe Ratio: {metrics["Sharpe"]:.2f}\nRisk: {metrics["Risk"]:.2f}')
         plt.xlabel('Volatility')
         plt.ylabel('Return')
