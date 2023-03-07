@@ -148,7 +148,10 @@ class ekoptim():
         portfolio_peak = np.maximum.accumulate(portfolio_return)
         drawdown = portfolio_peak - portfolio_return
         max_drawdown = np.max(drawdown)
-        return max_drawdown
+        max_drawdown_pct = max_drawdown / portfolio_peak.max() * 100
+        
+        return max_drawdown_pct
+
     #-------------------------------
     #---Optimizations---------------
     #-------------------------------
@@ -297,7 +300,7 @@ class ekoptim():
                 'Sortino': self.sortino_ratio_cnt(w),
                 'Surprise': self.surprise_cnt(w),
                 'CVAR': self.cvar_cnt(w, alpha),
-                'MXDD': self.maximum_drawdown_cnt(w)}
+                'MXDDP': self.maximum_drawdown_cnt(w)}
 
     def frontPlot(self, w, save=False):
         # use Monte Carlo simulation to generate multiple sets of random weights

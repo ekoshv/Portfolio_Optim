@@ -150,7 +150,7 @@ if __name__ == "__main__":
     print("Sortino: ", metrics['Sortino'])
     print("Surprise: ", metrics['Surprise'])
     print("CVAR: ", metrics['CVAR'])
-    print("Maximum DrawDown: ", metrics['MXDD'])
+    print("Maximum DrawDown%: ", metrics['MXDDP'])
     print("***********************")
 
     equity_div = []
