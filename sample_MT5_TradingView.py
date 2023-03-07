@@ -149,6 +149,7 @@ if __name__ == "__main__":
     print("Volatility: ", metrics['Risk'])
     print("Sortino: ", metrics['Sortino'])
     print("Surprise: ", metrics['Surprise'])
+    print("CVAR(95%): ", metrics['CVAR(95%)'])
     print("***********************")
 
     equity_div = []
