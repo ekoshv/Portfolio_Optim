@@ -140,6 +140,15 @@ class ekoptim():
         downside_volatility = np.sqrt((downside_returns**2).mean()) * np.sqrt(self.days)
         sortino_ratio = (portfolio_return - self.risk_free_rate) / downside_volatility
         return sortino_ratio
+    
+    def maximum_drawdown_cnt(self, w):
+        # Calculate the maximum drawdown of the portfolio
+        
+        portfolio_return = (self.returns @ w).cumsum()
+        portfolio_peak = np.maximum.accumulate(portfolio_return)
+        drawdown = portfolio_peak - portfolio_return
+        max_drawdown = np.max(drawdown)
+        return max_drawdown
     #-------------------------------
     #---Optimizations---------------
     #-------------------------------
@@ -287,7 +296,8 @@ class ekoptim():
                 'Sharpe': self.sharpe_ratio_cnt(w),
                 'Sortino': self.sortino_ratio_cnt(w),
                 'Surprise': self.surprise_cnt(w),
-                'CVAR': self.cvar_cnt(w, alpha)}
+                'CVAR': self.cvar_cnt(w, alpha),
+                'MXDD': self.maximum_drawdown_cnt(w)}
 
     def frontPlot(self, w, save=False):
         # use Monte Carlo simulation to generate multiple sets of random weights
