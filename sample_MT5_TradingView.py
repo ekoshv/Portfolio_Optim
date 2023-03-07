@@ -143,13 +143,13 @@ if __name__ == "__main__":
     threshold = min_tresh
     
     print("***********************")
-    metrics = optimizerTV.calculate_metrics(optimized_weights_TV)    
+    metrics = optimizerTV.calculate_metrics(optimized_weights_TV,0.5)    
     print("Sharpe Ratio: ", metrics['Sharpe'])
     print("Return: ", round(metrics['Return']*1000)/10, "%")
     print("Volatility: ", metrics['Risk'])
     print("Sortino: ", metrics['Sortino'])
     print("Surprise: ", metrics['Surprise'])
-    print("CVAR(95%): ", metrics['CVAR(95%)'])
+    print("CVAR: ", metrics['CVAR'])
     print("***********************")
 
     equity_div = []

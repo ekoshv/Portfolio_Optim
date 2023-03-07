@@ -281,13 +281,13 @@ class ekoptim():
             print("Caught an exception:")
             traceback.print_exc()
     
-    def calculate_metrics(self,w):
+    def calculate_metrics(self,w, alpha):
         return {'Risk': self.risk_cnt(w),
                 'Return': self.return_cnt(w),
                 'Sharpe': self.sharpe_ratio_cnt(w),
                 'Sortino': self.sortino_ratio_cnt(w),
                 'Surprise': self.surprise_cnt(w),
-                'CVAR(95%)': self.cvar_cnt(w, 0.95)}
+                'CVAR': self.cvar_cnt(w, alpha)}
 
     def frontPlot(self, w, save=False):
         # use Monte Carlo simulation to generate multiple sets of random weights
