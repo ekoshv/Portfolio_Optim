@@ -314,7 +314,7 @@ class ekoptim():
                 'CVAR': self.cvar_cnt(w, alpha),
                 'MXDDP': self.maximum_drawdown_cnt(w)}
 
-    def frontPlot(self, w, save=False):
+    def frontPlot(self, w, alpha=0.95, save=False):
         # use Monte Carlo simulation to generate multiple sets of random weights
         num_portfolios = 500
         returns_listx = []
@@ -330,7 +330,7 @@ class ekoptim():
             volatilities_listx.append(portfolio_volatilityx)
             sharpe_ratios_listx.append(sharpe_ratiox)
         # plot the efficient frontier
-        metrics = self.calculate_metrics(w)#self.optimized_weights
+        metrics = self.calculate_metrics(w,alpha)#self.optimized_weights
         data = {'Volatility': volatilities_listx, 'Return': returns_listx, 'Sharpe Ratio': sharpe_ratios_listx}
         data = pd.DataFrame(data)
         sns.scatterplot(data=data, x='Volatility', y='Return', hue='Sharpe Ratio', palette='viridis')
