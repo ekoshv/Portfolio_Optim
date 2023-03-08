@@ -239,8 +239,18 @@ class ekoptim():
         self.optimized_weights = result.x
         return self.optimized_weights
 
+    def markowitz_optimization_mxddp_sharpe(self):#9
+        #run the optimization
+        fn = lambda x:  (math.exp(self.maximum_drawdown_cnt(x))+
+                         math.exp(-self.sharpe_ratio_cnt(x)))
+        result = minimize(fn, self.w0,
+                          method='SLSQP', bounds=self.bounds,
+                          constraints=[self.constraints[i] for i in [0,7]],
+                          tol = self.toler)
+        self.optimized_weights = result.x
+        return self.optimized_weights
     #---Surprise---
-    def surprise_sharpe_optimization(self):#9
+    def surprise_sharpe_optimization(self):#10
         #run the optimization
         fn = lambda x:  (math.exp(self.surprise_cnt(x))+
                          math.exp(-self.sharpe_ratio_cnt(x)))
@@ -251,7 +261,7 @@ class ekoptim():
         self.optimized_weights = result.x
         return self.optimized_weights
 
-    def surprise_sortino_optimization(self):#10
+    def surprise_sortino_optimization(self):#11
         #run the optimization
         fn = lambda x:  (math.exp(self.surprise_cnt(x))+
                          math.exp(-self.sortino_ratio_cnt(x)))
@@ -284,8 +294,10 @@ class ekoptim():
             elif sel==8:
                 return self.markowitz_optimization_risk_sortino()
             elif sel==9:
-                return self.surprise_sharpe_optimization()
+                return self.markowitz_optimization_mxddp_sharpe()
             elif sel==10:
+                return self.surprise_sharpe_optimization()
+            elif sel==11:
                 return self.surprise_sortino_optimization()
             else:
                 return -1
@@ -323,7 +335,7 @@ class ekoptim():
         data = pd.DataFrame(data)
         sns.scatterplot(data=data, x='Volatility', y='Return', hue='Sharpe Ratio', palette='viridis')
         plt.scatter(metrics['Risk'], metrics['Return'], c='red', marker='D', s=200)
-        plt.xlabel(f'Volatility\nOptimun found at Sharpe Ratio: {metrics["Sharpe"]:.2f}\nRisk: {metrics["Risk"]:.2f}')
+        plt.xlabel(f'Volatility\nOptimun found at Sharpe Ratio: {metrics["Sharpe"]:.2f}, Risk: {metrics["Risk"]:.2f}')
         plt.ylabel('Return')
         current_time = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
         file_name = f'efficient_frontier_{current_time}.png'
