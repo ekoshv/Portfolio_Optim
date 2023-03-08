@@ -148,7 +148,7 @@ class ekoptim():
         portfolio_peak = np.maximum.accumulate(portfolio_return)
         drawdown = portfolio_peak - portfolio_return
         max_drawdown = np.max(drawdown)
-        max_drawdown_pct = max_drawdown / portfolio_peak.max() * 100
+        max_drawdown_pct = max_drawdown / portfolio_peak.max()
         
         return max_drawdown_pct
 
