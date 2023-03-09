@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="ekoptim",
-    version="0.0.13",
+    version="0.0.17",
     packages=["ekoptim"],
     url="https://github.com/ekoshv/Markowitz_Optim",
     project_urls={
