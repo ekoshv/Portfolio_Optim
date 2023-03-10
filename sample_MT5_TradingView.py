@@ -34,6 +34,7 @@ if __name__ == "__main__":
     # username = int(username)
     # password = input("Enter your password: ")
     # server = input("Enter the server name: ")
+#%%
     path = "C:\\Program Files\\JFD MetaTrader 5\\terminal64.exe"
     # connect_to_metatrader(path, username, password, server)
     connect_to_metatrader(path, 555855, "?XRyrR2#", "JFD-Live")
@@ -46,7 +47,7 @@ if __name__ == "__main__":
     # display the account info
     print(mt5.account_info())
     print("-------------------------")
-    
+#%%    
     #retrieve historical data and calculate returns
     print("----Parameteres----")
     total_equity = float(input("Enter total equity: "))
@@ -62,27 +63,6 @@ if __name__ == "__main__":
         allsymb = [s.name for s in filtered_symbols]
     History_Days = int(input("How many historical days: "))
     #is_weighted = bool(input("Do you want it to be weighted(True/False): "))
-    target_SR = float(input("Target Sharpe Ratio: "))
-    target_Volat = float(input("Target Volatility: "))
-    target_Return = float(input("Target Return(%): "))/100
-    max_weight = float(input("Maximum Weight Allocation(0-1): "))
-    min_tresh  = float(input("Minimum Threshold Weight Allocation(0-1): "))
-    print("-------------------------")
-    print("1.  Optimum Return with no limit.")
-    print("2.  Optimum Return with constraint Sharpe Ratio.")
-    print("3.  Optimum Return with constraint Volatility.")
-    print("4.  Optimum Risk with no limit.")
-    print("5.  Optimum Risk with constraint Sharpe Ratio.")
-    print("6.  Optimum Risk with constraint Return.")
-    print("7.  Markowitz Min-Risk + Max-Sharpe.")
-    print("8.  Markowitz Min-Risk + Max-Sortino.")
-    print("9.  Markowitz Min-MXDDP + Max-Sharpe.")
-    print("10. EKO Min-Surprise + Max-Sharpe.")
-    print("11. EKO Min-Surprise + Max-Sortino.")
-    print("-------------------------")
-    otp_sel = int(input("Which type of opt you wish: "))
-    # min_tresh  = float(input("Minimum Threshold Weight Allocation(0-1): "))
-    # max_numb = int(input("Number of weights greater than threshold: "))
     
     returns_list = []
     returns_MT5 = []
@@ -128,13 +108,31 @@ if __name__ == "__main__":
     returnsMT5= pd.concat(returns_MT5, axis=1)
     returnsTV.fillna(0,inplace=True)
     returnsMT5.fillna(0,inplace=True)
-    
-    # if is_weighted:
-    #     maxsec = int(returns.index.max().timestamp())
+
         
     risk_free_rate = 0.03
     tol = None
+#%%    
     #-----------Optimization---------------------------------
+    target_SR = float(input("Target Sharpe Ratio: "))
+    target_Volat = float(input("Target Volatility: "))
+    target_Return = float(input("Target Return(%): "))/100
+    max_weight = float(input("Maximum Weight Allocation(0-1): "))
+    min_tresh  = float(input("Minimum Threshold Weight Allocation(0-1): "))
+    print("-------------------------")
+    print("1.  Optimum Return with no limit.")
+    print("2.  Optimum Return with constraint Sharpe Ratio.")
+    print("3.  Optimum Return with constraint Volatility.")
+    print("4.  Optimum Risk with no limit.")
+    print("5.  Optimum Risk with constraint Sharpe Ratio.")
+    print("6.  Optimum Risk with constraint Return.")
+    print("7.  Markowitz Min-Risk + Max-Sharpe.")
+    print("8.  Markowitz Min-Risk + Max-Sortino.")
+    print("9.  Markowitz Min-MXDDP + Max-Sharpe.")
+    print("10. EKO Min-Surprise + Max-Sharpe.")
+    print("11. EKO Min-Surprise + Max-Sortino.")
+    print("-------------------------")
+    otp_sel = int(input("Which type of opt you wish: "))
     print("Optimization started, please wait...")
     optimizerTV = ekoptim(returnsTV, risk_free_rate, target_SR,
                         target_Return, target_Volat, max_weight,tol)
@@ -197,4 +195,5 @@ if __name__ == "__main__":
     # use Monte Carlo simulation to generate multiple sets of random weights
     optimizerTV.frontPlot(optimized_weights_TV, save=False)
     # shut down connection to the MetaTrader 5 terminal
+#%%
     mt5.shutdown()
