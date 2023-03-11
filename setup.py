@@ -5,9 +5,9 @@ with open("README.md", "r") as fh:
 
 setup(
     name="ekoptim",
-    version="0.0.17",
+    version="0.1.17",
     packages=["ekoptim"],
-    url="https://github.com/ekoshv/Markowitz_Optim",
+    url="https://github.com/ekoshv/Portfolio_Optim",
     project_urls={
         "LinkedIn": "https://www.linkedin.com/in/ehsan-khademolama-05149865/",
     },

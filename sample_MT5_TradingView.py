@@ -135,7 +135,8 @@ if __name__ == "__main__":
     otp_sel = int(input("Which type of opt you wish: "))
     print("Optimization started, please wait...")
     optimizerTV = ekoptim(returnsTV, risk_free_rate, target_SR,
-                        target_Return, target_Volat, max_weight,tol)
+                        target_Return, target_Volat, max_weight,tol,
+                        full_rates = rates_list)
     optimized_weights_TV = optimizerTV.optiselect(otp_sel)
     #-----------Optimization---------------------------------
     print("Sum of the weights: ", optimized_weights_TV.sum())

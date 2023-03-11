@@ -1,6 +1,7 @@
 # Portfolio_Optim
- Markowitz Portfolio Optimizer
 
+ Portfolio Optimizer
+ 
 # Installation
 
 This module is installed via pip:
