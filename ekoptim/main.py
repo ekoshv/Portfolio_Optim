@@ -123,12 +123,14 @@ class ekoptim():
         model = tf.keras.Sequential([
             tf.keras.layers.Input(shape=(self.Dyp, 1)),
             
-            tf.keras.layers.Conv1D(filters=32, kernel_size=9, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.Conv1D(filters=32, kernel_size=9,
+                                   strides=1, padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
             
-            tf.keras.layers.Conv1D(filters=64, kernel_size=7, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.Conv1D(filters=64, kernel_size=7,
+                                   strides=1, padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
@@ -155,8 +157,10 @@ class ekoptim():
         #y_in = y.reshape(y.shape[0],1,y.shape[1])
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
+        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
         model.fit(X_train, y_train, epochs=100, batch_size=8,
-                  validation_split=0.33, shuffle=True)
+                  validation_split=0.33, shuffle=True ,
+                  callbacks=[tensorboard_callback])
         self.nnmodel = model
         
     #---------------------------------------------------

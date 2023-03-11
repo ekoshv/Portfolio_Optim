@@ -138,6 +138,7 @@ if __name__ == "__main__":
                         target_Return, target_Volat, max_weight,tol,
                         full_rates = rates_list)
     optimized_weights_TV = optimizerTV.optiselect(otp_sel)
+    optimizerTV.NNmake()
     #-----------Optimization---------------------------------
     print("Sum of the weights: ", optimized_weights_TV.sum())
     threshold = min_tresh
