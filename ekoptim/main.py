@@ -8,12 +8,15 @@ import pandas as pd
 import datetime
 from sklearn.covariance import LedoitWolf
 import traceback
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
 
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
                                target_SR, target_Return, target_Volat,
-                               max_weight,toler):
+                               max_weight,toler,
+                               full_rates,Dyp=120, Dyf=30, Thi=5):
         self.returns = returns
         self.target_SR = target_SR
         self.target_Return = target_Return
@@ -48,18 +51,15 @@ class ekoptim():
                             {"type":"ineq",#7 max weight
                              "fun":lambda x: self.max_weight-x}]
     
-    
+        self.Dyp = Dyp   # Number of past days to consider in the moving horizon
+        self.Dyf = Dyf    # Number of future days to predict in the moving horizon
+        self.Thi = Thi   # Time horizon interval (in days)
+        self.full_rates = full_rates
+        self.nnmodel = tf.keras.Sequential()
+        
     #define the optimization functions    
     def __initial_weight(self, w0):
         self.w0 = w0
-    
-    # def cov2corr(self,cov):
-    #     # calculate the standard deviation of each variable
-    #     std_dev = np.sqrt(np.diag(cov))
-
-    #     # calculate the correlation matrix
-    #     corr = cov / np.outer(std_dev, std_dev)
-    #     return corr
 
     def cov2corr(self, cov):
         corr = np.zeros_like(cov)
@@ -75,6 +75,90 @@ class ekoptim():
                     corr[i, j] = corr[j, i] = cov[i, j] / np.sqrt(cov[i, i] * cov[j, j])
         
         return corr
+    
+    # Define a function that applies the moving horizon to a given dataframe
+    def apply_moving_horizon(self,df,smb):
+        new_df = pd.DataFrame()
+        for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
+            past_data = df[smb].iloc[i-self.Dyp:i]
+            future_data = df[smb].iloc[i:i+self.Dyf]
+            new_row = {
+                'past_data': past_data,
+                'future_data': future_data,
+            }
+            new_df = new_df.append(new_row, ignore_index=True)
+        return new_df
+
+    def normalize(self,data):
+        #Normalize a pandas series by scaling its values to the range [0, 1].
+        return (data - data.min()) / (data.max() - data.min())
+
+    def apply_moving_horizon_norm(self,df,smb):
+        new_df = []
+        for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
+            past_data = df[smb].iloc[i-self.Dyp:i]
+            past_data_normalized = self.normalize(past_data)
+            future_data = df[smb].iloc[i:i+self.Dyf]
+            future_data_rescaled = ((future_data - past_data.min()) /
+                                    (past_data.max() - past_data.min()))
+            new_row = {
+                'past_data': past_data_normalized.values,
+                'future_data': future_data_rescaled.values,
+            }
+            #print(new_row)
+            new_df.append(new_row)
+        return new_df
+    
+    #---------------------------------------------------
+    #---Neural Network ---------------------------------
+    #---------------------------------------------------     
+    def Hrz_Nrm(self,smb):
+        # Apply the moving horizon to each dataframe in rates_lists
+        return [self.apply_moving_horizon_norm(df,smb) for df in self.full_rates]
+    
+    def NNmake(self):
+        
+        HNrates = self.Hrz_Nrm('close')
+        # Define the neural network
+        model = tf.keras.Sequential([
+            tf.keras.layers.Input(shape=(self.Dyp, 1)),
+            
+            tf.keras.layers.Conv1D(filters=32, kernel_size=9, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.MaxPooling1D(pool_size=2),
+            tf.keras.layers.Dropout(0.2),
+            
+            tf.keras.layers.Conv1D(filters=64, kernel_size=7, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.MaxPooling1D(pool_size=2),
+            tf.keras.layers.Dropout(0.2),
+            
+            tf.keras.layers.Flatten(),
+            
+            tf.keras.layers.Dense(128, activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.5),
+            
+            tf.keras.layers.Dense(self.Dyf)
+        ])
+
+        # Compile the model with mean squared error loss
+        opt = tf.keras.optimizers.Adam(learning_rate=0.001)
+        #model.compile(optimizer=opt, loss='mse')
+        model.compile(optimizer=opt, loss='mse')
+
+        # Train the model on the data in new_rates_lists
+        X = np.array([d['past_data'] for lst in HNrates for d in lst])
+        X = np.expand_dims(X, axis=-1)  # add a new axis for the input feature
+        #X_in = X.reshape(X.shape[0],1,X.shape[1])
+        y = np.array([d['future_data'] for lst in HNrates for d in lst])
+        #y_in = y.reshape(y.shape[0],1,y.shape[1])
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
+        model.fit(X_train, y_train, epochs=100, batch_size=8,
+                  validation_split=0.33, shuffle=True)
+        self.nnmodel = model
+        
     #---------------------------------------------------
     #---Risk, Sharpe, Sortino, Return, Surprise --------
     #---------------------------------------------------        

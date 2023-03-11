@@ -1,11 +1,11 @@
-# Markowitz_Optim
- Markowitz Portfolio Optimizer
+# Portfolio_Optim
+ Portfolio Optimizer
 
 # Installation
 
 This module is installed via pip:
 
-pip install --upgrade --no-cache-dir git+https://github.com/ekoshv/Markowitz_Optim.git
+pip install --upgrade --no-cache-dir git+https://github.com/ekoshv/Portfolio_Optim.git
 
 # ekoptim class documentation
 The ekoptim class is used to optimize a portfolio based on a number of inputs. It uses optimization functions to calculate the weights of assets to maximize certain criteria such as return or Sharpe ratio.
