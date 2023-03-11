@@ -1,4 +1,4 @@
-# Markowitz_Optim
+# Portfolio_Optim
  Markowitz Portfolio Optimizer
 
 # Installation
