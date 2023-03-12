@@ -11,6 +11,79 @@ import traceback
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
+from pandas.tseries.holiday import AbstractHolidayCalendar, Holiday, nearest_workday, \
+    USMartinLutherKingJr, USPresidentsDay, GoodFriday, USMemorialDay, \
+    USLaborDay, USThanksgivingDay, next_monday_or_tuesday
+from pandas.tseries.offsets import CustomBusinessDay
+
+class GermanHolidayCalendar(AbstractHolidayCalendar):
+    rules = [
+        Holiday('Neujahrstag', month=1, day=1),
+        Holiday('Karfreitag', month=1, day=1, offset=pd.DateOffset(weekday=4)),
+        Holiday('Ostermontag', month=1, day=1, offset=[pd.DateOffset(weekday=0), pd.DateOffset(days=1)]),
+        Holiday('Tag der Arbeit', month=5, day=1),
+        Holiday('Christi Himmelfahrt', month=1, day=1, offset=pd.DateOffset(weekday=4, weeks=1)),
+        Holiday('Pfingstmontag', month=1, day=1, offset=[pd.DateOffset(weekday=0, weeks=1), pd.DateOffset(days=1, weeks=1)]),
+        Holiday('Tag der Deutschen Einheit', month=10, day=3),
+        Holiday('Heiligabend', month=12, day=24),
+        Holiday('1. Weihnachtsfeiertag', month=12, day=25),
+        Holiday('2. Weihnachtsfeiertag', month=12, day=26)
+    ]
+
+class GermanTradingCalendar(AbstractHolidayCalendar):
+    def __init__(self, year=None):
+        self.year = year
+    
+    def get_calendar_holidays(self, year):
+        holidays = GermanHolidayCalendar().holidays(start=pd.Timestamp(year=year, month=1, day=1), end=pd.Timestamp(year=year, month=12, day=31))
+        
+        # If Christmas Eve or New Year's Eve falls on a weekday, it is a half-day holiday
+        if pd.Timestamp(year=year, month=12, day=24).weekday() < 5:
+            holidays.append(Holiday('Heiligabend (halber Tag)', pd.Timestamp(year=year, month=12, day=24), observance=next_monday_or_tuesday))
+        if pd.Timestamp(year=year, month=12, day=31).weekday() < 5:
+            holidays.append(Holiday('Silvester (halber Tag)', pd.Timestamp(year=year, month=12, day=31), observance=next_monday_or_tuesday))
+        
+        return holidays
+    
+    def get_rules(self):
+        if self.year is not None:
+            self.rules = self.get_calendar_holidays(self.year)
+        else:
+            self.rules = []
+            for year in range(1900, 2100):
+                self.rules.extend(self.get_calendar_holidays(year))
+    
+    rules = get_rules.__func__()
+    
+
+
+class USTradingCalendar(AbstractHolidayCalendar):
+    def __init__(self, year=None):
+        self.year = year
+    
+    def get_calendar_holidays(self, year):
+        return [
+            Holiday('NewYearsDay', month=1, day=1, observance=nearest_workday),
+            USMartinLutherKingJr,
+            USPresidentsDay,
+            GoodFriday,
+            USMemorialDay,
+            Holiday('USIndependenceDay', month=7, day=4, observance=nearest_workday),
+            USLaborDay,
+            USThanksgivingDay,
+            Holiday('Christmas', month=12, day=25, observance=nearest_workday)
+        ]
+    
+    def get_rules(self):
+        if self.year is not None:
+            self.rules = self.get_calendar_holidays(self.year)
+        else:
+            self.rules = []
+            for year in range(1900, 2100):
+                self.rules.extend(self.get_calendar_holidays(year))
+    
+    rules = get_rules.__func__()
+#end of class USTradingCalendar
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
@@ -31,6 +104,8 @@ class ekoptim():
         self.risk_free_rate = risk_free_rate*self.durc
         self.toler = toler
         self.HNrates = []
+        self.Predicted_Rates=[]
+        
         
         #define constraints
         self.bounds = [(0,1) for i in range(self.n)]
@@ -56,6 +131,7 @@ class ekoptim():
         self.Dyf = Dyf    # Number of future days to predict in the moving horizon
         self.Thi = Thi   # Time horizon interval (in days)
         self.full_rates = full_rates
+        self.new_full_rates = []
         self.nnmodel = tf.keras.Sequential()
         
     #define the optimization functions    
@@ -191,21 +267,22 @@ class ekoptim():
     
         return y_pred_rescaled
     
+    def add_business_days(df, delta):
+        cal = GermanTradingCalendar()
+        df_new = pd.DataFrame(index=df.index + CustomBusinessDay(n=delta, calendar=cal))
+        df_new = df_new.join(df)
+        return df_new
+    
     def predict_all(self, smb):
         # Loop through all dataframes in full_rates
         for df in self.full_rates:
             # Predict the next values for the given symbol using the predict_next method
             y_pred = self.predict_next(df, smb)
+            df_new = self.add_business_days(df, self.Dyf)
+            self.new_full_rates.append(df_new)
+            
     
-            # Add zeros to y_pred if its length is less than the number of rows in the dataframe
-            if len(y_pred) < len(df):
-                zeros_to_add = len(df) - len(y_pred)
-                y_pred = np.append(y_pred, np.zeros(zeros_to_add))
-    
-            # Add the predicted values as a new column in the dataframe
-            df[smb + '_pred'] = y_pred
-    
-        return self.full_rates
+            
 
     #---------------------------------------------------
     #---Risk, Sharpe, Sortino, Return, Surprise --------
