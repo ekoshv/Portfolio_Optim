@@ -158,7 +158,7 @@ class ekoptim():
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
-        model.fit(X_train, y_train, epochs=100, batch_size=8,
+        model.fit(X_train, y_train, epochs=10, batch_size=32,
                   validation_split=0.33, shuffle=True ,
                   callbacks=[tensorboard_callback])
         self.nnmodel = model
