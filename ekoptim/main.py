@@ -116,28 +116,36 @@ class ekoptim():
         # Apply the moving horizon to each dataframe in rates_lists
         return [self.apply_moving_horizon_norm(df,smb) for df in self.full_rates]
     
-    def NNmake(self):
+    def NNmake(self,symb='close', learning_rate=0.001, epochs=10, batch_size=32):
         
-        HNrates = self.Hrz_Nrm('close')
+        HNrates = self.Hrz_Nrm(symb)
         # Define the neural network
         model = tf.keras.Sequential([
             tf.keras.layers.Input(shape=(self.Dyp, 1)),
             
-            tf.keras.layers.Conv1D(filters=32, kernel_size=9,
-                                   strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.Conv1D(filters=round(self.Dyp/3), kernel_size=9, strides=1, padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
             
-            tf.keras.layers.Conv1D(filters=64, kernel_size=7,
-                                   strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.Conv1D(filters=2*round(self.Dyp/3), kernel_size=7, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.MaxPooling1D(pool_size=2),
+            tf.keras.layers.Dropout(0.2),
+
+            tf.keras.layers.Conv1D(filters=3*round(self.Dyp/3), kernel_size=5, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.MaxPooling1D(pool_size=2),
+            tf.keras.layers.Dropout(0.2),
+
+            tf.keras.layers.Conv1D(filters=4*round(self.Dyp/3), kernel_size=3, strides=1, padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
             
             tf.keras.layers.Flatten(),
             
-            tf.keras.layers.Dense(128, activation="relu"),
+            tf.keras.layers.Dense(5*self.Dyf, activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
             
@@ -145,7 +153,7 @@ class ekoptim():
         ])
 
         # Compile the model with mean squared error loss
-        opt = tf.keras.optimizers.Adam(learning_rate=0.001)
+        opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         #model.compile(optimizer=opt, loss='mse')
         model.compile(optimizer=opt, loss='mse')
 
@@ -158,7 +166,7 @@ class ekoptim():
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
-        model.fit(X_train, y_train, epochs=10, batch_size=32,
+        model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
                   validation_split=0.33, shuffle=True ,
                   callbacks=[tensorboard_callback])
         self.nnmodel = model
