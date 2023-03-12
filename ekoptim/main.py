@@ -91,19 +91,20 @@ class ekoptim():
 
     def normalize(self,data):
         #Normalize a pandas series by scaling its values to the range [0, 1].
-        return (data - data.min()) / (data.max() - data.min())
+        return (data - data.min()) / (data.max() - data.min()), data.min(), data.max()
 
     def apply_moving_horizon_norm(self,df,smb):
         new_df = []
         for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
             past_data = df[smb].iloc[i-self.Dyp:i]
-            past_data_normalized = self.normalize(past_data)
+            past_data_normalized, mindf, maxdf = self.normalize(past_data)
             future_data = df[smb].iloc[i:i+self.Dyf]
             future_data_rescaled = ((future_data - past_data.min()) /
                                     (past_data.max() - past_data.min()))
             new_row = {
                 'past_data': past_data_normalized.values,
                 'future_data': future_data_rescaled.values,
+                'minmax': [mindf,maxdf]
             }
             #print(new_row)
             new_df.append(new_row)

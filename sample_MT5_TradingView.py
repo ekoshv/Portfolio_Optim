@@ -133,13 +133,14 @@ if __name__ == "__main__":
     print("11. EKO Min-Surprise + Max-Sortino.")
     print("-------------------------")
     otp_sel = int(input("Which type of opt you wish: "))
-    print("Optimization started, please wait...")
+#%%
     optimizerTV = ekoptim(returnsTV, risk_free_rate, target_SR,
                         target_Return, target_Volat, max_weight,tol,
-                        full_rates = rates_list)
+                        full_rates = rates_list, Dyp=120, Dyf=120, Thi=3)
+    optimizerTV.NNmake(learning_rate=0.01, epochs=10, batch_size=32)
+    print("Optimization started, please wait...")
     optimized_weights_TV = optimizerTV.optiselect(otp_sel)
-    optimizerTV.NNmake()
-    #-----------Optimization---------------------------------
+        #-----------Optimization---------------------------------
     print("Sum of the weights: ", optimized_weights_TV.sum())
     threshold = min_tresh
     
