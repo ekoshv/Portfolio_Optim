@@ -172,7 +172,35 @@ class ekoptim():
                   validation_split=0.33, shuffle=True ,
                   callbacks=[tensorboard_callback])
         self.nnmodel = model
-        
+    
+    def predict_next(self, rate, smb):
+        # Get the last Dyp rows of full_rates for the given symbol
+        past_data = rate[smb].tail(self.Dyp)
+    
+        # Normalize the past data using the same min and max values used during training
+        past_data_normalized, mindf, maxdf = self.normalize(past_data)
+    
+        # Reshape the past data for input to the neural network
+        X = past_data_normalized.values.reshape(1, self.Dyp, 1)
+    
+        # Use the trained neural network model to predict the future data
+        y_pred = self.nnmodel.predict(X)
+    
+        # Rescale the predicted future data to the original scale
+        y_pred_rescaled = y_pred * (maxdf-mindf) + mindf
+    
+        return y_pred_rescaled
+    
+    def predict_all(self, smb):
+        # Loop through all dataframes in full_rates
+        for df in self.full_rates:
+            # Predict the next values for the given symbol using the predict_next method
+            y_pred = self.predict_next(df, smb)
+    
+            # Add the predicted values as a new column in the dataframe
+            df[smb + '_pred'] = y_pred
+    
+        return self.full_rates
     #---------------------------------------------------
     #---Risk, Sharpe, Sortino, Return, Surprise --------
     #---------------------------------------------------        
