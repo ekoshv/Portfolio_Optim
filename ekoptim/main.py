@@ -197,10 +197,16 @@ class ekoptim():
             # Predict the next values for the given symbol using the predict_next method
             y_pred = self.predict_next(df, smb)
     
+            # Add zeros to y_pred if its length is less than the number of rows in the dataframe
+            if len(y_pred) < len(df):
+                zeros_to_add = len(df) - len(y_pred)
+                y_pred = np.append(y_pred, np.zeros(zeros_to_add))
+    
             # Add the predicted values as a new column in the dataframe
             df[smb + '_pred'] = y_pred
     
         return self.full_rates
+
     #---------------------------------------------------
     #---Risk, Sharpe, Sortino, Return, Surprise --------
     #---------------------------------------------------        
