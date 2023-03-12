@@ -30,6 +30,7 @@ class ekoptim():
         self.durc = self.days/252
         self.risk_free_rate = risk_free_rate*self.durc
         self.toler = toler
+        self.HNrates = []
         
         #define constraints
         self.bounds = [(0,1) for i in range(self.n)]
@@ -119,7 +120,7 @@ class ekoptim():
     
     def NNmake(self,symb='close', learning_rate=0.001, epochs=10, batch_size=32):
         
-        HNrates = self.Hrz_Nrm(symb)
+        self.HNrates = self.Hrz_Nrm(symb)
         # Define the neural network
         model = tf.keras.Sequential([
             tf.keras.layers.Input(shape=(self.Dyp, 1)),
@@ -159,10 +160,10 @@ class ekoptim():
         model.compile(optimizer=opt, loss='mse')
 
         # Train the model on the data in new_rates_lists
-        X = np.array([d['past_data'] for lst in HNrates for d in lst])
+        X = np.array([d['past_data'] for lst in self.HNrates for d in lst])
         X = np.expand_dims(X, axis=-1)  # add a new axis for the input feature
         #X_in = X.reshape(X.shape[0],1,X.shape[1])
-        y = np.array([d['future_data'] for lst in HNrates for d in lst])
+        y = np.array([d['future_data'] for lst in self.HNrates for d in lst])
         #y_in = y.reshape(y.shape[0],1,y.shape[1])
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
