@@ -46,15 +46,17 @@ class GermanTradingCalendar(AbstractHolidayCalendar):
         
         return holidays
     
-    def get_rules(self):
-        if self.year is not None:
-            self.rules = self.get_calendar_holidays(self.year)
+    @classmethod
+    def get_rules(cls, year=None):
+        if year is not None:
+            holidays = cls.get_calendar_holidays(year)
         else:
-            self.rules = []
+            holidays = []
             for year in range(1900, 2100):
-                self.rules.extend(self.get_calendar_holidays(year))
+                holidays.extend(cls.get_calendar_holidays(year))
+        return holidays
     
-    rules = get_rules.__func__()
+    rules = get_rules
 
 class USTradingCalendar(AbstractHolidayCalendar):
     def __init__(self, year=None):
@@ -74,15 +76,17 @@ class USTradingCalendar(AbstractHolidayCalendar):
             Holiday('Christmas', month=12, day=25, observance=nearest_workday)
         ]
     
-    def get_rules(self):
-        if self.year is not None:
-            self.rules = self.get_calendar_holidays(self.year)
+    @classmethod
+    def get_rules(cls, year=None):
+        if year is not None:
+            holidays = cls.get_calendar_holidays(year)
         else:
-            self.rules = []
+            holidays = []
             for year in range(1900, 2100):
-                self.rules.extend(self.get_calendar_holidays(year))
+                holidays.extend(cls.get_calendar_holidays(year))
+        return holidays
     
-    rules = get_rules.__func__()
+    rules = get_rules
 #end of class USTradingCalendar
 
 class ekoptim():
