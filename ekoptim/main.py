@@ -271,7 +271,7 @@ class ekoptim():
     
         return y_pred_rescaled
     
-    def add_business_days(df, delta):
+    def add_business_days(self, df, delta):
         cal = GermanTradingCalendar()
         df_new = pd.DataFrame(index=df.index + CustomBusinessDay(n=delta, calendar=cal))
         df_new = df_new.join(df)
