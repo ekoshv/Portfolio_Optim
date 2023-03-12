@@ -137,7 +137,7 @@ if __name__ == "__main__":
     optimizerTV = ekoptim(returnsTV, risk_free_rate, target_SR,
                         target_Return, target_Volat, max_weight,tol,
                         full_rates = rates_list, Dyp=30, Dyf=7, Thi=3)
-    optimizerTV.NNmake(learning_rate=0.001, epochs=3, batch_size=32)
+    optimizerTV.NNmake(learning_rate=0.001, epochs=1, batch_size=32)
 #%%
     print("Optimization started, please wait...")
     optimized_weights_TV = optimizerTV.optiselect(otp_sel)

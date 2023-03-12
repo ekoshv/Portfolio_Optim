@@ -34,7 +34,8 @@ class GermanTradingCalendar(AbstractHolidayCalendar):
     def __init__(self, year=None):
         self.year = year
     
-    def get_calendar_holidays(self, year):
+    @classmethod
+    def get_calendar_holidays(cls, year):
         holidays = GermanHolidayCalendar().holidays(start=pd.Timestamp(year=year, month=1, day=1), end=pd.Timestamp(year=year, month=12, day=31))
         
         # If Christmas Eve or New Year's Eve falls on a weekday, it is a half-day holiday
@@ -54,14 +55,13 @@ class GermanTradingCalendar(AbstractHolidayCalendar):
                 self.rules.extend(self.get_calendar_holidays(year))
     
     rules = get_rules.__func__()
-    
-
 
 class USTradingCalendar(AbstractHolidayCalendar):
     def __init__(self, year=None):
         self.year = year
     
-    def get_calendar_holidays(self, year):
+    @classmethod
+    def get_calendar_holidays(cls, year):
         return [
             Holiday('NewYearsDay', month=1, day=1, observance=nearest_workday),
             USMartinLutherKingJr,
