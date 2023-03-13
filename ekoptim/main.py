@@ -10,6 +10,8 @@ from sklearn.covariance import LedoitWolf
 import traceback
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
+import os
+from tensorflow.keras.callbacks import ModelCheckpoint
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
@@ -127,29 +129,46 @@ class ekoptim():
         model = tf.keras.Sequential([
             tf.keras.layers.Input(shape=(self.Dyp, 1)),
             
-            tf.keras.layers.Conv1D(filters=round(self.Dyp/3), kernel_size=9, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.Conv1D(filters=round(self.Dyp/3), kernel_size=11, strides=1, padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
             
-            tf.keras.layers.Conv1D(filters=2*round(self.Dyp/3), kernel_size=7, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.Conv1D(filters=2*round(self.Dyp/3), kernel_size=9, strides=1, padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
 
-            tf.keras.layers.Conv1D(filters=3*round(self.Dyp/3), kernel_size=5, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.Conv1D(filters=3*round(self.Dyp/3), kernel_size=7, strides=1, padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
 
-            tf.keras.layers.Conv1D(filters=4*round(self.Dyp/3), kernel_size=3, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.Conv1D(filters=4*round(self.Dyp/3), kernel_size=5, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.MaxPooling1D(pool_size=2),
+            tf.keras.layers.Dropout(0.2),
+
+            tf.keras.layers.Conv1D(filters=5*round(self.Dyp/3), kernel_size=3, strides=1, padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
             
             tf.keras.layers.Flatten(),
             
+            tf.keras.layers.Dense(1024, activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.5),
+            
+            tf.keras.layers.Dense(7*self.Dyf, activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.5),
+            
             tf.keras.layers.Dense(5*self.Dyf, activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.5),
+            
+            tf.keras.layers.Dense(3*self.Dyf, activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
             
@@ -160,6 +179,13 @@ class ekoptim():
         opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         #model.compile(optimizer=opt, loss='mse')
         model.compile(optimizer=opt, loss='mape')
+
+        # Set up the callback to save the best model weights
+        checkpoint_dir = './checkpoints'
+        if not os.path.exists(checkpoint_dir):
+            os.makedirs(checkpoint_dir)
+        filepath = checkpoint_dir + '/best_weights.hdf5'
+        checkpoint_callback = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 
         # Train the model on the data in new_rates_lists
         X = np.array([d['past_data'] for lst in self.HNrates for d in lst])
@@ -172,7 +198,9 @@ class ekoptim():
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
         model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
                   validation_split=0.33, shuffle=True ,
-                  callbacks=[tensorboard_callback])
+                  callbacks=[tensorboard_callback, checkpoint_callback])
+        # Load the best model weights
+        model.load_weights(filepath)
         self.nnmodel = model
     
     def predict_next(self, rate, smb):
