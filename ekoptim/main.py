@@ -227,6 +227,7 @@ class ekoptim():
         for df in self.full_rates:
             # Predict the next values for the given symbol using the predict_next method
             y_pred = self.predict_next(df, smb)
+            self.Predicted_Rates.append(y_pred)
             
     
             
