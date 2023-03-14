@@ -12,6 +12,8 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 import os
 from tensorflow.keras.callbacks import ModelCheckpoint
+#from sklearn.metrics import accuracy_score
+
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
@@ -100,10 +102,16 @@ class ekoptim():
 
     def apply_moving_horizon_norm(self,df,smb):
         new_df = []
+        if isinstance(smb, str):
+            smb_col = smb
+        elif isinstance(smb, int):
+            smb_col = df.columns[smb]
+        else:
+            raise ValueError("smb should be either a string or an integer.")
         for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
-            past_data = df[smb].iloc[i-self.Dyp:i]
+            past_data = df[smb_col].iloc[i-self.Dyp:i]
             past_data_normalized, mindf, maxdf = self.normalize(past_data)
-            future_data = df[smb].iloc[i:i+self.Dyf]
+            future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled = ((future_data - past_data.min()) /
                                     (past_data.max() - past_data.min()))
             new_row = {
@@ -122,40 +130,40 @@ class ekoptim():
         # Apply the moving horizon to each dataframe in rates_lists
         return [self.apply_moving_horizon_norm(df,smb) for df in self.full_rates]
     
-    def NNmake(self,symb='close', learning_rate=0.001, epochs=10, batch_size=32):
+    def NNmake(self,symb='close', learning_rate=0.001, epochs=100, batch_size=32):
         
         self.HNrates = self.Hrz_Nrm(symb)
         # Define the neural network
         model = tf.keras.Sequential([
             tf.keras.layers.Input(shape=(self.Dyp, 1)),
             
-            tf.keras.layers.Conv1D(filters=round(self.Dyp/3), kernel_size=11, strides=1, padding="causal", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling1D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),
-            
-            tf.keras.layers.Conv1D(filters=2*round(self.Dyp/3), kernel_size=9, strides=1, padding="causal", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling1D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),
-
-            tf.keras.layers.Conv1D(filters=3*round(self.Dyp/3), kernel_size=7, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
+                                   kernel_size=11, strides=1,
+                                   padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
 
-            tf.keras.layers.Conv1D(filters=4*round(self.Dyp/3), kernel_size=5, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
+                                   kernel_size=9, strides=1,
+                                   padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
 
-            tf.keras.layers.Conv1D(filters=5*round(self.Dyp/3), kernel_size=3, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
+                                   kernel_size=7, strides=1,
+                                   padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),
+            tf.keras.layers.Dropout(0.2),            
             
             tf.keras.layers.Flatten(),
             
+            tf.keras.layers.Dense(1024, activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.5),
+
             tf.keras.layers.Dense(1024, activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
@@ -168,17 +176,13 @@ class ekoptim():
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
             
-            tf.keras.layers.Dense(3*self.Dyf, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-            
             tf.keras.layers.Dense(self.Dyf)
         ])
 
         # Compile the model with mean squared error loss
         opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-        #model.compile(optimizer=opt, loss='mse')
-        model.compile(optimizer=opt, loss='mape')
+        model.compile(optimizer=opt, loss='mse', metrics=['accuracy'])
+        #model.compile(optimizer=opt, loss='mape')
 
         # Set up the callback to save the best model weights
         checkpoint_dir = './checkpoints'
@@ -201,11 +205,25 @@ class ekoptim():
                   callbacks=[tensorboard_callback, checkpoint_callback])
         # Load the best model weights
         model.load_weights(filepath)
+        
+        # Make predictions on the test set
+        y_pred = model.predict(X_test)
+        
+        # Evaluate the model on the test set
+        score = model.evaluate(X_test, y_test)
+        print(score)
         self.nnmodel = model
     
     def predict_next(self, rate, smb):
+        
+        if isinstance(smb, str):
+            smb_col = smb
+        elif isinstance(smb, int):
+            smb_col = rate.columns[smb]
+        else:
+            raise ValueError("smb should be either a string or an integer.")
         # Get the last Dyp rows of full_rates for the given symbol
-        past_data = rate[smb].tail(self.Dyp)
+        past_data = rate[smb_col].tail(self.Dyp)
     
         # Normalize the past data using the same min and max values used during training
         past_data_normalized, mindf, maxdf = self.normalize(past_data)
