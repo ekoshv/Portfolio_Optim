@@ -138,14 +138,14 @@ class ekoptim():
             tf.keras.layers.Input(shape=(self.Dyp, 1)),
             
             tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
-                                   kernel_size=11, strides=1,
+                                   kernel_size=7, strides=1,
                                    padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
 
             tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
-                                   kernel_size=9, strides=1,
+                                   kernel_size=7, strides=1,
                                    padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
@@ -157,8 +157,33 @@ class ekoptim():
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),            
+
+            tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
+                                   kernel_size=7, strides=1,
+                                   padding="causal", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.MaxPooling1D(pool_size=2),
+            tf.keras.layers.Dropout(0.2),
+
+            tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
+                                   kernel_size=7, strides=1,
+                                   padding="causal", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.MaxPooling1D(pool_size=2),
+            tf.keras.layers.Dropout(0.2),
+
+            tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
+                                   kernel_size=7, strides=1,
+                                   padding="causal", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.MaxPooling1D(pool_size=2),
+            tf.keras.layers.Dropout(0.2), 
             
             tf.keras.layers.Flatten(),
+            
+            tf.keras.layers.Dense(1024, activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.5),
             
             tf.keras.layers.Dense(1024, activation="relu"),
             tf.keras.layers.BatchNormalization(),
@@ -168,11 +193,11 @@ class ekoptim():
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
             
-            tf.keras.layers.Dense(7*self.Dyf, activation="relu"),
+            tf.keras.layers.Dense(1024, activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
             
-            tf.keras.layers.Dense(5*self.Dyf, activation="relu"),
+            tf.keras.layers.Dense(3*self.Dyf, activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
             
