@@ -13,6 +13,7 @@ from sklearn.model_selection import train_test_split
 import os
 from tensorflow.keras.callbacks import ModelCheckpoint
 #from sklearn.metrics import accuracy_score
+import pywt
 
 
 class ekoptim():
@@ -89,9 +90,10 @@ class ekoptim():
         for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
             past_data = df[smb].iloc[i-self.Dyp:i]
             future_data = df[smb].iloc[i:i+self.Dyf]
+            cAf, cDf = pywt.dwt(future_data.values, 'db1')
             new_row = {
                 'past_data': past_data,
-                'future_data': future_data,
+                'future_data': [cAf, cDf],
             }
             new_df = new_df.append(new_row, ignore_index=True)
         return new_df
@@ -114,9 +116,10 @@ class ekoptim():
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled = ((future_data - past_data.min()) /
                                     (past_data.max() - past_data.min()))
+            cAf, cDf = pywt.dwt(future_data_rescaled.values, 'db1')
             new_row = {
                 'past_data': past_data_normalized.values,
-                'future_data': future_data_rescaled.values,
+                'future_data': [cAf, cDf],
                 'minmax': [mindf,maxdf]
             }
             #print(new_row)
