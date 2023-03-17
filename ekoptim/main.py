@@ -83,6 +83,21 @@ class ekoptim():
                     corr[i, j] = corr[j, i] = cov[i, j] / np.sqrt(cov[i, i] * cov[j, j])
         
         return corr
+
+    def decompose_and_flatten(self, data, wavelet):
+        coeffs = pywt.wavedec(data, wavelet)
+        lengths = [len(c) for c in coeffs]
+        flattened_coeffs = np.concatenate(coeffs)
+        return flattened_coeffs, lengths
+    
+    def reconstruct_from_flattened(self, flattened_coeffs, wavelet, lengths):
+        coeffs = []
+        start = 0
+        for length in lengths:
+            coeffs.append(flattened_coeffs[start:start + length])
+            start += length
+        reconstructed_data = pywt.waverec(coeffs, wavelet)
+        return reconstructed_data
     
     # Define a function that applies the moving horizon to a given dataframe
     def apply_moving_horizon(self,df,smb):
@@ -90,10 +105,11 @@ class ekoptim():
         for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
             past_data = df[smb].iloc[i-self.Dyp:i]
             future_data = df[smb].iloc[i:i+self.Dyf]
-            cAf, cDf = pywt.dwt(future_data.values, 'db1')
+            flattened_coeffs, lengths = self.decompose_and_flatten(future_data.values, 'db1')
             new_row = {
                 'past_data': past_data,
-                'future_data': [cAf, cDf],
+                'future_data': flattened_coeffs,
+                'cLength': lengths
             }
             new_df = new_df.append(new_row, ignore_index=True)
         return new_df
@@ -116,10 +132,11 @@ class ekoptim():
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled = ((future_data - past_data.min()) /
                                     (past_data.max() - past_data.min()))
-            cAf, cDf = pywt.dwt(future_data_rescaled.values, 'db1')
+            flattened_coeffs, lengths = self.decompose_and_flatten(future_data_rescaled.values, 'db1')
             new_row = {
                 'past_data': past_data_normalized.values,
-                'future_data': [cAf, cDf],
+                'future_data': flattened_coeffs,
+                'cLength': lengths,
                 'minmax': [mindf,maxdf]
             }
             #print(new_row)
