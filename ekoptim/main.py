@@ -206,7 +206,7 @@ class ekoptim():
 
         # Compile the model with mean squared error loss
         opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-        model.compile(optimizer=opt, loss='mse', metrics=['accuracy'])
+        model.compile(optimizer=opt, loss='mape', metrics=['accuracy'])
         #model.compile(optimizer=opt, loss='mape')
 
         # Set up the callback to save the best model weights
