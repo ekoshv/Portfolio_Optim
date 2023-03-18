@@ -296,7 +296,7 @@ class ekoptim():
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
         model.summary()
         print("Training Model...")
-        if(not load_train):
+        if(load_train):
             model.load_weights(filepath)
         model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
                   validation_split=0.33, shuffle=True ,
