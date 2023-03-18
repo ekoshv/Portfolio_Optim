@@ -98,21 +98,54 @@ class ekoptim():
             start += length
         reconstructed_data = pywt.waverec(coeffs, wavelet)
         return reconstructed_data
+
+    def create_2d_image(self, data, wavelet):
+        # Perform wavelet decomposition
+        coeffs = pywt.wavedec(data, wavelet)
+        final_size = len(data)
+        # Repeat coefficients to the same length as the original data
+        repeated_coeffs = []
+        for c in coeffs:
+            repeated = np.repeat(c, len(data) // len(c))
+            repeated_coeffs.append(repeated)
+        
+        # Stack the repeated coefficients to create a 2D image
+        image = np.stack(repeated_coeffs)
+        
+        # Repeat the image to create a final square image
+        repeat_x = final_size // image.shape[1]
+        repeat_y = final_size // image.shape[0]
+        final_image = np.tile(image, (repeat_y, repeat_x))
+        
+        return final_image
     
     # Define a function that applies the moving horizon to a given dataframe
-    def apply_moving_horizon(self,df,smb):
+    def apply_moving_horizon(self, df, smb):
         new_df = pd.DataFrame()
         for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
             past_data = df[smb].iloc[i-self.Dyp:i]
+            past_data_im =  self.create_2d_image(past_data.values,'db1')
             future_data = df[smb].iloc[i:i+self.Dyf]
             flattened_coeffs, lengths = self.decompose_and_flatten(future_data.values, 'db1')
             new_row = {
-                'past_data': past_data,
+                'past_data': past_data_im,
                 'future_data': flattened_coeffs,
                 'cLength': lengths
             }
             new_df = new_df.append(new_row, ignore_index=True)
         return new_df
+
+    def r_squared(self, y_true, y_pred):
+        # Calculate the residual sum of squares (numerator)
+        residual = tf.reduce_sum(tf.square(tf.subtract(y_true, y_pred)))
+        
+        # Calculate the total sum of squares (denominator)
+        total = tf.reduce_sum(tf.square(tf.subtract(y_true, tf.reduce_mean(y_true))))
+        
+        # Calculate R-squared
+        r2 = tf.subtract(1.0, tf.divide(residual, total))
+        
+        return r2
 
     def normalize(self,data):
         #Normalize a pandas series by scaling its values to the range [0, 1].
@@ -129,12 +162,13 @@ class ekoptim():
         for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
             past_data = df[smb_col].iloc[i-self.Dyp:i]
             past_data_normalized, mindf, maxdf = self.normalize(past_data)
+            past_data_nm_im =  self.create_2d_image(past_data_normalized.values,'db1')
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled = ((future_data - past_data.min()) /
                                     (past_data.max() - past_data.min()))
             flattened_coeffs, lengths = self.decompose_and_flatten(future_data_rescaled.values, 'db1')
             new_row = {
-                'past_data': past_data_normalized.values,
+                'past_data': past_data_nm_im,
                 'future_data': flattened_coeffs,
                 'cLength': lengths,
                 'minmax': [mindf,maxdf]
@@ -149,115 +183,130 @@ class ekoptim():
     def Hrz_Nrm(self,smb):
         # Apply the moving horizon to each dataframe in rates_lists
         return [self.apply_moving_horizon_norm(df,smb) for df in self.full_rates]
+
+    def create_model(self, image_height, image_width):
+        model = tf.keras.Sequential([
+            tf.keras.layers.Input(shape=(image_height, image_width, 1)),
+    
+            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
+                           kernel_size=7, strides=1,
+                           padding="same", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.MaxPooling2D(pool_size=2),
+            tf.keras.layers.Dropout(0.2),
+        
+            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
+                                   kernel_size=7, strides=1,
+                                   padding="same", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.MaxPooling2D(pool_size=2),
+            tf.keras.layers.Dropout(0.2),
+        
+            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
+                                   kernel_size=7, strides=1,
+                                   padding="same", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.MaxPooling2D(pool_size=2),
+            tf.keras.layers.Dropout(0.2),
+        
+            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
+                                   kernel_size=7, strides=1,
+                                   padding="same", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.MaxPooling2D(pool_size=2),
+            tf.keras.layers.Dropout(0.2),
+        
+            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
+                                   kernel_size=7, strides=1,
+                                   padding="same", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.MaxPooling2D(pool_size=2),
+            tf.keras.layers.Dropout(0.2),
+        
+            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
+                                   kernel_size=7, strides=1,
+                                   padding="same", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.MaxPooling2D(pool_size=2),
+            tf.keras.layers.Dropout(0.2),
+        
+            tf.keras.layers.Flatten(),
+        
+            tf.keras.layers.Dense(1024, activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.5),
+        
+            tf.keras.layers.Dense(1024, activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.5),
+        
+            tf.keras.layers.Dense(1024, activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.5),
+        
+            tf.keras.layers.Dense(1024, activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.5),
+        
+            tf.keras.layers.Dense(5 * self.Dyf, activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.5),
+    
+            tf.keras.layers.Dense(self.Dyf)
+        ])
+        return model
+
+    def prepare_image(image):
+        # Ensure the image has only one channel (grayscale)
+        if len(image.shape) > 2 and image.shape[2] > 1:
+            image = np.mean(image, axis=2)
+    
+        # Add the channel dimension (1 channel) to the image
+        image = np.expand_dims(image, axis=-1)
+
+        return image
     
     def NNmake(self,symb='close', learning_rate=0.001, epochs=100, batch_size=32):
         
         self.HNrates = self.Hrz_Nrm(symb)
-        # Define the neural network
-        model = tf.keras.Sequential([
-            tf.keras.layers.Input(shape=(self.Dyp, 1)),
-            
-            tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
-                                   kernel_size=7, strides=1,
-                                   padding="causal", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling1D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),
+        # mz = self.HNrates
+        # # Define the neural network
+        # model = self.create_model(prepared_image.shape[0], prepared_image.shape[1]) 
 
-            tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
-                                   kernel_size=7, strides=1,
-                                   padding="causal", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling1D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),
+        # # Compile the model with mean squared error loss
+        # opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+        # model.compile(optimizer=opt, loss='mape', metrics=[self.r_squared])
+        # #model.compile(optimizer=opt, loss='mape')
 
-            tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
-                                   kernel_size=7, strides=1,
-                                   padding="causal", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling1D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),            
+        # # Set up the callback to save the best model weights
+        # checkpoint_dir = './checkpoints'
+        # if not os.path.exists(checkpoint_dir):
+        #     os.makedirs(checkpoint_dir)
+        # filepath = checkpoint_dir + '/best_weights.hdf5'
+        # checkpoint_callback = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 
-            tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
-                                   kernel_size=7, strides=1,
-                                   padding="causal", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling1D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),
+        # # Train the model on the data in new_rates_lists
+        # X = np.array([d['past_data'] for lst in self.HNrates for d in lst])
+        # X = np.expand_dims(X, axis=-1)  # add a new axis for the input feature
+        # #X_in = X.reshape(X.shape[0],1,X.shape[1])
+        # y = np.array([d['future_data'] for lst in self.HNrates for d in lst])
+        # #y_in = y.reshape(y.shape[0],1,y.shape[1])
 
-            tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
-                                   kernel_size=7, strides=1,
-                                   padding="causal", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling1D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),
-
-            tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
-                                   kernel_size=7, strides=1,
-                                   padding="causal", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling1D(pool_size=2),
-            tf.keras.layers.Dropout(0.2), 
-            
-            tf.keras.layers.Flatten(),
-            
-            tf.keras.layers.Dense(1024, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-            
-            tf.keras.layers.Dense(1024, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-
-            tf.keras.layers.Dense(1024, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-            
-            tf.keras.layers.Dense(1024, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-            
-            tf.keras.layers.Dense(3*self.Dyf, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-            
-            tf.keras.layers.Dense(self.Dyf)
-        ])
-
-        # Compile the model with mean squared error loss
-        opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-        model.compile(optimizer=opt, loss='mape', metrics=['accuracy'])
-        #model.compile(optimizer=opt, loss='mape')
-
-        # Set up the callback to save the best model weights
-        checkpoint_dir = './checkpoints'
-        if not os.path.exists(checkpoint_dir):
-            os.makedirs(checkpoint_dir)
-        filepath = checkpoint_dir + '/best_weights.hdf5'
-        checkpoint_callback = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-
-        # Train the model on the data in new_rates_lists
-        X = np.array([d['past_data'] for lst in self.HNrates for d in lst])
-        X = np.expand_dims(X, axis=-1)  # add a new axis for the input feature
-        #X_in = X.reshape(X.shape[0],1,X.shape[1])
-        y = np.array([d['future_data'] for lst in self.HNrates for d in lst])
-        #y_in = y.reshape(y.shape[0],1,y.shape[1])
-
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
-        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
-        model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
-                  validation_split=0.33, shuffle=True ,
-                  callbacks=[tensorboard_callback, checkpoint_callback])
-        # Load the best model weights
-        model.load_weights(filepath)
+        # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
+        # tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
+        # model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
+        #           validation_split=0.33, shuffle=True ,
+        #           callbacks=[tensorboard_callback, checkpoint_callback])
+        # # Load the best model weights
+        # model.load_weights(filepath)
         
-        # Make predictions on the test set
-        y_pred = model.predict(X_test)
+        # # Make predictions on the test set
+        # y_pred = model.predict(X_test)
         
-        # Evaluate the model on the test set
-        score = model.evaluate(X_test, y_test)
-        print(score)
-        self.nnmodel = model
+        # # Evaluate the model on the test set
+        # score = model.evaluate(X_test, y_test)
+        # print(score)
+        # self.nnmodel = model
     
     def predict_next(self, rate, smb):
         
