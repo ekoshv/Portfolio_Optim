@@ -143,7 +143,7 @@ class ekoptim():
         total = tf.reduce_sum(tf.square(tf.subtract(y_true, tf.reduce_mean(y_true))))
         
         # Calculate R-squared
-        r2 = tf.subtract(1.0, tf.divide(residual, total))
+        r2 =  tf.exp(tf.subtract(1.0, tf.divide(residual, total)))
         
         return r2
 
@@ -266,7 +266,7 @@ class ekoptim():
 
         return image
     
-    def NNmake(self,symb='close', learning_rate=0.001, epochs=100, batch_size=32):
+    def NNmake(self,symb='close', learning_rate=0.001, epochs=100, batch_size=32, load_train=False):
         print("Preparing Data...")
         self.HNrates = self.Hrz_Nrm(symb)
         mz = self.HNrates[0][0]['past_data'].shape[0]
@@ -288,14 +288,16 @@ class ekoptim():
         # Train the model on the data in new_rates_lists
         X = np.array([d['past_data'] for lst in self.HNrates for d in lst])
         X = np.expand_dims(X, axis=-1)  # add a new axis for the input feature
-        #X_in = X.reshape(X.shape[0],1,X.shape[1])
+        
         y = np.array([d['future_data'] for lst in self.HNrates for d in lst])
-        #y_in = y.reshape(y.shape[0],1,y.shape[1])
+        
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
         model.summary()
         print("Training Model...")
+        if(not load_train):
+            model.load_weights(filepath)
         model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
                   validation_split=0.33, shuffle=True ,
                   callbacks=[tensorboard_callback, checkpoint_callback])
