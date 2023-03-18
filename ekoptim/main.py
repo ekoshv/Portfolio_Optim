@@ -267,46 +267,45 @@ class ekoptim():
         return image
     
     def NNmake(self,symb='close', learning_rate=0.001, epochs=100, batch_size=32):
-        
+        print("Preparing Data...")
         self.HNrates = self.Hrz_Nrm(symb)
-        # mz = self.HNrates
-        # # Define the neural network
-        # model = self.create_model(prepared_image.shape[0], prepared_image.shape[1]) 
+        mz = self.HNrates[0][0]['past_data'].shape[0]
+        nz = self.HNrates[0][0]['past_data'].shape[1]
+        # Define the neural network
+        model = self.create_model(mz, nz) 
 
-        # # Compile the model with mean squared error loss
-        # opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-        # model.compile(optimizer=opt, loss='mape', metrics=[self.r_squared])
-        # #model.compile(optimizer=opt, loss='mape')
+        # Compile the model with mean squared error loss
+        opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+        model.compile(optimizer=opt, loss='mape', metrics=[self.r_squared])
 
-        # # Set up the callback to save the best model weights
-        # checkpoint_dir = './checkpoints'
-        # if not os.path.exists(checkpoint_dir):
-        #     os.makedirs(checkpoint_dir)
-        # filepath = checkpoint_dir + '/best_weights.hdf5'
-        # checkpoint_callback = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+        # Set up the callback to save the best model weights
+        checkpoint_dir = './checkpoints'
+        if not os.path.exists(checkpoint_dir):
+            os.makedirs(checkpoint_dir)
+        filepath = checkpoint_dir + '/best_weights.hdf5'
+        checkpoint_callback = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 
-        # # Train the model on the data in new_rates_lists
-        # X = np.array([d['past_data'] for lst in self.HNrates for d in lst])
-        # X = np.expand_dims(X, axis=-1)  # add a new axis for the input feature
-        # #X_in = X.reshape(X.shape[0],1,X.shape[1])
-        # y = np.array([d['future_data'] for lst in self.HNrates for d in lst])
-        # #y_in = y.reshape(y.shape[0],1,y.shape[1])
+        # Train the model on the data in new_rates_lists
+        X = np.array([d['past_data'] for lst in self.HNrates for d in lst])
+        X = np.expand_dims(X, axis=-1)  # add a new axis for the input feature
+        #X_in = X.reshape(X.shape[0],1,X.shape[1])
+        y = np.array([d['future_data'] for lst in self.HNrates for d in lst])
+        #y_in = y.reshape(y.shape[0],1,y.shape[1])
 
-        # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
-        # tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
-        # model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
-        #           validation_split=0.33, shuffle=True ,
-        #           callbacks=[tensorboard_callback, checkpoint_callback])
-        # # Load the best model weights
-        # model.load_weights(filepath)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
+        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
+        model.summary()
+        print("Training Model...")
+        model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
+                  validation_split=0.33, shuffle=True ,
+                  callbacks=[tensorboard_callback, checkpoint_callback])
+        # Load the best model weights
+        model.load_weights(filepath)
         
-        # # Make predictions on the test set
-        # y_pred = model.predict(X_test)
-        
-        # # Evaluate the model on the test set
-        # score = model.evaluate(X_test, y_test)
-        # print(score)
-        # self.nnmodel = model
+        # Evaluate the model on the test set
+        score = model.evaluate(X_test, y_test)
+        print("The scores: ", score)
+        self.nnmodel = model
     
     def predict_next(self, rate, smb):
         
