@@ -324,7 +324,7 @@ class ekoptim():
         past_data_normalized, mindf, maxdf = self.normalize(past_data)
         past_data_nm_im =  self.create_2d_image(past_data_normalized.values,'db1')
         # Reshape the past data for input to the neural network
-        X = past_data_nm_im.reshape(past_data_nm_im.shape[0], past_data_nm_im.shape[1], 1)
+        X = np.expand_dims(past_data_nm_im, axis=-1)
     
         # Use the trained neural network model to predict the future data
         y_pred_w = self.nnmodel.predict(X)
