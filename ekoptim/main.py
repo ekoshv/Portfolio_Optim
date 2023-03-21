@@ -143,7 +143,7 @@ class ekoptim():
         total = tf.reduce_sum(tf.square(tf.subtract(y_true, tf.reduce_mean(y_true))))
         
         # Calculate R-squared
-        r2 =  tf.exp(tf.subtract(1.0, tf.divide(residual, total)))
+        r2 =  tf.divide(tf.exp(tf.subtract(1.0, tf.divide(residual, total))),tf.exp(1))
         
         return r2
 
@@ -299,7 +299,7 @@ class ekoptim():
         if(load_train):
             model.load_weights(filepath)
         model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
-                  validation_split=0.33, shuffle=True ,
+                  validation_split=0.33, shuffle=False ,
                   callbacks=[tensorboard_callback, checkpoint_callback])
         # Load the best model weights
         model.load_weights(filepath)
@@ -323,8 +323,9 @@ class ekoptim():
         # Normalize the past data using the same min and max values used during training
         past_data_normalized, mindf, maxdf = self.normalize(past_data)
         past_data_nm_im =  self.create_2d_image(past_data_normalized.values,'db1')
+        print(past_data_nm_im.shape())
         # Reshape the past data for input to the neural network
-        X = np.expand_dims(past_data_nm_im, axis=-1)
+        X = np.expand_dims(past_data_nm_im, axis=(0, -1))
     
         # Use the trained neural network model to predict the future data
         y_pred_w = self.nnmodel.predict(X)
