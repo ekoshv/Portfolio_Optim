@@ -346,8 +346,8 @@ class ekoptim():
         
         print(y_pred_w)
         print("y_pred_w shape:", y_pred_w.shape)  # Add this line
-        y_pred_w.squeeze(inplace=True)
-        y_pred = self.reconstruct_from_flattened(y_pred_w, 'db1', self.HNrates[0][0]['cLength'])
+        y_pred_w_r = y_pred_w.squeeze()
+        y_pred = self.reconstruct_from_flattened(y_pred_w_r, 'db1', self.HNrates[0][0]['cLength'])
         # Rescale the predicted future data to the original scale
         y_pred_rescaled = y_pred * (maxdf-mindf) + mindf
     
