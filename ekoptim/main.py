@@ -157,7 +157,7 @@ class ekoptim():
         total = tf.reduce_sum(tf.square(tf.subtract(y_true, tf.reduce_mean(y_true))))
         
         # Calculate R-squared
-        r2 =  tf.divide(tf.exp(tf.subtract(1.0, tf.divide(residual, total))),tf.exp(1))
+        r2 =  tf.divide(tf.exp(tf.subtract(1.0, tf.divide(residual, total))),tf.exp(1.0))
         
         return r2
 
