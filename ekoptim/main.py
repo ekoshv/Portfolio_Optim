@@ -90,12 +90,26 @@ class ekoptim():
         flattened_coeffs = np.concatenate(coeffs)
         return flattened_coeffs, lengths
     
+    def reconstruct_from_flattenedx(self, flattened_coeffs, wavelet, lengths):
+        coeffs = []
+        start = 0
+        for length in lengths:
+            coeffs.append(flattened_coeffs[start:start + length])
+            start += length
+        reconstructed_data = pywt.waverec(coeffs, wavelet)
+        return reconstructed_data
+
     def reconstruct_from_flattened(self, flattened_coeffs, wavelet, lengths):
         coeffs = []
         start = 0
         for length in lengths:
             coeffs.append(flattened_coeffs[start:start + length])
             start += length
+        
+        # Add print statements to inspect shapes
+        print("Flattened coeffs shape:", flattened_coeffs.shape)
+        print("Reconstructed coeffs shapes:", [c.shape for c in coeffs])
+    
         reconstructed_data = pywt.waverec(coeffs, wavelet)
         return reconstructed_data
 
