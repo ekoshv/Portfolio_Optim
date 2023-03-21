@@ -337,12 +337,14 @@ class ekoptim():
         # Normalize the past data using the same min and max values used during training
         past_data_normalized, mindf, maxdf = self.normalize(past_data)
         past_data_nm_im =  self.create_2d_image(past_data_normalized.values,'db1')
-        print(past_data_nm_im.shape)
+        #print(past_data_nm_im.shape)
         # Reshape the past data for input to the neural network
         X = np.expand_dims(past_data_nm_im, axis=(0, -1))
     
         # Use the trained neural network model to predict the future data
         y_pred_w = self.nnmodel.predict(X)
+        print(y_pred_w)
+        print("y_pred_w shape:", y_pred_w.shape)  # Add this line
         y_pred = self.reconstruct_from_flattened(y_pred_w, 'db1', self.HNrates[0][0]['cLength'])
         # Rescale the predicted future data to the original scale
         y_pred_rescaled = y_pred * (maxdf-mindf) + mindf
