@@ -323,7 +323,7 @@ class ekoptim():
         # Normalize the past data using the same min and max values used during training
         past_data_normalized, mindf, maxdf = self.normalize(past_data)
         past_data_nm_im =  self.create_2d_image(past_data_normalized.values,'db1')
-        print(past_data_nm_im.shape())
+        print(past_data_nm_im.shape)
         # Reshape the past data for input to the neural network
         X = np.expand_dims(past_data_nm_im, axis=(0, -1))
     
