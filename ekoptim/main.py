@@ -7,143 +7,227 @@ import seaborn as sns
 import pandas as pd
 import datetime
 from sklearn.covariance import LedoitWolf
+from sklearn.covariance import MinCovDet
 import traceback
 
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
-                               target_SR, target_Return, target_Volat,
-                               max_weight,toler):
-        self.returns = returns
-        self.target_SR = target_SR
-        self.target_Return = target_Return
-        self.target_Volat = target_Volat
-        self.max_weight = max_weight
-        self.n = returns.shape[1]
-        self.days = returns.shape[0]
-        #initialize starting point
-        self.w0 = [1/self.n] * self.n
-        self.optimized_weights = [1/self.n] * self.n
-        self.durc = self.days/252
-        self.risk_free_rate = risk_free_rate*self.durc
-        self.toler = toler
-        
-        
-        #define constraints
-        self.bounds = [(0,1) for i in range(self.n)]
-        
-        self.constraints = [{"type":"eq",#0 sum = 1
-                             "fun":lambda x: x.sum() - 1},
-                            {"type":"ineq",#1 lb<return<ub @15%
-                             "fun":lambda x: self.return_cnt(x)-0.85*self.target_Return},
-                            {"type":"ineq",#2
-                             "fun":lambda x: -self.return_cnt(x)+1.15*self.target_Return},
-                            {"type":"ineq",#3 lb<sharpe<ub @15%
-                             "fun":lambda x: self.sharpe_ratio_cnt(x)-0.85*self.target_SR},
-                            {"type":"ineq",#4
-                             "fun":lambda x: -self.sharpe_ratio_cnt(x)+1.15*self.target_SR},
-                            {"type":"ineq",#5 lb<volat<ub @15%
-                             "fun":lambda x: 1.15*self.target_Volat-self.risk_cnt(x)},
-                            {"type":"ineq",#6
-                             "fun":lambda x: -0.85*self.target_Volat+self.risk_cnt(x)},
-                            {"type":"ineq",#7 max weight
-                             "fun":lambda x: self.max_weight-x}]
-        
-    #define the optimization functions    
+                 target_SR, target_Return, target_Volat,
+                 max_weight, toler):
+        try:
+            self.returns = returns  # Set returns
+            self.target_SR = target_SR  # Set target Sharpe Ratio
+            self.target_Return = target_Return  # Set target return
+            self.target_Volat = target_Volat  # Set target volatility
+            self.max_weight = max_weight  # Set maximum weight
+            self.n = returns.shape[1]  # Number of assets
+            self.days = returns.shape[0]  # Number of days
+            # Initialize starting point (equal weight)
+            self.w0 = [1 / self.n] * self.n
+            # Initialize optimized_weights (equal weight)
+            self.optimized_weights = [1 / self.n] * self.n
+            self.durc = self.days / 252  # Calculate duration
+            # Calculate risk-free rate adjusted for duration
+            self.risk_free_rate = risk_free_rate * self.durc
+            self.toler = toler  # Set tolerance
+    
+            # Define constraints
+            self.bounds = [(0, 1) for i in range(self.n)]  # Set bounds for weights
+    
+            self.constraints = [
+                {"type": "eq",  # Constraint 1: Sum of weights equals 1
+                 "fun": lambda x: x.sum() - 1},
+                {"type": "ineq",  # Constraint 2: Lower bound on return
+                 "fun": lambda x: self.return_cnt(x) - 0.85 * self.target_Return},
+                {"type": "ineq",  # Constraint 3: Upper bound on return
+                 "fun": lambda x: -self.return_cnt(x) + 1.15 * self.target_Return},
+                {"type": "ineq",  # Constraint 4: Lower bound on Sharpe Ratio
+                 "fun": lambda x: self.sharpe_ratio_cnt(x) - 0.85 * self.target_SR},
+                {"type": "ineq",  # Constraint 5: Upper bound on Sharpe Ratio
+                 "fun": lambda x: -self.sharpe_ratio_cnt(x) + 1.15 * self.target_SR},
+                {"type": "ineq",  # Constraint 6: Lower bound on volatility
+                 "fun": lambda x: 1.15 * self.target_Volat - self.risk_cnt(x)},
+                {"type": "ineq",  # Constraint 7: Upper bound on volatility
+                 "fun": lambda x: -0.85 * self.target_Volat + self.risk_cnt(x)},
+                {"type": "ineq",  # Constraint 8: Maximum weight constraint
+                 "fun": lambda x: self.max_weight - x}
+            ]
+    
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            traceback.print_exc()
+
     def __initial_weight(self, w0):
         self.w0 = w0
 
     def cov2corr(self, cov):
+        # Initialize an empty correlation matrix with the same shape as the covariance matrix
         corr = np.zeros_like(cov)
+        # Get the number of assets
         n = cov.shape[0]
-        
+    
+        # Iterate through the rows of the matrix
         for i in range(n):
+            # Set the diagonal elements to 1.0 (correlation of an asset with itself)
             corr[i, i] = 1.0
-            
+    
+            # Iterate through the columns of the matrix, starting from the next element in the row
             for j in range(i + 1, n):
+                # Check if the variance of the assets i and j is zero
                 if cov[i, i] == 0.0 or cov[j, j] == 0.0:
+                    # Set the correlation between assets i and j to zero if either variance is zero
                     corr[i, j] = corr[j, i] = 0.0
                 else:
+                    # Calculate and set the correlation between assets i and j
                     corr[i, j] = corr[j, i] = cov[i, j] / np.sqrt(cov[i, i] * cov[j, j])
-        
-        return corr
     
+        # Return the correlation matrix
+        return corr
+ 
     #---------------------------------------------------
     #---Risk, Sharpe, Sortino, Return, Surprise --------
     #---------------------------------------------------        
     def risk_cnt(self, w):
-        portfolio_volatility = (w.T @ LedoitWolf().fit(self.returns).
-                                covariance_ @ w)**0.5 * np.sqrt(self.days)
-        return portfolio_volatility
+        try:
+            # Calculate the covariance matrix using the LedoitWolf method
+            covariance_matrix = LedoitWolf().fit(self.returns).covariance_
+    
+            # Compute the portfolio volatility by multiplying the weights,
+            # covariance matrix, and weights transposed, then taking the square root
+            portfolio_volatility = np.sqrt(w.T @ covariance_matrix @ w) * np.sqrt(self.days)
+    
+            # Return the portfolio volatility
+            return portfolio_volatility
+        except Exception as e:
+            print(f"An error occurred in risk_cnt: {e}")
+            traceback.print_exc()
+            return None
 
     def cvar_cnt(self, w, alpha):
-        # Calculate the conditional value-at-risk (CVaR) of the portfolio
-        # with confidence level alpha
-        
-        # Calculate the portfolio return and volatility
-        portfolio_return = w.T @ self.returns.mean() * self.days - self.risk_free_rate
-        portfolio_volatility = (w.T @ LedoitWolf().fit(self.returns).
-                                covariance_ @ w)**0.5 * np.sqrt(self.days)
-        
-        # Calculate the VaR of the portfolio using the normal distribution
-        #z_alpha = norm.ppf(alpha)
-        #portfolio_var = portfolio_return - z_alpha * portfolio_volatility
-        
-        # Calculate the expected shortfall (ES) of the portfolio
-        portfolio_es = -1/alpha * (1 - alpha) * \
-            norm.pdf(norm.ppf(alpha)) * portfolio_volatility
-        portfolio_cvar = portfolio_return - portfolio_es
-        
-        return portfolio_cvar
+        try:
+            # Calculate the conditional value-at-risk (CVaR) of the portfolio
+            # with confidence level alpha
+    
+            # Calculate the portfolio return
+            portfolio_return = w.T @ self.returns.mean() * self.days - self.risk_free_rate
+    
+            # Calculate the portfolio volatility using the LedoitWolf covariance matrix
+            covariance_matrix = LedoitWolf().fit(self.returns).covariance_
+            portfolio_volatility = np.sqrt(w.T @ covariance_matrix @ w) * np.sqrt(self.days)
+    
+            # Calculate the expected shortfall (ES) of the portfolio
+            portfolio_es = (
+                -1 / alpha
+                * (1 - alpha)
+                * norm.pdf(norm.ppf(alpha))
+                * portfolio_volatility
+            )
+    
+            # Calculate the conditional value-at-risk (CVaR) of the portfolio
+            portfolio_cvar = portfolio_return - portfolio_es
+    
+            return portfolio_cvar
+        except Exception as e:
+            print(f"An error occurred in cvar_cnt: {e}")
+            traceback.print_exc()
+            return None
 
     def surprise_cnt(self, w):
-        # Calculate the percentage change between consecutive returns
-        delta_returns = self.returns.pct_change().fillna(0)
-        
-        # Calculate the absolute percentage change between consecutive returns
-        aks = abs(delta_returns.replace([np.inf, -np.inf], 0))
-        
-        # Calculate the log of the absolute percentage change plus one
-        #aks_log = np.log(aks + 1)
-        aks_sqrt = np.sqrt(aks+1)
-        
-        # Calculate the correlation matrix of the log-returns adjusted for the absolute percentage change between consecutive returns
-        covar = LedoitWolf().fit(self.returns*aks_sqrt).covariance_
-        #corr = self.cov2corr(covar)
-        
-        # Calculate the portfolio surprise
-        portfolio_surprise = (w.T @ covar @ w)**0.5 * np.sqrt(self.days)
-        
-        return portfolio_surprise
+        try:
+            # Calculate the percentage change between consecutive returns
+            delta_returns = self.returns.pct_change().fillna(0)
     
+            # Calculate the absolute percentage change between consecutive returns
+            aks = abs(delta_returns.replace([np.inf, -np.inf], 0))
+    
+            # Calculate the log of the absolute percentage change plus one
+            aks_log = np.log(aks + 1)
+    
+            # Calculate the covariance matrix of the returns adjusted for the log of the absolute percentage change
+            covar = MinCovDet().fit(self.returns * aks_log).covariance_
+    
+            # Calculate the portfolio surprise using the covariance matrix
+            portfolio_surprise = (w.T @ covar @ w)**0.5 * np.sqrt(self.days)
+    
+            return portfolio_surprise
+        except Exception as e:
+            print(f"An error occurred in surprise_cnt: {e}")
+            traceback.print_exc()
+            return None
+
     def sharpe_ratio_cnt(self, w):
-        portfolio_return = w.T @ self.returns.mean() * self.days - self.risk_free_rate
-        portfolio_volatility = ((w.T @ LedoitWolf().fit(self.returns).covariance_ @ w)**0.5 *
-                                np.sqrt(self.days))
-        sharpe_ratio = (portfolio_return - self.risk_free_rate) / portfolio_volatility
-        return sharpe_ratio
+        try:
+            # Calculate the portfolio return using the weighted average of asset returns and risk-free rate
+            portfolio_return = w.T @ self.returns.mean() * self.days - self.risk_free_rate
     
+            # Calculate the portfolio volatility using the weighted covariance matrix of asset returns
+            portfolio_volatility = (
+                (w.T @ LedoitWolf().fit(self.returns).covariance_ @ w)**0.5 * np.sqrt(self.days)
+            )
+    
+            # Calculate the Sharpe ratio by dividing the excess return by the portfolio volatility
+            sharpe_ratio = (portfolio_return - self.risk_free_rate) / portfolio_volatility
+    
+            return sharpe_ratio
+        except Exception as e:
+            print(f"An error occurred in sharpe_ratio_cnt: {e}")
+            traceback.print_exc()
+            return None
+ 
     def return_cnt(self, w):
-        portfolio_return = w.T @ self.returns.mean() * self.days - self.risk_free_rate
-        return portfolio_return
+        try:
+            # Calculate the portfolio return using the weighted average of asset returns and risk-free rate
+            portfolio_return = w.T @ self.returns.mean() * self.days - self.risk_free_rate
+    
+            return portfolio_return
+        except Exception as e:
+            print(f"An error occurred in return_cnt: {e}")
+            traceback.print_exc()
+            return None
     
     def sortino_ratio_cnt(self, w):
-        portfolio_return = w.T @ self.returns.mean() * self.days - self.risk_free_rate
-        downside_returns = self.returns[self.returns.dot(w) < 0].dot(w)
-        downside_volatility = np.sqrt((downside_returns**2).mean()) * np.sqrt(self.days)
-        sortino_ratio = (portfolio_return - self.risk_free_rate) / downside_volatility
-        return sortino_ratio
+        try:
+            # Calculate the portfolio return
+            portfolio_return = w.T @ self.returns.mean() * self.days - self.risk_free_rate
+            
+            # Filter the returns to only include negative returns
+            downside_returns = self.returns[self.returns.dot(w) < 0].dot(w)
+            
+            # Calculate the downside volatility by taking the square root of the mean of squared negative returns
+            downside_volatility = np.sqrt((downside_returns**2).mean()) * np.sqrt(self.days)
+            
+            # Calculate the Sortino ratio using portfolio return, risk-free rate, and downside volatility
+            sortino_ratio = (portfolio_return - self.risk_free_rate) / downside_volatility
+            
+            return sortino_ratio
+        except Exception as e:
+            print(f"An error occurred in sortino_ratio_cnt: {e}")
+            traceback.print_exc()
+            return None
     
     def maximum_drawdown_cnt(self, w):
-        # Calculate the maximum drawdown of the portfolio
-        
-        portfolio_return = (self.returns @ w).cumsum()
-        portfolio_peak = np.maximum.accumulate(portfolio_return)
-        drawdown = portfolio_peak - portfolio_return
-        max_drawdown = np.max(drawdown)
-        max_drawdown_pct = max_drawdown / portfolio_peak.max()
-        
-        return max_drawdown_pct
+        try:
+            # Calculate the cumulative returns of the portfolio
+            portfolio_return = (self.returns @ w).cumsum()
+    
+            # Identify the running maximum value of the portfolio returns
+            portfolio_peak = np.maximum.accumulate(portfolio_return)
+    
+            # Calculate drawdowns by subtracting the current return from the peak value
+            drawdown = portfolio_peak - portfolio_return
+    
+            # Find the maximum drawdown value
+            max_drawdown = np.max(drawdown)
+    
+            # Calculate the maximum drawdown percentage
+            max_drawdown_pct = max_drawdown / portfolio_peak.max()
+    
+            return max_drawdown_pct
+        except Exception as e:
+            print(f"An error occurred in maximum_drawdown_cnt: {e}")
+            traceback.print_exc()
+            return None
 
     #-------------------------------
     #---Optimizations---------------
@@ -295,8 +379,9 @@ class ekoptim():
             else:
                 return -1
         except Exception as e:
-            print("Caught an exception:")
+            print(f"Caught an exception: {e}")
             traceback.print_exc()
+            return None
     
     def calculate_metrics(self,w, alpha):
         return {'Risk': self.risk_cnt(w),
@@ -308,31 +393,55 @@ class ekoptim():
                 'MXDDP': self.maximum_drawdown_cnt(w)}
 
     def frontPlot(self, w, alpha=0.95, save=False):
-        # use Monte Carlo simulation to generate multiple sets of random weights
-        num_portfolios = 500
-        returns_listx = []
-        sharpe_ratios_listx = []
-        volatilities_listx = []
-        for i in range(num_portfolios):
-            weights = w+(2*np.random.random(self.n)-1)/(3*np.sqrt(self.n)+1)
-            weights /= np.sum(weights)
-            portfolio_returnx = self.return_cnt(weights)
-            portfolio_volatilityx = self.risk_cnt(weights)
-            sharpe_ratiox = self.sharpe_ratio_cnt(weights)
-            returns_listx.append(portfolio_returnx)
-            volatilities_listx.append(portfolio_volatilityx)
-            sharpe_ratios_listx.append(sharpe_ratiox)
-        # plot the efficient frontier
-        metrics = self.calculate_metrics(w,alpha)#self.optimized_weights
-        data = {'Volatility': volatilities_listx, 'Return': returns_listx, 'Sharpe Ratio': sharpe_ratios_listx}
-        data = pd.DataFrame(data)
-        sns.scatterplot(data=data, x='Volatility', y='Return', hue='Sharpe Ratio', palette='viridis')
-        plt.scatter(metrics['Risk'], metrics['Return'], c='red', marker='D', s=200)
-        plt.xlabel(f'Volatility\nOptimun found at Sharpe Ratio: {metrics["Sharpe"]:.2f}, Risk: {metrics["Risk"]:.2f}')
-        plt.ylabel('Return')
-        current_time = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        file_name = f'efficient_frontier_{current_time}.png'
-        if save:
-            plt.savefig(file_name, dpi=300)
-        plt.show()
+        try:
+            # Use Monte Carlo simulation to generate multiple sets of random weights
+            num_portfolios = 500
+            returns_listx = []
+            sharpe_ratios_listx = []
+            volatilities_listx = []
+    
+            for i in range(num_portfolios):
+                # Generate random weights and normalize them
+                weights = w + (2 * np.random.random(self.n) - 1) / (3 * np.sqrt(self.n) + 1)
+                weights /= np.sum(weights)
+    
+                # Calculate portfolio return, volatility, and Sharpe ratio
+                portfolio_returnx = self.return_cnt(weights)
+                portfolio_volatilityx = self.risk_cnt(weights)
+                sharpe_ratiox = self.sharpe_ratio_cnt(weights)
+    
+                # Store the results in lists
+                returns_listx.append(portfolio_returnx)
+                volatilities_listx.append(portfolio_volatilityx)
+                sharpe_ratios_listx.append(sharpe_ratiox)
+    
+            # Calculate the optimized metrics
+            metrics = self.calculate_metrics(w, alpha)
+    
+            # Prepare data for plotting
+            data = {'Volatility': volatilities_listx, 'Return': returns_listx, 'Sharpe Ratio': sharpe_ratios_listx}
+            data = pd.DataFrame(data)
+    
+            # Create a scatterplot of the efficient frontier
+            sns.scatterplot(data=data, x='Volatility', y='Return', hue='Sharpe Ratio', palette='viridis')
+            # Plot the optimized point on the graph
+            plt.scatter(metrics['Risk'], metrics['Return'], c='red', marker='D', s=200)
+    
+            # Set the labels for the axes
+            plt.xlabel(f'Volatility\nOptimum found at Sharpe Ratio: {metrics["Sharpe"]:.2f}, Risk: {metrics["Risk"]:.2f}')
+            plt.ylabel('Return')
+    
+            # Save the graph to a file if specified
+            current_time = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+            file_name = f'efficient_frontier_{current_time}.png'
+            if save:
+                plt.savefig(file_name, dpi=300)
+    
+            # Display the graph
+            plt.show()
+    
+        except Exception as e:
+            print(f"An error occurred in frontPlot: {e}")
+            traceback.print_exc()
+
 # end of class ekoptim
