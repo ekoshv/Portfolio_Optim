@@ -343,7 +343,7 @@ class ekoptim():
     
         # Use the trained neural network model to predict the future data
         y_pred_w = np.array(self.nnmodel.predict(X))
-        print('Hoooyyyoo')
+        print('Hoooyyyii')
         y_pred_w_r = y_pred_w.squeeze()
         y_pred = self.reconstruct_from_flattened(y_pred_w_r, 'db1', self.HNrates[0][0]['cLength'])
         # Rescale the predicted future data to the original scale
