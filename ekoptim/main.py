@@ -9,6 +9,11 @@ import datetime
 from sklearn.covariance import LedoitWolf
 from sklearn.covariance import MinCovDet
 import traceback
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.callbacks import ModelCheckpoint
+import os
+import pywt
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
@@ -83,7 +88,6 @@ class ekoptim():
     
         # Return the correlation matrix
         return corr
- 
     #---------------------------------------------------
     #---Risk, Sharpe, Sortino, Return, Surprise --------
     #---------------------------------------------------        
@@ -227,6 +231,90 @@ class ekoptim():
             print(f"An error occurred in maximum_drawdown_cnt: {e}")
             traceback.print_exc()
             return None
+    
+    #-------------------------------
+    #--- Neural Networks -----------
+    #-------------------------------
+    def r_squared(self, y_true, y_pred):
+        # Calculate the residual sum of squares (numerator)
+        residual = tf.reduce_sum(tf.square(tf.subtract(y_true, y_pred)))
+        
+        # Calculate the total sum of squares (denominator)
+        total = tf.reduce_sum(tf.square(tf.subtract(y_true, tf.reduce_mean(y_true))))
+        
+        # Calculate R-squared
+        r2 =  tf.divide(tf.exp(tf.subtract(1.0, tf.divide(residual, total))),tf.exp(1.0))
+        
+        return r2
+    #--- Wavelets ------
+    def decompose_and_flatten(self, data, wavelet):
+        coeffs = pywt.wavedec(data, wavelet)
+        lengths = [len(c) for c in coeffs]
+        flattened_coeffs = np.concatenate(coeffs)
+        return flattened_coeffs, lengths    
+    
+    def reconstruct_from_flattened(self, flattened_coeffs, wavelet, lengths):
+        coeffs = []
+        start = 0
+        for length in lengths:
+            coeffs.append(flattened_coeffs[start:start + length])
+            start += length
+        reconstructed_data = pywt.waverec(coeffs, wavelet)
+        return reconstructed_data
+
+    # Define a function that applies the moving horizon to a given dataframe
+    def apply_moving_horizon(self, df, smb):
+        new_df = pd.DataFrame()
+        for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
+            past_data = df[smb].iloc[i-self.Dyp:i]
+            future_data = df[smb].iloc[i:i+self.Dyf]
+            flattened_coeffs, lengths = self.decompose_and_flatten(future_data.values, 'db1')
+            new_row = {
+                'past_data': past_data,
+                'future_data': flattened_coeffs,
+                'cLength': lengths
+            }
+            new_df = new_df.append(new_row, ignore_index=True)
+        return new_df
+
+    def normalize(self,data):
+        #Normalize a pandas series by scaling its values to the range [0, 1].
+        return (data - data.min()) / (data.max() - data.min()), data.min(), data.max()
+
+    def apply_moving_horizon_norm(self,df,smb):
+        new_df = []
+        if isinstance(smb, str):
+            smb_col = smb
+        elif isinstance(smb, int):
+            smb_col = df.columns[smb]
+        else:
+            raise ValueError("smb should be either a string or an integer.")
+        for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
+            past_data = df[smb_col].iloc[i-self.Dyp:i]
+            past_data_normalized, mindf, maxdf = self.normalize(past_data)
+            future_data = df[smb_col].iloc[i:i+self.Dyf]
+            future_data_rescaled = ((future_data - mindf) /
+                                    (maxdf - mindf))
+            flattened_coeffs, lengths = self.decompose_and_flatten(future_data_rescaled.values, 'db1')
+            new_row = {
+                'past_data': past_data_normalized,
+                'future_data': flattened_coeffs,
+                'cLength': lengths,
+                'minmax': [mindf,maxdf]
+            }
+            #print(new_row)
+            new_df.append(new_row)
+        return new_df    
+    
+    def Hrz_Nrm(self,smb):
+        # Apply the moving horizon to each dataframe in rates_lists
+        return [self.apply_moving_horizon_norm(df,smb) for df in self.full_rates]    
+
+    def Prepare_Data(self, symb):
+        print("Preparing Data...")
+        self.HNrates = self.Hrz_Nrm(symb)
+
+
 
     #-------------------------------
     #---Optimizations---------------
