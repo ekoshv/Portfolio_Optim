@@ -10,7 +10,6 @@ from sklearn.covariance import LedoitWolf
 from sklearn.covariance import MinCovDet
 import traceback
 
-
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
                  target_SR, target_Return, target_Volat,
