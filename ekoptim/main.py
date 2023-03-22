@@ -18,7 +18,8 @@ import pywt
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
                  target_SR, target_Return, target_Volat,
-                 max_weight, toler):
+                 max_weight, toler,
+                 full_rates, Dyp=120, Dyf=16, Thi=3):
         try:
             self.returns = returns  # Set returns
             self.target_SR = target_SR  # Set target Sharpe Ratio
@@ -57,6 +58,15 @@ class ekoptim():
                 {"type": "ineq",  # Constraint 8: Maximum weight constraint
                  "fun": lambda x: self.max_weight - x}
             ]
+            
+            self.HNrates = []
+            self.Predicted_Rates=[]
+            self.Dyp = Dyp   # Number of past days to consider in the moving horizon
+            self.Dyf = Dyf    # Number of future days to predict in the moving horizon
+            self.Thi = Thi   # Time horizon interval (in days)
+            self.full_rates = full_rates
+            self.new_full_rates = []
+            self.nnmodel = tf.keras.Sequential()
     
         except Exception as e:
             print(f"An error occurred: {e}")

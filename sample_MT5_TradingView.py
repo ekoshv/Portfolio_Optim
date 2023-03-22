@@ -135,7 +135,9 @@ if __name__ == "__main__":
     otp_sel = int(input("Which type of opt you wish: "))
 #%%
     optimizerTV = ekoptim(returnsTV, risk_free_rate, target_SR,
-                        target_Return, target_Volat, max_weight,tol)
+                        target_Return, target_Volat, max_weight,tol,
+                        full_rates = rates_list, Dyp=128, Dyf=16, Thi=3)
+    optimizerTV.Prepare_Data('close')
 #%%
     print("Optimization started, please wait...")
     optimized_weights_TV = optimizerTV.optiselect(otp_sel)
