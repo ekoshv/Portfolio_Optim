@@ -8,19 +8,12 @@ import pandas as pd
 import datetime
 from sklearn.covariance import LedoitWolf
 import traceback
-import tensorflow as tf
-from sklearn.model_selection import train_test_split
-import os
-from tensorflow.keras.callbacks import ModelCheckpoint
-#from sklearn.metrics import accuracy_score
-import pywt
 
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
                                target_SR, target_Return, target_Volat,
-                               max_weight,toler,
-                               full_rates,Dyp=120, Dyf=30, Thi=5):
+                               max_weight,toler):
         self.returns = returns
         self.target_SR = target_SR
         self.target_Return = target_Return
@@ -34,8 +27,6 @@ class ekoptim():
         self.durc = self.days/252
         self.risk_free_rate = risk_free_rate*self.durc
         self.toler = toler
-        self.HNrates = []
-        self.Predicted_Rates=[]
         
         
         #define constraints
@@ -57,13 +48,6 @@ class ekoptim():
                              "fun":lambda x: -0.85*self.target_Volat+self.risk_cnt(x)},
                             {"type":"ineq",#7 max weight
                              "fun":lambda x: self.max_weight-x}]
-    
-        self.Dyp = Dyp   # Number of past days to consider in the moving horizon
-        self.Dyf = Dyf    # Number of future days to predict in the moving horizon
-        self.Thi = Thi   # Time horizon interval (in days)
-        self.full_rates = full_rates
-        self.new_full_rates = []
-        self.nnmodel = tf.keras.Sequential()
         
     #define the optimization functions    
     def __initial_weight(self, w0):
@@ -83,285 +67,7 @@ class ekoptim():
                     corr[i, j] = corr[j, i] = cov[i, j] / np.sqrt(cov[i, i] * cov[j, j])
         
         return corr
-
-    def decompose_and_flatten(self, data, wavelet):
-        coeffs = pywt.wavedec(data, wavelet)
-        lengths = [len(c) for c in coeffs]
-        flattened_coeffs = np.concatenate(coeffs)
-        return flattened_coeffs, lengths
     
-    def reconstruct_from_flattenedx(self, flattened_coeffs, wavelet, lengths):
-        coeffs = []
-        start = 0
-        for length in lengths:
-            coeffs.append(flattened_coeffs[start:start + length])
-            start += length
-        reconstructed_data = pywt.waverec(coeffs, wavelet)
-        return reconstructed_data
-
-    def reconstruct_from_flattened(self, flattened_coeffs, wavelet, lengths):
-        coeffs = []
-        start = 0
-        for length in lengths:
-            coeffs.append(flattened_coeffs[start:start + length])
-            start += length
-        
-        # Add print statements to inspect shapes
-        print("Flattened coeffs shape:", flattened_coeffs.shape)
-        print("Reconstructed coeffs shapes:", [c.shape for c in coeffs])
-    
-        reconstructed_data = pywt.waverec(coeffs, wavelet)
-        return reconstructed_data
-
-    def create_2d_image(self, data, wavelet):
-        # Perform wavelet decomposition
-        coeffs = pywt.wavedec(data, wavelet)
-        final_size = len(data)
-        # Repeat coefficients to the same length as the original data
-        repeated_coeffs = []
-        for c in coeffs:
-            repeated = np.repeat(c, len(data) // len(c))
-            repeated_coeffs.append(repeated)
-        
-        # Stack the repeated coefficients to create a 2D image
-        image = np.stack(repeated_coeffs)
-        
-        # Repeat the image to create a final square image
-        repeat_x = final_size // image.shape[1]
-        repeat_y = final_size // image.shape[0]
-        final_image = np.tile(image, (repeat_y, repeat_x))
-        
-        return final_image
-    
-    # Define a function that applies the moving horizon to a given dataframe
-    def apply_moving_horizon(self, df, smb):
-        new_df = pd.DataFrame()
-        for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
-            past_data = df[smb].iloc[i-self.Dyp:i]
-            past_data_im =  self.create_2d_image(past_data.values,'db1')
-            future_data = df[smb].iloc[i:i+self.Dyf]
-            flattened_coeffs, lengths = self.decompose_and_flatten(future_data.values, 'db1')
-            new_row = {
-                'past_data': past_data_im,
-                'future_data': flattened_coeffs,
-                'cLength': lengths
-            }
-            new_df = new_df.append(new_row, ignore_index=True)
-        return new_df
-
-    def r_squared(self, y_true, y_pred):
-        # Calculate the residual sum of squares (numerator)
-        residual = tf.reduce_sum(tf.square(tf.subtract(y_true, y_pred)))
-        
-        # Calculate the total sum of squares (denominator)
-        total = tf.reduce_sum(tf.square(tf.subtract(y_true, tf.reduce_mean(y_true))))
-        
-        # Calculate R-squared
-        r2 =  tf.divide(tf.exp(tf.subtract(1.0, tf.divide(residual, total))),tf.exp(1.0))
-        
-        return r2
-
-    def normalize(self,data):
-        #Normalize a pandas series by scaling its values to the range [0, 1].
-        return (data - data.min()) / (data.max() - data.min()), data.min(), data.max()
-
-    def apply_moving_horizon_norm(self,df,smb):
-        new_df = []
-        if isinstance(smb, str):
-            smb_col = smb
-        elif isinstance(smb, int):
-            smb_col = df.columns[smb]
-        else:
-            raise ValueError("smb should be either a string or an integer.")
-        for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
-            past_data = df[smb_col].iloc[i-self.Dyp:i]
-            past_data_normalized, mindf, maxdf = self.normalize(past_data)
-            past_data_nm_im =  self.create_2d_image(past_data_normalized.values,'db1')
-            future_data = df[smb_col].iloc[i:i+self.Dyf]
-            future_data_rescaled = ((future_data - past_data.min()) /
-                                    (past_data.max() - past_data.min()))
-            flattened_coeffs, lengths = self.decompose_and_flatten(future_data_rescaled.values, 'db1')
-            new_row = {
-                'past_data': past_data_nm_im,
-                'future_data': flattened_coeffs,
-                'cLength': lengths,
-                'minmax': [mindf,maxdf]
-            }
-            #print(new_row)
-            new_df.append(new_row)
-        return new_df
-    
-    #---------------------------------------------------
-    #---Neural Network ---------------------------------
-    #---------------------------------------------------     
-    def Hrz_Nrm(self,smb):
-        # Apply the moving horizon to each dataframe in rates_lists
-        return [self.apply_moving_horizon_norm(df,smb) for df in self.full_rates]
-
-    def create_model(self, image_height, image_width):
-        model = tf.keras.Sequential([
-            tf.keras.layers.Input(shape=(image_height, image_width, 1)),
-    
-            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
-                           kernel_size=7, strides=1,
-                           padding="same", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling2D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),
-        
-            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
-                                   kernel_size=7, strides=1,
-                                   padding="same", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling2D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),
-        
-            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
-                                   kernel_size=7, strides=1,
-                                   padding="same", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling2D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),
-        
-            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
-                                   kernel_size=7, strides=1,
-                                   padding="same", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling2D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),
-        
-            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
-                                   kernel_size=7, strides=1,
-                                   padding="same", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling2D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),
-        
-            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
-                                   kernel_size=7, strides=1,
-                                   padding="same", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling2D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),
-        
-            tf.keras.layers.Flatten(),
-        
-            tf.keras.layers.Dense(1024, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-        
-            tf.keras.layers.Dense(1024, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-        
-            tf.keras.layers.Dense(1024, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-        
-            tf.keras.layers.Dense(1024, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-        
-            tf.keras.layers.Dense(5 * self.Dyf, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-    
-            tf.keras.layers.Dense(self.Dyf)
-        ])
-        return model
-
-    def prepare_image(image):
-        # Ensure the image has only one channel (grayscale)
-        if len(image.shape) > 2 and image.shape[2] > 1:
-            image = np.mean(image, axis=2)
-    
-        # Add the channel dimension (1 channel) to the image
-        image = np.expand_dims(image, axis=-1)
-
-        return image
-    
-    def NNmake(self,symb='close', learning_rate=0.001, epochs=100, batch_size=32, load_train=False):
-        print("Preparing Data...")
-        self.HNrates = self.Hrz_Nrm(symb)
-        mz = self.HNrates[0][0]['past_data'].shape[0]
-        nz = self.HNrates[0][0]['past_data'].shape[1]
-        # Define the neural network
-        model = self.create_model(mz, nz) 
-
-        # Compile the model with mean squared error loss
-        opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-        model.compile(optimizer=opt, loss='mape', metrics=[self.r_squared])
-
-        # Set up the callback to save the best model weights
-        checkpoint_dir = './checkpoints'
-        if not os.path.exists(checkpoint_dir):
-            os.makedirs(checkpoint_dir)
-        filepath = checkpoint_dir + '/best_weights.hdf5'
-        checkpoint_callback = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-
-        # Train the model on the data in new_rates_lists
-        X = np.array([d['past_data'] for lst in self.HNrates for d in lst])
-        X = np.expand_dims(X, axis=-1)  # add a new axis for the input feature
-        
-        y = np.array([d['future_data'] for lst in self.HNrates for d in lst])
-        
-
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
-        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
-        model.summary()
-        print("Training Model...")
-        if(load_train):
-            model.load_weights(filepath)
-        model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
-                  validation_split=0.33, shuffle=False ,
-                  callbacks=[tensorboard_callback, checkpoint_callback])
-        # Load the best model weights
-        model.load_weights(filepath)
-        
-        # Evaluate the model on the test set
-        score = model.evaluate(X_test, y_test)
-        print("The scores: ", score)
-        self.nnmodel = model
-    
-    def predict_next(self, rate, smb):
-        
-        if isinstance(smb, str):
-            smb_col = smb
-        elif isinstance(smb, int):
-            smb_col = rate.columns[smb]
-        else:
-            raise ValueError("smb should be either a string or an integer.")
-        # Get the last Dyp rows of full_rates for the given symbol
-        past_data = rate[smb_col].tail(self.Dyp)
-    
-        # Normalize the past data using the same min and max values used during training
-        past_data_normalized, mindf, maxdf = self.normalize(past_data)
-        past_data_nm_im =  self.create_2d_image(past_data_normalized.values,'db1')
-        #print(past_data_nm_im.shape)
-        # Reshape the past data for input to the neural network
-        X = np.expand_dims(past_data_nm_im, axis=(0, -1))
-    
-        # Use the trained neural network model to predict the future data
-        y_pred_w = np.array(self.nnmodel.predict(X))
-        print('Hoooyyyii')
-        y_pred_w_r = y_pred_w.squeeze()
-        y_pred = self.reconstruct_from_flattened(y_pred_w_r, 'db1', self.HNrates[0][0]['cLength'])
-        # Rescale the predicted future data to the original scale
-        y_pred_rescaled = y_pred * (maxdf-mindf) + mindf
-    
-        return y_pred_rescaled
-
-    
-    def predict_all(self, smb):
-        # Loop through all dataframes in full_rates
-        for df in self.full_rates:
-            # Predict the next values for the given symbol using the predict_next method
-            y_pred = self.predict_next(df, smb)
-            self.Predicted_Rates.append(y_pred)
-            
-    
-            
-
     #---------------------------------------------------
     #---Risk, Sharpe, Sortino, Return, Surprise --------
     #---------------------------------------------------        
