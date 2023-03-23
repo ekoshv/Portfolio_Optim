@@ -326,51 +326,49 @@ class ekoptim():
         self.spn = spn
         self.HNrates = self.Hrz_Nrm(symb, spn)
 
+    def model_create(self):
+        model = tf.keras.Sequential([
+            tf.keras.layers.Input(shape=(self.Dyp, 1)),
+            
+            tf.keras.layers.SeparableConv1D(filters=max(round(self.Dyp/4), 32), kernel_size=9, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.MaxPooling1D(pool_size=2),
+            tf.keras.layers.Dropout(0.2),
+        
+            tf.keras.layers.SeparableConv1D(filters=max(round(self.Dyp/4), 32), kernel_size=7, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.MaxPooling1D(pool_size=2),
+            tf.keras.layers.Dropout(0.2),
+        
+            tf.keras.layers.SeparableConv1D(filters=max(round(self.Dyp/4), 32), kernel_size=5, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.MaxPooling1D(pool_size=2),
+            tf.keras.layers.Dropout(0.2),            
+        
+            tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(128)),
+            
+            tf.keras.layers.Dense(512, activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.5),
+        
+            tf.keras.layers.Dense(256, activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.5),
+        
+            tf.keras.layers.Dense(5*self.Dyf, activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.5),
+        
+            tf.keras.layers.Dense(self.Dyf)
+        ])
+        return model
+
     def NNmake(self,
                learning_rate=0.001, epochs=100, batch_size=32,
                load_train=False):
 
        # Define the neural network
-       model = tf.keras.Sequential([
-           tf.keras.layers.Input(shape=(self.Dyp, 1)),
-           
-           tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
-                                  kernel_size=9, strides=1,
-                                  padding="causal", activation="relu"),
-           tf.keras.layers.BatchNormalization(),
-           tf.keras.layers.MaxPooling1D(pool_size=2),
-           tf.keras.layers.Dropout(0.2),
-
-           tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
-                                  kernel_size=7, strides=1,
-                                  padding="causal", activation="relu"),
-           tf.keras.layers.BatchNormalization(),
-           tf.keras.layers.MaxPooling1D(pool_size=2),
-           tf.keras.layers.Dropout(0.2),
-
-           tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
-                                  kernel_size=5, strides=1,
-                                  padding="causal", activation="relu"),
-           tf.keras.layers.BatchNormalization(),
-           tf.keras.layers.MaxPooling1D(pool_size=2),
-           tf.keras.layers.Dropout(0.2),            
-           
-           tf.keras.layers.Flatten(),
-           
-           tf.keras.layers.Dense(1024, activation="relu"),
-           tf.keras.layers.BatchNormalization(),
-           tf.keras.layers.Dropout(0.5),
-           
-           tf.keras.layers.Dense(1024, activation="relu"),
-           tf.keras.layers.BatchNormalization(),
-           tf.keras.layers.Dropout(0.5),
-           
-           tf.keras.layers.Dense(5*self.Dyf, activation="relu"),
-           tf.keras.layers.BatchNormalization(),
-           tf.keras.layers.Dropout(0.5),
-           
-           tf.keras.layers.Dense(self.Dyf)
-       ])
+       model = self.model_create()
        
        # Compile the model with mean squared error loss
        opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
@@ -408,6 +406,15 @@ class ekoptim():
        score = model.evaluate(X_test, y_test)
        print(score)
        self.nnmodel = model
+
+    def load_model_fit(self):
+        model = self.model_create()
+        checkpoint_dir = './checkpoints'
+        if not os.path.exists(checkpoint_dir):
+            os.makedirs(checkpoint_dir)
+        filepath = checkpoint_dir + '/best_weights.hdf5'
+        model.load_weights(filepath)
+        self.nnmodel = model
 
     def predict_next(self, rate, smb):
         

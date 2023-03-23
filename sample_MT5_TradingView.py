@@ -140,6 +140,7 @@ if __name__ == "__main__":
     optimizerTV.Prepare_Data(-1, 10)
 #%%
     optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32, load_train=False)
+
 #%%
     print("Optimization started, please wait...")
     optimized_weights_TV = optimizerTV.optiselect(otp_sel)
