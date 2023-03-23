@@ -2,12 +2,12 @@ import MetaTrader5 as mt5
 import numpy as np
 import pandas as pd
 #import matplotlib.pyplot as plt
-from sklearn.covariance import LedoitWolf
 #from concurrent.futures import ThreadPoolExecutor
 from ekoptim import ekoptim
 from ekoView import TradingViewfeed, Interval
 import datetime
 from tqdm import tqdm
+from sklearn.covariance import LedoitWolf
 
 def connect_to_metatrader(path, username, password, server):
     # initialize connection to the MetaTrader 5 terminal

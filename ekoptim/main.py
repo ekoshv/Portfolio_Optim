@@ -346,8 +346,6 @@ class ekoptim():
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),            
-        
-            tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(128)),
             
             tf.keras.layers.Dense(512, activation="relu"),
             tf.keras.layers.BatchNormalization(),
