@@ -324,8 +324,120 @@ class ekoptim():
         print("Preparing Data...")
         self.HNrates = self.Hrz_Nrm(symb)
 
+    def NNmake(self,
+               learning_rate=0.001, epochs=100, batch_size=32,
+               load_train=False):
 
+       # Define the neural network
+       model = tf.keras.Sequential([
+           tf.keras.layers.Input(shape=(self.Dyp, 1)),
+           
+           tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
+                                  kernel_size=9, strides=1,
+                                  padding="causal", activation="relu"),
+           tf.keras.layers.BatchNormalization(),
+           tf.keras.layers.MaxPooling1D(pool_size=2),
+           tf.keras.layers.Dropout(0.2),
 
+           tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
+                                  kernel_size=7, strides=1,
+                                  padding="causal", activation="relu"),
+           tf.keras.layers.BatchNormalization(),
+           tf.keras.layers.MaxPooling1D(pool_size=2),
+           tf.keras.layers.Dropout(0.2),
+
+           tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
+                                  kernel_size=5, strides=1,
+                                  padding="causal", activation="relu"),
+           tf.keras.layers.BatchNormalization(),
+           tf.keras.layers.MaxPooling1D(pool_size=2),
+           tf.keras.layers.Dropout(0.2),            
+           
+           tf.keras.layers.Flatten(),
+           
+           tf.keras.layers.Dense(1024, activation="relu"),
+           tf.keras.layers.BatchNormalization(),
+           tf.keras.layers.Dropout(0.5),
+           
+           tf.keras.layers.Dense(1024, activation="relu"),
+           tf.keras.layers.BatchNormalization(),
+           tf.keras.layers.Dropout(0.5),
+           
+           tf.keras.layers.Dense(5*self.Dyf, activation="relu"),
+           tf.keras.layers.BatchNormalization(),
+           tf.keras.layers.Dropout(0.5),
+           
+           tf.keras.layers.Dense(self.Dyf)
+       ])
+       
+       # Compile the model with mean squared error loss
+       opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+       model.compile(optimizer=opt, loss='mape', metrics=[self.r_squared])
+       #model.compile(optimizer=opt, loss='mape')
+   
+       # Set up the callback to save the best model weights
+       checkpoint_dir = './checkpoints'
+       if not os.path.exists(checkpoint_dir):
+           os.makedirs(checkpoint_dir)
+       filepath = checkpoint_dir + '/best_weights.hdf5'
+       checkpoint_callback = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+   
+       # Train the model on the data in new_rates_lists
+       X = np.array([d['past_data'] for lst in self.HNrates for d in lst])
+       X = np.expand_dims(X, axis=-1)  # add a new axis for the input feature
+       #X_in = X.reshape(X.shape[0],1,X.shape[1])
+       y = np.array([d['future_data'] for lst in self.HNrates for d in lst])
+       #y_in = y.reshape(y.shape[0],1,y.shape[1])
+   
+       X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
+       tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
+       model.summary()
+       print("Training Model...")
+       if(load_train):
+            model.load_weights(filepath)
+       model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
+                 validation_split=0.33, shuffle=True ,
+                 callbacks=[tensorboard_callback, checkpoint_callback])
+       # Load the best model weights
+       model.load_weights(filepath)
+       
+       # Evaluate the model on the test set
+       score = model.evaluate(X_test, y_test)
+       print(score)
+       self.nnmodel = model
+
+    def predict_next(self, rate, smb):
+        
+        if isinstance(smb, str):
+            smb_col = smb
+        elif isinstance(smb, int):
+            smb_col = rate.columns[smb]
+        else:
+            raise ValueError("smb should be either a string or an integer.")
+        # Get the last Dyp rows of full_rates for the given symbol
+        past_data = rate[smb_col].tail(self.Dyp)
+    
+        # Normalize the past data using the same min and max values used during training
+        past_data_normalized, mindf, maxdf = self.normalize(past_data)
+    
+        # Reshape the past data for input to the neural network
+        X = past_data_normalized.values.reshape(1, self.Dyp, 1)
+    
+        # Use the trained neural network model to predict the future data
+        y_pred = self.nnmodel.predict(X)
+    
+        # Rescale the predicted future data to the original scale
+        y_pred_rescaled = y_pred * (maxdf-mindf) + mindf
+    
+        return y_pred_rescaled
+
+    
+    def predict_all(self, smb):
+        # Loop through all dataframes in full_rates
+        for df in self.full_rates:
+            # Predict the next values for the given symbol using the predict_next method
+            y_pred = self.predict_next(df, smb)
+            self.Predicted_Rates.append(y_pred)
     #-------------------------------
     #---Optimizations---------------
     #-------------------------------
