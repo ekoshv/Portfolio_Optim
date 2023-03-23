@@ -291,7 +291,7 @@ class ekoptim():
         #Normalize a pandas series by scaling its values to the range [0, 1].
         return (data - data.min()) / (data.max() - data.min()), data.min(), data.max()
 
-    def apply_moving_horizon_norm(self,df,smb):
+    def apply_moving_horizon_norm(self,df,smb,spn):
         new_df = []
         if isinstance(smb, str):
             smb_col = smb
@@ -306,6 +306,7 @@ class ekoptim():
             future_data_rescaled = ((future_data - mindf) /
                                     (maxdf - mindf))
             flattened_coeffs, lengths = self.decompose_and_flatten(future_data_rescaled.values, 'db1')
+            flattened_coeffs[1:] = [num*spn for num in flattened_coeffs[1:]]
             new_row = {
                 'past_data': past_data_normalized,
                 'future_data': flattened_coeffs,
@@ -316,13 +317,14 @@ class ekoptim():
             new_df.append(new_row)
         return new_df    
     
-    def Hrz_Nrm(self,smb):
+    def Hrz_Nrm(self,smb, spn):
         # Apply the moving horizon to each dataframe in rates_lists
-        return [self.apply_moving_horizon_norm(df,smb) for df in self.full_rates]    
+        return [self.apply_moving_horizon_norm(df,smb, spn) for df in self.full_rates]    
 
-    def Prepare_Data(self, symb):
+    def Prepare_Data(self, symb, spn):
         print("Preparing Data...")
-        self.HNrates = self.Hrz_Nrm(symb)
+        self.spn = spn
+        self.HNrates = self.Hrz_Nrm(symb, spn)
 
     def NNmake(self,
                learning_rate=0.001, epochs=100, batch_size=32,
@@ -426,7 +428,7 @@ class ekoptim():
         # Use the trained neural network model to predict the future data
         y_pred = np.array(self.nnmodel.predict(X))
         y_pred = y_pred.squeeze()
-        
+        y_pred[1:]=[num/self.spn for num in y_pred[1:]]
         # Rescale the predicted future data to the original scale
         y_pred_rescaled = y_pred * (maxdf-mindf) + mindf
     
