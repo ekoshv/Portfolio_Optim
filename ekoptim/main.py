@@ -1,4 +1,6 @@
 import numpy as np
+from sklearnex import patch_sklearn
+patch_sklearn()
 import math
 from scipy.optimize import minimize
 from scipy.stats import norm
