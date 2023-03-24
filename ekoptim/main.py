@@ -31,6 +31,7 @@ class LSTMCell(tf.keras.layers.Layer):
         self.bias = self.add_weight(shape=(4 * self.units,), initializer='zeros', name='bias')
         super(LSTMCell, self).build(input_shape)
 
+    @tf.function
     def call(self, inputs, states):
         h_tm1, c_tm1 = states
 
@@ -44,7 +45,7 @@ class LSTMCell(tf.keras.layers.Layer):
 
         h = o * tf.nn.tanh(c)
         return h, [h, c]
-    
+
     def get_config(self):
         config = super().get_config()
         config.update({
@@ -55,7 +56,8 @@ class LSTMCell(tf.keras.layers.Layer):
 class LSTMLayer(tf.keras.layers.RNN):
     def __init__(self, units, return_sequences=False, return_state=False, **kwargs):
         cell = LSTMCell(units)
-        super(LSTMLayer, self).__init__(cell, return_sequences=return_sequences, return_state=return_state, **kwargs)
+        super(LSTMLayer, self).__init__(cell, return_sequences=return_sequences,
+                                        return_state=return_state, **kwargs)
 
     def get_config(self):
         config = super().get_config()
