@@ -17,6 +17,61 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 import os
 import pywt
 
+class LSTMCell(tf.keras.layers.Layer):
+    def __init__(self, units):
+        super(LSTMCell, self).__init__()
+        self.units = units
+        self.state_size = (units, units)
+
+    def build(self, input_shape):
+        input_dim = input_shape[-1]
+
+        # Initialize weights and biases for input gate
+        self.W_i = self.add_weight(shape=(input_dim, self.units), initializer='glorot_uniform', name='W_i')
+        self.U_i = self.add_weight(shape=(self.units, self.units), initializer='orthogonal', name='U_i')
+        self.b_i = self.add_weight(shape=(self.units,), initializer='zeros', name='b_i')
+
+        # Initialize weights and biases for forget gate
+        self.W_f = self.add_weight(shape=(input_dim, self.units), initializer='glorot_uniform', name='W_f')
+        self.U_f = self.add_weight(shape=(self.units, self.units), initializer='orthogonal', name='U_f')
+        self.b_f = self.add_weight(shape=(self.units,), initializer='zeros', name='b_f')
+
+        # Initialize weights and biases for cell state update
+        self.W_c = self.add_weight(shape=(input_dim, self.units), initializer='glorot_uniform', name='W_c')
+        self.U_c = self.add_weight(shape=(self.units, self.units), initializer='orthogonal', name='U_c')
+        self.b_c = self.add_weight(shape=(self.units,), initializer='zeros', name='b_c')
+
+        # Initialize weights and biases for output gate
+        self.W_o = self.add_weight(shape=(input_dim, self.units), initializer='glorot_uniform', name='W_o')
+        self.U_o = self.add_weight(shape=(self.units, self.units), initializer='orthogonal', name='U_o')
+        self.b_o = self.add_weight(shape=(self.units,), initializer='zeros', name='b_o')
+
+    def call(self, inputs, states):
+        h_prev, c_prev = states
+
+        # Input gate
+        i = tf.nn.sigmoid(tf.matmul(inputs, self.W_i) + tf.matmul(h_prev, self.U_i) + self.b_i)
+
+        # Forget gate
+        f = tf.nn.sigmoid(tf.matmul(inputs, self.W_f) + tf.matmul(h_prev, self.U_f) + self.b_f)
+
+        # Cell state update
+        c_tilde = tf.nn.tanh(tf.matmul(inputs, self.W_c) + tf.matmul(h_prev, self.U_c) + self.b_c)
+        c = f * c_prev + i * c_tilde
+
+        # Output gate
+        o = tf.nn.sigmoid(tf.matmul(inputs, self.W_o) + tf.matmul(h_prev, self.U_o) + self.b_o)
+
+        # Hidden state update
+        h = o * tf.nn.tanh(c)
+
+        return h, [h, c]
+
+class LSTMLayer(tf.keras.layers.RNN):
+    def __init__(self, units, return_sequences=False, return_state=False, **kwargs):
+        cell = LSTMCell(units)
+        super(LSTMLayer, self).__init__(cell, return_sequences=return_sequences, return_state=return_state, **kwargs)
+
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
                  target_SR, target_Return, target_Volat,
@@ -329,44 +384,50 @@ class ekoptim():
         self.HNrates = self.Hrz_Nrm(symb, spn)
 
     def model_create(self):
+        
+        lstm_units = 64  # Adjust this value based on your requirements
+
         model = tf.keras.Sequential([
             tf.keras.layers.Input(shape=(self.Dyp, 1)),
-            
-            tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
+        
+            tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4), 32)),
                                    kernel_size=9, strides=1,
                                    padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
-
-            tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
+        
+            tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4), 32)),
                                    kernel_size=7, strides=1,
                                    padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
-
-            tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4),32)),
+        
+            tf.keras.layers.Conv1D(filters=(max(round(self.Dyp/4), 32)),
                                    kernel_size=5, strides=1,
                                    padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),            
-            
+            tf.keras.layers.Dropout(0.2),
+        
+            # Add the custom LSTM layer
+            LSTMLayer(lstm_units, return_sequences=True),
+        
             tf.keras.layers.Flatten(),
-            
+        
             tf.keras.layers.Dense(512, activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
-            
+        
             tf.keras.layers.Dense(256, activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
-            
-            tf.keras.layers.Dense(5*self.Dyf, activation="relu"),
+        
+            tf.keras.layers.Dense(5 * self.Dyf, activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
-            
+        
             tf.keras.layers.Dense(self.Dyf)
         ])
         return model
