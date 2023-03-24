@@ -67,7 +67,7 @@ class LSTMLayer(tf.keras.layers.Layer):
             return_state=False
         )
         self.lstm_layer.build(input_shape)
-        super(CustomLSTM, self).build(input_shape)
+        super(LSTMLayer, self).build(input_shape)
 
     def call(self, inputs):
         return self.lstm_layer(inputs)
