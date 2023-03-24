@@ -54,35 +54,29 @@ class LSTMCell(tf.keras.layers.Layer):
         return config
 
 class LSTMLayer(tf.keras.layers.Layer):
-    def __init__(self, units, return_sequences=False, go_backwards=False, return_state=False, **kwargs):
+    def __init__(self, units, return_sequences=False, **kwargs):
         super(LSTMLayer, self).__init__(**kwargs)
         self.units = units
         self.return_sequences = return_sequences
-        self.go_backwards = go_backwards
-        self.return_state = return_state
         self.lstm_cell = tf.keras.layers.LSTMCell(units)
 
     def build(self, input_shape):
         self.lstm_layer = tf.keras.layers.RNN(
             self.lstm_cell,
             return_sequences=self.return_sequences,
-            return_state=self.return_state,
-            go_backwards=self.go_backwards
+            return_state=False
         )
-        self.built = True
+        self.lstm_layer.build(input_shape)
+        super(LSTMLayer, self).build(input_shape)
 
     def call(self, inputs):
-        input_shape = tf.shape(inputs)
-        reshaped_inputs = tf.reshape(inputs, (input_shape[0], input_shape[1], input_shape[2]))
-        return self.lstm_layer(reshaped_inputs)
+        return self.lstm_layer(inputs)
 
     def get_config(self):
         config = super().get_config()
         config.update({
             "units": self.units,
             "return_sequences": self.return_sequences,
-            "go_backwards": self.go_backwards,
-            "return_state": self.return_state,
         })
         return config
 
@@ -466,7 +460,7 @@ class ekoptim():
             tf.keras.layers.Flatten(),
             
             #tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(128)),
-            tf.keras.layers.Bidirectional(LSTMLayer(lstm_units, return_sequences=True)),
+            LSTMLayer(lstm_units, return_sequences=True),
             
             
             tf.keras.layers.Dense(1024, activation="relu"),
