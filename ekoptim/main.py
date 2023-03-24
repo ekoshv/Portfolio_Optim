@@ -54,18 +54,19 @@ class LSTMCell(tf.keras.layers.Layer):
         return config
 
 class LSTMLayer(tf.keras.layers.Layer):
-    def __init__(self, units, return_sequences=False, go_backwards=False, **kwargs):
+    def __init__(self, units, return_sequences=False, go_backwards=False, return_state=False, **kwargs):
         super(LSTMLayer, self).__init__(**kwargs)
         self.units = units
         self.return_sequences = return_sequences
         self.go_backwards = go_backwards
+        self.return_state = return_state
         self.lstm_cell = tf.keras.layers.LSTMCell(units)
 
     def build(self, input_shape):
         self.lstm_layer = tf.keras.layers.RNN(
             self.lstm_cell,
             return_sequences=self.return_sequences,
-            return_state=False,
+            return_state=self.return_state,
             go_backwards=self.go_backwards
         )
         self.lstm_layer.build(input_shape)
@@ -83,6 +84,7 @@ class LSTMLayer(tf.keras.layers.Layer):
             "units": self.units,
             "return_sequences": self.return_sequences,
             "go_backwards": self.go_backwards,
+            "return_state": self.return_state,
         })
         return config
 
