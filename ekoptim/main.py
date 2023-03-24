@@ -54,17 +54,16 @@ class LSTMCell(tf.keras.layers.Layer):
         return config
 
 class LSTMLayer(tf.keras.layers.RNN):
-    def __init__(self, units, return_sequences=False, return_state=False, **kwargs):
-        cell = LSTMCell(units)
-        super(LSTMLayer, self).__init__(cell, return_sequences=return_sequences,
-                                        return_state=return_state, **kwargs)
+    def __init__(self, lstm_units, return_sequences=False, return_state=False, **kwargs):
+        cell = LSTMCell(lstm_units)
+        super(LSTMLayer, self).__init__(cell, return_sequences=return_sequences, return_state=return_state, **kwargs)
 
     def get_config(self):
         config = super().get_config()
         config.update({
-            "units": self.cell.units,
+            "lstm_units": self.cell.units,
             "return_sequences": self.return_sequences,
-            "return_state": self.return_state,
+            "return_state": self.return_state
         })
         return config
 
