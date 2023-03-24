@@ -66,9 +66,10 @@ class LSTMLayer(tf.keras.layers.Layer):
         self.lstm_layer = tf.keras.layers.RNN(
             self.lstm_cell,
             return_sequences=self.return_sequences,
-            return_state=self.return_state,
-            go_backwards=self.go_backwards
+            return_state=False
         )
+        if input_shape[0] is None:
+            input_shape = (None,) + input_shape[1:]
         self.lstm_layer.build(input_shape)
         super(LSTMLayer, self).build(input_shape)
 
