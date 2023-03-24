@@ -393,7 +393,7 @@ class ekoptim():
 
     def model_create(self):
         
-        # lstm_units = 64  # Adjust this value based on your requirements
+        lstm_units = 64  # Adjust this value based on your requirements
 
         # model = tf.keras.Sequential([
         #     tf.keras.layers.Input(shape=(self.Dyp, 1)),
@@ -460,6 +460,7 @@ class ekoptim():
             tf.keras.layers.Flatten(),
             
             #tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(128)),
+            tf.keras.layers.Bidirectional(LSTMLayer(lstm_units, return_sequences=True)),
             
             
             tf.keras.layers.Dense(1024, activation="relu"),
