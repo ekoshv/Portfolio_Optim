@@ -24,47 +24,25 @@ class LSTMCell(tf.keras.layers.Layer):
         self.state_size = (units, units)
 
     def build(self, input_shape):
-        input_dim = input_shape[-1]
-
-        # Initialize weights and biases for input gate
-        self.W_i = self.add_weight(shape=(input_dim, self.units), initializer='glorot_uniform', name='W_i')
-        self.U_i = self.add_weight(shape=(self.units, self.units), initializer='orthogonal', name='U_i')
-        self.b_i = self.add_weight(shape=(self.units,), initializer='zeros', name='b_i')
-
-        # Initialize weights and biases for forget gate
-        self.W_f = self.add_weight(shape=(input_dim, self.units), initializer='glorot_uniform', name='W_f')
-        self.U_f = self.add_weight(shape=(self.units, self.units), initializer='orthogonal', name='U_f')
-        self.b_f = self.add_weight(shape=(self.units,), initializer='zeros', name='b_f')
-
-        # Initialize weights and biases for cell state update
-        self.W_c = self.add_weight(shape=(input_dim, self.units), initializer='glorot_uniform', name='W_c')
-        self.U_c = self.add_weight(shape=(self.units, self.units), initializer='orthogonal', name='U_c')
-        self.b_c = self.add_weight(shape=(self.units,), initializer='zeros', name='b_c')
-
-        # Initialize weights and biases for output gate
-        self.W_o = self.add_weight(shape=(input_dim, self.units), initializer='glorot_uniform', name='W_o')
-        self.U_o = self.add_weight(shape=(self.units, self.units), initializer='orthogonal', name='U_o')
-        self.b_o = self.add_weight(shape=(self.units,), initializer='zeros', name='b_o')
+        self.kernel = self.add_weight(shape=(input_shape[-1] + self.units, 4 * self.units),
+                                      initializer='glorot_uniform', name='kernel')
+        self.recurrent_kernel = self.add_weight(shape=(self.units, 4 * self.units),
+                                                initializer='orthogonal', name='recurrent_kernel')
+        self.bias = self.add_weight(shape=(4 * self.units,), initializer='zeros', name='bias')
+        super(LSTMCell, self).build(input_shape)
 
     def call(self, inputs, states):
-        h_prev, c_prev = states
+        h_tm1, c_tm1 = states
 
-        # Input gate
-        i = tf.nn.sigmoid(tf.matmul(inputs, self.W_i) + tf.matmul(h_prev, self.U_i) + self.b_i)
+        z = tf.matmul(tf.concat([inputs, h_tm1], axis=-1), self.kernel) + self.bias
+        z = tf.split(z, num_or_size_splits=4, axis=-1)
 
-        # Forget gate
-        f = tf.nn.sigmoid(tf.matmul(inputs, self.W_f) + tf.matmul(h_prev, self.U_f) + self.b_f)
+        i = tf.nn.sigmoid(z[0])
+        f = tf.nn.sigmoid(z[1])
+        c = f * c_tm1 + i * tf.nn.tanh(z[2])
+        o = tf.nn.sigmoid(z[3])
 
-        # Cell state update
-        c_tilde = tf.nn.tanh(tf.matmul(inputs, self.W_c) + tf.matmul(h_prev, self.U_c) + self.b_c)
-        c = f * c_prev + i * c_tilde
-
-        # Output gate
-        o = tf.nn.sigmoid(tf.matmul(inputs, self.W_o) + tf.matmul(h_prev, self.U_o) + self.b_o)
-
-        # Hidden state update
         h = o * tf.nn.tanh(c)
-
         return h, [h, c]
     
     def get_config(self):
