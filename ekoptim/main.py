@@ -17,68 +17,6 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 import os
 import pywt
 
-class LSTMCell(tf.keras.layers.Layer):
-    def __init__(self, units):
-        super(LSTMCell, self).__init__()
-        self.units = units
-        self.state_size = (units, units)
-
-    def build(self, input_shape):
-        self.kernel = self.add_weight(shape=(input_shape[-1] + self.units, 4 * self.units),
-                                      initializer='glorot_uniform', name='kernel')
-        self.recurrent_kernel = self.add_weight(shape=(self.units, 4 * self.units),
-                                                initializer='orthogonal', name='recurrent_kernel')
-        self.bias = self.add_weight(shape=(4 * self.units,), initializer='zeros', name='bias')
-        super(LSTMCell, self).build(input_shape)
-
-    @tf.function
-    def call(self, inputs, states):
-        h_tm1, c_tm1 = states
-
-        z = tf.matmul(tf.concat([inputs, h_tm1], axis=-1), self.kernel) + self.bias
-        z = tf.split(z, num_or_size_splits=4, axis=-1)
-
-        i = tf.nn.sigmoid(z[0])
-        f = tf.nn.sigmoid(z[1])
-        c = f * c_tm1 + i * tf.nn.tanh(z[2])
-        o = tf.nn.sigmoid(z[3])
-
-        h = o * tf.nn.tanh(c)
-        return h, [h, c]
-
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            "units": self.units,
-        })
-        return config
-
-class LSTMLayer(tf.keras.layers.Layer):
-    def __init__(self, units, return_sequences=False, **kwargs):
-        super(LSTMLayer, self).__init__(**kwargs)
-        self.units = units
-        self.return_sequences = return_sequences
-        self.lstm_cell = tf.keras.layers.LSTMCell(units)
-
-    def build(self, input_shape):
-        self.lstm_layer = tf.keras.layers.RNN(
-            self.lstm_cell,
-            return_sequences=self.return_sequences,
-            return_state=False
-        )
-        self.lstm_layer.build(input_shape)
-        super(LSTMLayer, self).build(input_shape)
-
-    def call(self, inputs):
-        return self.lstm_layer(inputs)
-
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            "units": self.units,
-            "return_sequences": self.return_sequences,
-        })
-        return config
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
@@ -393,8 +331,6 @@ class ekoptim():
 
     def model_create(self):
         
-        #lstm_units = 64  # Adjust this value based on your requirements
-        
         model = tf.keras.Sequential([
             tf.keras.layers.Input(shape=(self.Dyp, 1)),
             
@@ -413,11 +349,7 @@ class ekoptim():
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),            
             
-            tf.keras.layers.Flatten(),
-            
-            #tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(128)),
-            #LSTMLayer(lstm_units, return_sequences=True),
-            
+            tf.keras.layers.Flatten(),            
             
             tf.keras.layers.Dense(1024, activation="relu"),
             tf.keras.layers.BatchNormalization(),
