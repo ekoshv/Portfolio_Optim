@@ -70,13 +70,10 @@ class LSTMLayer(tf.keras.layers.Layer):
             go_backwards=self.go_backwards
         )
         self.lstm_layer.build(input_shape)
-        super(LSTMLayer, self).build(input_shape)
+        self.built = True
 
     def call(self, inputs):
-        input_shape = tf.shape(inputs)
-        if input_shape[0] is None:
-            input_shape = (None,) + input_shape[1:]
-        return self.lstm_layer(inputs, initial_state=self.lstm_layer.get_initial_state(inputs))
+        return self.lstm_layer(inputs)
 
     def get_config(self):
         config = super().get_config()
