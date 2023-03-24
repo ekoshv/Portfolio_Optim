@@ -72,8 +72,8 @@ class LSTMLayer(tf.keras.layers.Layer):
         self.lstm_layer.build(input_shape)
         super(LSTMLayer, self).build(input_shape)
 
-    def call(self, inputs):
-        return self.lstm_layer(inputs)
+    def call(self, inputs, **kwargs):
+        return self.lstm_layer(inputs, **kwargs)
 
     def get_config(self):
         config = super().get_config()
