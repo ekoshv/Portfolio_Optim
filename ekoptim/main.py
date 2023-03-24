@@ -67,6 +67,33 @@ class LSTMLayer(tf.keras.layers.RNN):
         })
         return config
 
+class CustomLSTM(tf.keras.layers.Layer):
+    def __init__(self, units, return_sequences=False, **kwargs):
+        super(CustomLSTM, self).__init__(**kwargs)
+        self.units = units
+        self.return_sequences = return_sequences
+        self.lstm_cell = tf.keras.layers.LSTMCell(units)
+
+    def build(self, input_shape):
+        self.lstm_layer = tf.keras.layers.RNN(
+            self.lstm_cell,
+            return_sequences=self.return_sequences,
+            return_state=False
+        )
+        self.lstm_layer.build(input_shape)
+        super(CustomLSTM, self).build(input_shape)
+
+    def call(self, inputs):
+        return self.lstm_layer(inputs)
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "units": self.units,
+            "return_sequences": self.return_sequences,
+        })
+        return config
+
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
                  target_SR, target_Return, target_Volat,
@@ -407,7 +434,7 @@ class ekoptim():
             tf.keras.layers.Dropout(0.2),
         
             # Add the custom LSTM layer
-            LSTMLayer(lstm_units, return_sequences=True),
+            CustomLSTM(lstm_units, return_sequences=True),
         
             tf.keras.layers.Flatten(),
         
