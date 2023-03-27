@@ -138,10 +138,12 @@ if __name__ == "__main__":
                         target_Return, target_Volat, max_weight,tol,
                         full_rates = rates_list, Dyp=90, Dyf=8, Thi=3)
 #%%
-    #optimizerTV.Prepare_Data(-1, 10)
+    optimizerTV.Prepare_Data(-1, 10)
 #%%
-    #optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32, load_train=False)
-
+    optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32, load_train=False)
+#%%
+    optimizerTV.load_model_fit()
+    optimizerTV.predict_all(-1)
 #%%
     print("Optimization started, please wait...")
     optimized_weights_TV = optimizerTV.optiselect(otp_sel)

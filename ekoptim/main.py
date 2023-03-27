@@ -259,6 +259,20 @@ class ekoptim():
         r2 =  tf.divide(tf.exp(tf.subtract(1.0, tf.divide(residual, total))),tf.exp(1.0))
         
         return r2
+
+    def reshape_nm(L):
+    
+        # Find the factors of L
+        factors = [i for i in range(1, L+1) if L % i == 0]
+    
+        # Find the factor pair closest to a square shape
+        mid = len(factors) // 2
+        if len(factors) % 2 == 0:
+            m, n = factors[mid-1], factors[mid]
+        else:
+            m = n = factors[mid]
+    
+        return n, m
     #--- Wavelets ------
     def decompose_and_flatten(self, data, wavelet):
         coeffs = pywt.wavedec(data, wavelet)
@@ -302,16 +316,20 @@ class ekoptim():
             smb_col = df.columns[smb]
         else:
             raise ValueError("smb should be either a string or an integer.")
+        
+        n, m = self.reshape_nm(self.Dyp)
         for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
             past_data = df[smb_col].iloc[i-self.Dyp:i]
             past_data_normalized, mindf, maxdf = self.normalize(past_data)
+            past_data_normalized.reshape(n,m)
+            past_data_normalized_rs = np.array(past_data_normalized).reshape((n, m))
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled = ((future_data - mindf) /
                                     (maxdf - mindf))
             flattened_coeffs, lengths = self.decompose_and_flatten(future_data_rescaled.values, 'db1')
             flattened_coeffs[1:] = [num*spn for num in flattened_coeffs[1:]]
             new_row = {
-                'past_data': past_data_normalized,
+                'past_data': past_data_normalized_rs,
                 'future_data': flattened_coeffs,
                 'cLength': lengths,
                 'minmax': [mindf,maxdf]
@@ -330,23 +348,29 @@ class ekoptim():
         self.HNrates = self.Hrz_Nrm(symb, spn)
 
     def model_create(self):
-        
+        n, m = self.reshape_nm(self.Dyp)
         model = tf.keras.Sequential([
-            tf.keras.layers.Input(shape=(self.Dyp, 1)),
+            tf.keras.layers.Input(shape=(n, m, 1)),
             
-            tf.keras.layers.SeparableConv1D(filters=max(round(self.Dyp/4), 32), kernel_size=9, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
+                           kernel_size=9, strides=1,
+                           padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling1D(pool_size=2),
+            tf.keras.layers.MaxPooling2D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
         
-            tf.keras.layers.SeparableConv1D(filters=max(round(self.Dyp/4), 32), kernel_size=7, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
+                           kernel_size=9, strides=1,
+                           padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling1D(pool_size=2),
+            tf.keras.layers.MaxPooling2D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
         
-            tf.keras.layers.SeparableConv1D(filters=max(round(self.Dyp/4), 32), kernel_size=5, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
+                           kernel_size=9, strides=1,
+                           padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling1D(pool_size=2),
+            tf.keras.layers.MaxPooling2D(pool_size=2),
             tf.keras.layers.Dropout(0.2),            
             
             tf.keras.layers.Flatten(),            
@@ -434,10 +458,10 @@ class ekoptim():
     
         # Normalize the past data using the same min and max values used during training
         past_data_normalized, mindf, maxdf = self.normalize(past_data)
-    
+        n, m = self.reshape_nm(self.Dyp)
+        past_data_normalized_rs = np.array(past_data_normalized).reshape((n, m))
         # Reshape the past data for input to the neural network
-        X = past_data_normalized.values.reshape(1, self.Dyp, 1)
-    
+        X = np.expand_dims(past_data_normalized_rs, axis=(0, -1))
         # Use the trained neural network model to predict the future data
         y_pred = np.array(self.nnmodel.predict(X))
         y_pred = y_pred.squeeze()
