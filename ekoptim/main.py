@@ -328,7 +328,7 @@ class ekoptim():
         #Normalize a pandas series by scaling its values to the range [0, 1].
         return (data - data.min()) / (data.max() - data.min()), data.min(), data.max()
 
-    def apply_moving_horizon_norm(self,df,smb):
+    def apply_moving_horizon_norm(self,df,smb,spn):
         new_df = []
         if isinstance(smb, str):
             smb_col = smb
@@ -344,6 +344,7 @@ class ekoptim():
             future_data_rescaled = ((future_data - past_data.min()) /
                                     (past_data.max() - past_data.min()))
             flattened_coeffs, lengths = self.decompose_and_flatten(future_data_rescaled.values, 'db1')
+            flattened_coeffs[1:] = [num*spn for num in flattened_coeffs[1:]]
             new_row = {
                 'past_data': past_data_nm_im,
                 'future_data': flattened_coeffs,
