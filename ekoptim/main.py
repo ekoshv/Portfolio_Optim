@@ -260,7 +260,7 @@ class ekoptim():
         
         return r2
 
-    def reshape_nm(L):
+    def reshape_nm(self, L):
     
         # Find the factors of L
         factors = [i for i in range(1, L+1) if L % i == 0]
