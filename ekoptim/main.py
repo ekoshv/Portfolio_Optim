@@ -308,7 +308,8 @@ class ekoptim():
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled = ((future_data - mindf) /
                                     (maxdf - mindf))
-            flattened_coeffs, lengths = self.decompose_and_flatten(future_data_rescaled.values, 'db1')
+            flattened_coeffs, lengths = self.decompose_and_flatten(future_data_rescaled.values,
+                                                                   'db1')
             flattened_coeffs[1:] = [num*spn for num in flattened_coeffs[1:]]
             new_row = {
                 'past_data': past_data_normalized,
@@ -334,20 +335,29 @@ class ekoptim():
         model = tf.keras.Sequential([
             tf.keras.layers.Input(shape=(self.Dyp, 1)),
             
-            tf.keras.layers.SeparableConv1D(filters=max(round(self.Dyp/4), 32), kernel_size=9, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.SeparableConv1D(filters=max(round(self.Dyp/4), 32), kernel_size=9,
+                                            strides=1, padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
         
-            tf.keras.layers.SeparableConv1D(filters=max(round(self.Dyp/4), 32), kernel_size=7, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.SeparableConv1D(filters=max(round(self.Dyp/4), 32), kernel_size=7,
+                                            strides=1, padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
         
-            tf.keras.layers.SeparableConv1D(filters=max(round(self.Dyp/4), 32), kernel_size=5, strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.SeparableConv1D(filters=max(round(self.Dyp/4), 32), kernel_size=5,
+                                            strides=1, padding="causal", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling1D(pool_size=2),
             tf.keras.layers.Dropout(0.2),            
+
+            tf.keras.layers.SeparableConv1D(filters=max(round(self.Dyp/4), 32), kernel_size=3,
+                                            strides=1, padding="causal", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.MaxPooling1D(pool_size=2),
+            tf.keras.layers.Dropout(0.2),
             
             tf.keras.layers.Flatten(),            
             
@@ -355,6 +365,10 @@ class ekoptim():
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
         
+            tf.keras.layers.Dense(1024, activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.5),
+
             tf.keras.layers.Dense(1024, activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
