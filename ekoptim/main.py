@@ -321,7 +321,6 @@ class ekoptim():
         for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
             past_data = df[smb_col].iloc[i-self.Dyp:i]
             past_data_normalized, mindf, maxdf = self.normalize(past_data)
-            past_data_normalized.reshape(n,m)
             past_data_normalized_rs = np.array(past_data_normalized).reshape((n, m))
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled = ((future_data - mindf) /
