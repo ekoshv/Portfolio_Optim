@@ -363,6 +363,8 @@ class ekoptim():
         print("Preparing Data...")
         self.spn = spn
         self.HNrates = self.Hrz_Nrm(symb, spn)
+        self.mz = self.HNrates[0][0]['past_data'].shape[0]
+        self.nz = self.HNrates[0][0]['past_data'].shape[1]
 
     def create_model(self, image_height, image_width):
         model = tf.keras.Sequential([
@@ -439,11 +441,8 @@ class ekoptim():
     def NNmake(self,
                learning_rate=0.001, epochs=100, batch_size=32,
                load_train=False):
-
-       mz = self.HNrates[0][0]['past_data'].shape[0]
-       nz = self.HNrates[0][0]['past_data'].shape[1]
        # Define the neural network
-       model = self.create_model(mz, nz) 
+       model = self.create_model(self.mz, self.nz) 
        
        # Compile the model with mean squared error loss
        opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
@@ -481,7 +480,7 @@ class ekoptim():
        self.nnmodel = model
 
     def load_model_fit(self):
-        model = self.model_create()
+        model = self.create_model(self.mz, self.nz)
         checkpoint_dir = './checkpoints'
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
