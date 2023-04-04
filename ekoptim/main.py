@@ -347,7 +347,8 @@ class ekoptim():
             flattened_coeffs[1:] = [num*spn for num in flattened_coeffs[1:]]
             new_row = {
                 'past_data': past_data_nm_im,
-                'future_data': flattened_coeffs,
+                'future_data': future_data_rescaled,
+                'wavelet': flattened_coeffs,
                 'cLength': lengths,
                 'minmax': [mindf,maxdf]
             }
