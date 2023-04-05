@@ -10,6 +10,7 @@ import pandas as pd
 import datetime
 from sklearn.covariance import LedoitWolf
 from sklearn.covariance import MinCovDet
+from sklearn.utils import class_weight
 import traceback
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
@@ -451,24 +452,25 @@ class ekoptim():
        y = pd.Series(y).map({-2: 0, -1: 1, 0: 2, 1: 3, 2: 4}).to_numpy()
    
        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
-       
+       class_weights = class_weight.compute_class_weight('balanced',
+                                                 np.unique(y_train),
+                                                 y_train)
        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
        model.summary()
        print("Training Model...")
        if(load_train):
             model.load_weights(filepath)
        
-        
-       class_weight = {0: 100.,
-                       1: 10.,
-                       2: 1.,
-                       3: 10.,
-                       4: 100}
+       # class_weight = {0: 100.,
+       #                 1: 10.,
+       #                 2: 1.,
+       #                 3: 10.,
+       #                 4: 100}
         
        model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
                  validation_split=0.33, shuffle=True ,
                  callbacks=[tensorboard_callback, checkpoint_callback],
-                 class_weight=class_weight)
+                 class_weight=class_weights)
        # Load the best model weights
        model.load_weights(filepath)
        
