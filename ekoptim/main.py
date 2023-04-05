@@ -448,21 +448,27 @@ class ekoptim():
        X = np.array([d['past_data'] for lst in self.HNrates for d in lst])
        X = np.expand_dims(X, axis=-1)  # add a new axis for the input feature
        y = np.array([d['signal'] for lst in self.HNrates for d in lst])
+       y = pd.Series(y).map({-2: 0, -1: 1, 0: 2, 1: 3, 2: 4}).to_numpy()
    
        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
-       # Add the mapping code here
-       y_train = pd.Series(y_train).map({-2: 0, -1: 1, 0: 2, 1: 3, 2: 4}).to_numpy()
-       # Add the mapping code for y_test here
-       y_test = pd.Series(y_test).map({-2: 0, -1: 1, 0: 2, 1: 3, 2: 4}).to_numpy()
        
        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
        model.summary()
        print("Training Model...")
        if(load_train):
             model.load_weights(filepath)
+       
+        
+       class_weight = {0: 100.,
+                       1: 10.,
+                       2: 1.,
+                       3: 10.,
+                       4: 100}
+        
        model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
                  validation_split=0.33, shuffle=True ,
-                 callbacks=[tensorboard_callback, checkpoint_callback])
+                 callbacks=[tensorboard_callback, checkpoint_callback],
+                 class_weight=class_weight)
        # Load the best model weights
        model.load_weights(filepath)
        
