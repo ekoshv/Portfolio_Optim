@@ -432,7 +432,7 @@ class ekoptim():
        # Compile the model with mean squared error loss
        opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
        model.compile(optimizer=opt,
-              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
               metrics=['accuracy'])
 
        #model.compile(optimizer=opt, loss='mape')
