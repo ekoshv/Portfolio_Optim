@@ -455,6 +455,7 @@ class ekoptim():
        class_weights = class_weight.compute_class_weight('balanced',
                                                          classes=np.unique(y_train),
                                                          weights=y_train)
+       print(f"The class weights: {class_weights}")
        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
        model.summary()
        print("Training Model...")
