@@ -499,11 +499,8 @@ class ekoptim():
         # Use the trained neural network model to predict the future data
         y_pred = np.array(self.nnmodel.predict(X))
         y_pred = y_pred.squeeze()
-        y_pred[1:]=[num/self.spn for num in y_pred[1:]]
-        # Rescale the predicted future data to the original scale
-        y_pred_rescaled = y_pred * (maxdf-mindf) + mindf
     
-        return y_pred_rescaled
+        return y_pred
 
     
     def predict_all(self, smb):
