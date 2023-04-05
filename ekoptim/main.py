@@ -10,6 +10,7 @@ import pandas as pd
 import datetime
 from sklearn.covariance import LedoitWolf
 from sklearn.covariance import MinCovDet
+from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import class_weight
 import traceback
 import tensorflow as tf
@@ -449,13 +450,21 @@ class ekoptim():
        X = np.array([d['past_data'] for lst in self.HNrates for d in lst])
        X = np.expand_dims(X, axis=-1)  # add a new axis for the input feature
        y = np.array([d['signal'] for lst in self.HNrates for d in lst])
-       y = pd.Series(y).map({-2: 0, -1: 1, 0: 2, 1: 3, 2: 4}).to_numpy()
+       
+       
    
        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
+       
+       # Create a label encoder for mapping the class labels
+       label_encoder = LabelEncoder()
+       unique_labels = np.unique(y_train)
+       encoded_labels = label_encoder.fit_transform(unique_labels)
+       # Compute the class weights
        class_weights = class_weight.compute_class_weight('balanced',
-                                                         classes=np.unique(y_train),
-                                                         weights=y_train)
-       print(f"The class weights: {class_weights}")
+                                                         classes=unique_labels,
+                                                         y=y_train)
+       class_weight_dict = dict(zip(encoded_labels, class_weights))
+       print(f"The class weights: {class_weight_dict}")
        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
        model.summary()
        print("Training Model...")
@@ -471,7 +480,7 @@ class ekoptim():
        model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
                  validation_split=0.33, shuffle=True ,
                  callbacks=[tensorboard_callback, checkpoint_callback],
-                 class_weight=class_weights)
+                 class_weight=class_weight_dict)
        # Load the best model weights
        model.load_weights(filepath)
        
