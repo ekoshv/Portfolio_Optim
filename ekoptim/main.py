@@ -419,7 +419,7 @@ class ekoptim():
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
     
-            tf.keras.layers.Dense(5)
+            tf.keras.layers.Dense(5, activation="softmax")
         ])
         return model
 
