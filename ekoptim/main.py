@@ -440,7 +440,7 @@ class ekoptim():
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
     
-            tf.keras.layers.Dense(self.Dyf)
+            tf.keras.layers.Dense(5)
         ])
         return model
 
@@ -452,8 +452,10 @@ class ekoptim():
        
        # Compile the model with mean squared error loss
        opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-       model.compile(optimizer=opt, loss='mape', metrics=[tf.keras.metrics.MeanSquaredError(),
-                                                          self.r_squared])
+       model.compile(optimizer=opt,
+              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+              metrics=['accuracy'])
+
        #model.compile(optimizer=opt, loss='mape')
    
        # Set up the callback to save the best model weights
@@ -466,9 +468,14 @@ class ekoptim():
        # Train the model on the data in new_rates_lists
        X = np.array([d['past_data'] for lst in self.HNrates for d in lst])
        X = np.expand_dims(X, axis=-1)  # add a new axis for the input feature
-       y = np.array([d['future_data'] for lst in self.HNrates for d in lst])
+       y = np.array([d['signal'] for lst in self.HNrates for d in lst])
    
        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
+       # Add the mapping code here
+       y_train = pd.Series(y_train).map({-2: 0, -1: 1, 0: 2, 1: 3, 2: 4}).to_numpy()
+       # Add the mapping code for y_test here
+       y_test = pd.Series(y_test).map({-2: 0, -1: 1, 0: 2, 1: 3, 2: 4}).to_numpy()
+       
        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
        model.summary()
        print("Training Model...")
