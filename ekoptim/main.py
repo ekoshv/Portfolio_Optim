@@ -377,35 +377,7 @@ class ekoptim():
             tf.keras.layers.Input(shape=(image_height, image_width, 1)),
     
             tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
-                                   kernel_size=7, strides=1,
-                                   padding="same", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling2D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),
-        
-            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
-                                   kernel_size=7, strides=1,
-                                   padding="same", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling2D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),
-        
-            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
-                                   kernel_size=7, strides=1,
-                                   padding="same", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling2D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),
-        
-            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
-                                   kernel_size=7, strides=1,
-                                   padding="same", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling2D(pool_size=2),
-            tf.keras.layers.Dropout(0.2),
-        
-            tf.keras.layers.Conv2D(filters=max(round(self.Dyp/4), 32),
-                                   kernel_size=7, strides=1,
+                                   kernel_size=9, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling2D(pool_size=2),
@@ -419,14 +391,6 @@ class ekoptim():
             tf.keras.layers.Dropout(0.2),
         
             tf.keras.layers.Flatten(),
-        
-            tf.keras.layers.Dense(1024, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-        
-            tf.keras.layers.Dense(1024, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
         
             tf.keras.layers.Dense(1024, activation="relu"),
             tf.keras.layers.BatchNormalization(),
