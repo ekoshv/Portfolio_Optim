@@ -343,11 +343,16 @@ class ekoptim():
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled = ((future_data - past_data.min()) /
                                     (past_data.max() - past_data.min()))
+            signal = ((2 if future_data_rescaled.max() > 1.5 else 1 if 1.03 <=
+                       future_data_rescaled.max() <= 1.5 else 0) +
+                      (-2 if future_data_rescaled.min() < -1.5 else -1 if -1.5 <=
+                       future_data_rescaled.min() <= -1.03 else 0))
             flattened_coeffs, lengths = self.decompose_and_flatten(future_data_rescaled.values, 'db1')
             flattened_coeffs[1:] = [num*spn for num in flattened_coeffs[1:]]
             new_row = {
                 'past_data': past_data_nm_im,
                 'future_data': future_data_rescaled,
+                'signal':signal,
                 'wavelet': flattened_coeffs,
                 'cLength': lengths,
                 'minmax': [mindf,maxdf]
