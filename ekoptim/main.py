@@ -454,7 +454,8 @@ class ekoptim():
        
    
        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
-       
+       y_train = pd.Series(y_train).map({-2: 0, -1: 1, 0: 2, 1: 3, 2: 4}).to_numpy()
+       y_test = pd.Series(y_test).map({-2: 0, -1: 1, 0: 2, 1: 3, 2: 4}).to_numpy()
        # Create a label encoder for mapping the class labels
        label_encoder = LabelEncoder()
        unique_labels = np.unique(y_train)

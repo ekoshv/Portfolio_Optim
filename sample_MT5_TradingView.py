@@ -140,7 +140,7 @@ if __name__ == "__main__":
 #%%
     optimizerTV.Prepare_Data('close', 10)
 #%%
-    optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32, load_train=False)
+    optimizerTV.NNmake(learning_rate=0.001, epochs=300, batch_size=32, load_train=False)
 #%%
     optimizerTV.load_model_fit()
     optimizerTV.predict_all('close')
