@@ -18,6 +18,7 @@ from sklearn.model_selection import train_test_split
 from tensorflow.keras.callbacks import ModelCheckpoint
 import os
 import pywt
+from tqdm import tqdm
 
 
 class ekoptim():
@@ -366,11 +367,12 @@ class ekoptim():
             }
             #print(new_row)
             new_df.append(new_row)
-        return new_df    
-    
-    def Hrz_Nrm(self,smb, spn):
+        return new_df        
+
+    def Hrz_Nrm(self, smb, spn):
         # Apply the moving horizon to each dataframe in rates_lists
-        return [self.apply_moving_horizon_norm(df,smb, spn) for df in self.full_rates]    
+        return [self.apply_moving_horizon_norm(df, smb, spn) for 
+                df in tqdm(self.full_rates, desc='Processing DataFrames')]
 
     def Prepare_Data(self, symb, spn):
         print("Preparing Data...")
