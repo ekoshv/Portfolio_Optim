@@ -347,7 +347,7 @@ class ekoptim():
             n, m = self.reshape_nm(len(past_data_normalized_w))
             past_data_normalized_w_rs = np.array(past_data_normalized_w).reshape((n, m))
             past_data_normalized_w_rs_tl = np.tile(past_data_normalized_w_rs, (2,2))
-            #past_data_nm_im =  self.create_2d_image(past_data_normalized.values,'db1')
+            past_data_nm_im =  self.create_2d_image(past_data_normalized.values,'db1')
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled = ((future_data - past_data.min()) /
                                     (past_data.max() - past_data.min()))
@@ -358,7 +358,8 @@ class ekoptim():
             flattened_coeffs, lengths = self.decompose_and_flatten(future_data_rescaled.values, 'db1')
             flattened_coeffs[1:] = [num*spn for num in flattened_coeffs[1:]]
             new_row = {
-                'past_data': past_data_normalized_w_rs_tl,
+                'past_data1': past_data_normalized_w_rs_tl,
+                'past_data2': past_data_nm_im,
                 'future_data': future_data_rescaled,
                 'signal': signal,
                 'wavelet': flattened_coeffs,
@@ -386,21 +387,21 @@ class ekoptim():
             tf.keras.layers.Input(shape=(image_height, image_width, 1)),
     
             tf.keras.layers.SeparableConv2D(filters=32,
-                                   kernel_size=9, strides=1,
+                                   kernel_size=11, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling2D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
         
             tf.keras.layers.SeparableConv2D(filters=32,
-                                   kernel_size=7, strides=1,
+                                   kernel_size=9, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling2D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
 
-            tf.keras.layers.SeparableConv2D(filters=16,
-                                   kernel_size=5, strides=1,
+            tf.keras.layers.SeparableConv2D(filters=32,
+                                   kernel_size=7, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling2D(pool_size=2),
@@ -454,12 +455,10 @@ class ekoptim():
        checkpoint_callback = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
    
        # Train the model on the data in new_rates_lists
-       X = np.array([d['past_data'] for lst in self.HNrates for d in lst])
+       X = np.array([d['past_data2'] for lst in self.HNrates for d in lst])
        X = np.expand_dims(X, axis=-1)  # add a new axis for the input feature
        y = np.array([d['signal'] for lst in self.HNrates for d in lst])
        
-       
-   
        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
        y_train = pd.Series(y_train).map({-2: 0, -1: 1, 0: 2, 1: 3, 2: 4}).to_numpy()
        y_test = pd.Series(y_test).map({-2: 0, -1: 1, 0: 2, 1: 3, 2: 4}).to_numpy()
@@ -478,12 +477,6 @@ class ekoptim():
        print("Training Model...")
        if(load_train):
             model.load_weights(filepath)
-       
-       # class_weight = {0: 100.,
-       #                 1: 10.,
-       #                 2: 1.,
-       #                 3: 10.,
-       #                 4: 100}
         
        model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
                  validation_split=0.33, shuffle=True ,

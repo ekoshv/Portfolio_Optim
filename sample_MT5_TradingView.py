@@ -136,7 +136,7 @@ if __name__ == "__main__":
 #%%
     optimizerTV = ekoptim(returnsTV, risk_free_rate, target_SR,
                         target_Return, target_Volat, max_weight,tol,
-                        full_rates = rates_list, Dyp=144, Dyf=8, Thi=3)
+                        full_rates = rates_list, Dyp=64, Dyf=8, Thi=3)
 #%%
     optimizerTV.Prepare_Data('close', 10)
 #%%
