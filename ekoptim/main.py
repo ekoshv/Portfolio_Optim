@@ -379,8 +379,8 @@ class ekoptim():
         print("Preparing Data...")
         self.spn = spn
         self.HNrates = self.Hrz_Nrm(symb, spn)
-        self.mz = self.HNrates[0][0]['past_data'].shape[0]
-        self.nz = self.HNrates[0][0]['past_data'].shape[1]
+        self.mz = self.HNrates[0][0]['past_data2'].shape[0]
+        self.nz = self.HNrates[0][0]['past_data2'].shape[1]
 
     def create_model(self, image_height, image_width):
         model = tf.keras.Sequential([
