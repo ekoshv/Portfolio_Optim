@@ -338,11 +338,12 @@ class ekoptim():
             smb_col = df.columns[smb]
         else:
             raise ValueError("smb should be either a string or an integer.")
-        n, m = self.reshape_nm(self.Dyp)
+
         for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
             past_data = df[smb_col].iloc[i-self.Dyp:i]
             past_data_normalized, mindf, maxdf = self.normalize(past_data)
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
+            n, m = self.reshape_nm(len(past_data_normalized_w))
             past_data_normalized_w_rs = np.array(past_data_normalized_w).reshape((n, m))
             past_data_normalized_w_rs_tl = np.tile(past_data_normalized_w_rs, (2,2))
             #past_data_nm_im =  self.create_2d_image(past_data_normalized.values,'db1')
