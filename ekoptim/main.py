@@ -382,21 +382,21 @@ class ekoptim():
         model = tf.keras.Sequential([
             tf.keras.layers.Input(shape=(image_height, image_width, 1)),
     
-            tf.keras.layers.Conv2D(filters=32,
+            tf.keras.layers.SeparableConv2D(filters=32,
                                    kernel_size=9, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling2D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
         
-            tf.keras.layers.Conv2D(filters=32,
+            tf.keras.layers.SeparableConv2D(filters=32,
                                    kernel_size=7, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling2D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
 
-            tf.keras.layers.Conv2D(filters=16,
+            tf.keras.layers.SeparableConv2D(filters=16,
                                    kernel_size=5, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
@@ -421,7 +421,7 @@ class ekoptim():
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
         
-            tf.keras.layers.Dense(5 * self.Dyf, activation="relu"),
+            tf.keras.layers.Dense(1024, activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
     
