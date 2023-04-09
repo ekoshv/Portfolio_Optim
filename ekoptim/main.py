@@ -378,7 +378,7 @@ class ekoptim():
         self.mz = self.HNrates[0][0]['past_data'].shape[0]
         self.nz = self.HNrates[0][0]['past_data'].shape[1]
 
-    def create_model(image_height, image_width):
+    def create_model(self, image_height, image_width):
         model = tf.keras.Sequential([
             tf.keras.layers.Input(shape=(image_height, image_width, 1)),
     
