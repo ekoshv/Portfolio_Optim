@@ -350,6 +350,7 @@ class ekoptim():
             psdt_LL = past_data.min(axis=0)['low']
             past_data_normalized, mindf, maxdf = self.normalize(past_data, psdt_LL, psdt_HH)
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized.values,'db1')
+            pst_dt_tiled = np.tile(past_data_normalized_w, (8,2))
             future_data = df[['open','high','low','close']].iloc[i:i+self.Dyf]
             future_data_rescaled, fdmn, fdmx = self.normalize(future_data, psdt_LL, psdt_HH)
             signal = ((2 if future_data_rescaled['high'].max() > 1.5 else 1 if 1.03 <=
@@ -357,7 +358,7 @@ class ekoptim():
                       (-2 if future_data_rescaled['low'].min() < -1.5 else -1 if -1.5 <=
                        future_data_rescaled['low'].min() <= -1.03 else 0))
             new_row = {
-                'past_data': past_data_normalized_w,
+                'past_data': pst_dt_tiled,
                 'future_data': future_data_rescaled,
                 'signal': signal,
                 'minmax': [psdt_LL,psdt_HH]
@@ -382,30 +383,38 @@ class ekoptim():
         model = tf.keras.Sequential([
             tf.keras.layers.Input(shape=(image_height, image_width, 1)),
     
-            tf.keras.layers.SeparableConv2D(filters=32,
-                                   kernel_size=3, strides=1,
-                                   padding="same", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.2),
-    
             tf.keras.layers.SeparableConv2D(filters=64,
-                                   kernel_size=3, strides=1,
+                                   kernel_size=9, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.2),
     
             tf.keras.layers.SeparableConv2D(filters=128,
-                                   kernel_size=3, strides=1,
+                                   kernel_size=7, strides=1,
+                                   padding="same", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.2),
+    
+            tf.keras.layers.SeparableConv2D(filters=256,
+                                   kernel_size=5, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.2),
     
             tf.keras.layers.GlobalAveragePooling2D(),
     
-            tf.keras.layers.Dense(512, activation="relu"),
+            tf.keras.layers.Dense(1024, activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
     
+            tf.keras.layers.Dense(1024, activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.5),
+
+            tf.keras.layers.Dense(256, activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.5),
+            
             tf.keras.layers.Dense(256, activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
