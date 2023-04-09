@@ -278,10 +278,14 @@ class ekoptim():
         return n, m
     #--- Wavelets ------
     def decompose_and_flatten(self, data, wavelet):
-        coeffs = pywt.wavedec(data, wavelet)
-        lengths = [len(c) for c in coeffs]
-        flattened_coeffs = np.concatenate(coeffs)
-        return flattened_coeffs, lengths    
+        flattened_coeffs_total = []
+        data_transposed = data.T  # Transpose the input data to iterate over columns
+        for dx in data_transposed:
+            coeffs = pywt.wavedec(dx, wavelet)
+            lengths = [len(c) for c in coeffs]
+            flattened_coeffs = np.concatenate(coeffs)
+            flattened_coeffs_total.append(flattened_coeffs)
+        return np.vstack(flattened_coeffs_total), lengths    
     
     def reconstruct_from_flattened(self, flattened_coeffs, wavelet, lengths):
         coeffs = []
@@ -327,9 +331,9 @@ class ekoptim():
             new_df = new_df.append(new_row, ignore_index=True)
         return new_df
 
-    def normalize(self,data):
+    def normalize(self,data, dmn, dmx):
         #Normalize a pandas series by scaling its values to the range [0, 1].
-        return (data - data.min()) / (data.max() - data.min()), data.min(), data.max()
+        return (data - dmn) / (dmx - dmn), data.min(axis=0)['low'], data.max(axis=0)['high']
 
     def apply_moving_horizon_norm(self,df,smb,spn):
         new_df = []
@@ -341,30 +345,22 @@ class ekoptim():
             raise ValueError("smb should be either a string or an integer.")
 
         for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
-            past_data = df[smb_col].iloc[i-self.Dyp:i]
-            past_data_normalized, mindf, maxdf = self.normalize(past_data)
+            past_data = df[['open','high','low','close']].iloc[i-self.Dyp:i]
+            psdt_HH = past_data.max(axis=0)['high']
+            psdt_LL = past_data.min(axis=0)['low']
+            past_data_normalized, mindf, maxdf = self.normalize(past_data, psdt_LL, psdt_HH)
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
-            n, m = self.reshape_nm(len(past_data_normalized_w))
-            past_data_normalized_w_rs = np.array(past_data_normalized_w).reshape((n, m))
-            past_data_normalized_w_rs_tl = np.tile(past_data_normalized_w_rs, (2,2))
-            past_data_nm_im =  self.create_2d_image(past_data_normalized.values,'db1')
-            future_data = df[smb_col].iloc[i:i+self.Dyf]
-            future_data_rescaled = ((future_data - past_data.min()) /
-                                    (past_data.max() - past_data.min()))
-            signal = ((2 if future_data_rescaled.max() > 1.5 else 1 if 1.03 <=
-                       future_data_rescaled.max() <= 1.5 else 0) +
-                      (-2 if future_data_rescaled.min() < -1.5 else -1 if -1.5 <=
-                       future_data_rescaled.min() <= -1.03 else 0))
-            flattened_coeffs, lengths = self.decompose_and_flatten(future_data_rescaled.values, 'db1')
-            flattened_coeffs[1:] = [num*spn for num in flattened_coeffs[1:]]
+            future_data = df[['open','high','low','close']].iloc[i:i+self.Dyf]
+            future_data_rescaled, fdmn, fdmx = self.normalize(future_data, psdt_LL, psdt_HH)
+            signal = ((2 if future_data_rescaled['high'].max() > 1.5 else 1 if 1.03 <=
+                       future_data_rescaled['high'].max() <= 1.5 else 0) +
+                      (-2 if future_data_rescaled['low'].min() < -1.5 else -1 if -1.5 <=
+                       future_data_rescaled['low'].min() <= -1.03 else 0))
             new_row = {
-                'past_data1': past_data_normalized_w_rs_tl,
-                'past_data2': past_data_nm_im,
+                'past_data': past_data_normalized_w,
                 'future_data': future_data_rescaled,
                 'signal': signal,
-                'wavelet': flattened_coeffs,
-                'cLength': lengths,
-                'minmax': [mindf,maxdf]
+                'minmax': [psdt_LL,psdt_HH]
             }
             #print(new_row)
             new_df.append(new_row)
