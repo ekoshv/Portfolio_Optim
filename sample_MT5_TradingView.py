@@ -64,9 +64,9 @@ if __name__ == "__main__":
     History_Days = int(input("How many historical days: "))
     #is_weighted = bool(input("Do you want it to be weighted(True/False): "))
     
-    returns_list = []
+    returns_TV = []
     returns_MT5 = []
-    rates_list = []
+    rates_TV = []
     rates_MT5 = []
     begindate = (datetime.datetime.today()-
                  datetime.timedelta(days=(int(1.1*History_Days*365/252))))
@@ -79,8 +79,8 @@ if __name__ == "__main__":
                                 exchange=Exg, 
                                 interval= Interval.in_daily, 
                                 n_bars=History_Days,
-                                ctype="dividends")
-            ratemt5 = mt5.copy_rates_from_pos(s.name, mt5.TIMEFRAME_D1, 0, History_Days)
+                                ctype="splits")
+            datamt5 = mt5.copy_rates_from_pos(s.name, mt5.TIMEFRAME_D1, 0, History_Days)
             #print(rates)
             if(len(rates)>=round(0.75*History_Days) and
                (rates.index[0] >= begindate)):
@@ -88,13 +88,14 @@ if __name__ == "__main__":
                                  interpolate(method='polynomial', order=2)).pct_change()
                 rates[s.name] = rates[s.name].interpolate(method='polynomial', order=2)
                 rates[s.name] = rates[s.name].fillna(0)
-                rates_list.append(rates)
-                returns_list.append(rates[s.name])
+                rates_TV.append(rates)
+                returns_TV.append(rates[s.name])
                 
-                data = pd.DataFrame(data=ratemt5, columns=["time", "open", "high", "low",
+                data = pd.DataFrame(data=datamt5, columns=["time", "open", "high", "low",
                                                          "close", "tick_volume", "spread", "real_volume"])
                 # convert time in seconds into the datetime format
                 data['time']=pd.to_datetime(data['time'], unit='s')
+                data.set_index('time', inplace=True)
                 data[s.name] = data["close"].pct_change()
                 data[s.name] = data[s.name].fillna(0)
                 rates_MT5.append(data)
@@ -104,7 +105,7 @@ if __name__ == "__main__":
             print("An exception occurred: ", s.name)
             print("---------")
     
-    returnsTV = pd.concat(returns_list, axis=1)
+    returnsTV = pd.concat(returns_TV, axis=1)
     returnsMT5= pd.concat(returns_MT5, axis=1)
     returnsTV.fillna(0,inplace=True)
     returnsMT5.fillna(0,inplace=True)
@@ -136,11 +137,11 @@ if __name__ == "__main__":
 #%%
     optimizerTV = ekoptim(returnsTV, risk_free_rate, target_SR,
                         target_Return, target_Volat, max_weight,tol,
-                        full_rates = rates_list, Dyp=64, Dyf=8, Thi=3)
+                        full_rates = rates_MT5, Dyp=128, Dyf=8, Thi=3)
 #%%
     optimizerTV.Prepare_Data('close', 10)
 #%%
-    optimizerTV.NNmake(learning_rate=0.001, epochs=300, batch_size=32, load_train=False)
+    optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32, load_train=False)
 #%%
     optimizerTV.load_model_fit()
     optimizerTV.predict_all('close')
