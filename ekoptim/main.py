@@ -386,21 +386,18 @@ class ekoptim():
                                    kernel_size=3, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling2D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
     
             tf.keras.layers.SeparableConv2D(filters=64,
                                    kernel_size=3, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling2D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
     
             tf.keras.layers.SeparableConv2D(filters=128,
                                    kernel_size=3, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.MaxPooling2D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
     
             tf.keras.layers.GlobalAveragePooling2D(),
