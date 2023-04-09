@@ -375,53 +375,41 @@ class ekoptim():
         print("Preparing Data...")
         self.spn = spn
         self.HNrates = self.Hrz_Nrm(symb, spn)
-        self.mz = self.HNrates[0][0]['past_data2'].shape[0]
-        self.nz = self.HNrates[0][0]['past_data2'].shape[1]
+        self.mz = self.HNrates[0][0]['past_data'].shape[0]
+        self.nz = self.HNrates[0][0]['past_data'].shape[1]
 
-    def create_model(self, image_height, image_width):
+    def create_model(image_height, image_width):
         model = tf.keras.Sequential([
             tf.keras.layers.Input(shape=(image_height, image_width, 1)),
     
             tf.keras.layers.SeparableConv2D(filters=32,
-                                   kernel_size=11, strides=1,
+                                   kernel_size=3, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling2D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
-        
-            tf.keras.layers.SeparableConv2D(filters=32,
-                                   kernel_size=9, strides=1,
+    
+            tf.keras.layers.SeparableConv2D(filters=64,
+                                   kernel_size=3, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling2D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
-
-            tf.keras.layers.SeparableConv2D(filters=32,
-                                   kernel_size=7, strides=1,
+    
+            tf.keras.layers.SeparableConv2D(filters=128,
+                                   kernel_size=3, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.MaxPooling2D(pool_size=2),
             tf.keras.layers.Dropout(0.2),
-        
-            tf.keras.layers.Flatten(),
-        
-            tf.keras.layers.Dense(1024, activation="relu"),
+    
+            tf.keras.layers.GlobalAveragePooling2D(),
+    
+            tf.keras.layers.Dense(512, activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
-        
-            tf.keras.layers.Dense(1024, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-
-            tf.keras.layers.Dense(1024, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-        
-            tf.keras.layers.Dense(1024, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-        
-            tf.keras.layers.Dense(1024, activation="relu"),
+    
+            tf.keras.layers.Dense(256, activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
     
