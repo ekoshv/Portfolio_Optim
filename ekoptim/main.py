@@ -436,7 +436,7 @@ class ekoptim():
        checkpoint_callback = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
    
        # Train the model on the data in new_rates_lists
-       X = np.array([d['past_data2'] for lst in self.HNrates for d in lst])
+       X = np.array([d['past_data'] for lst in self.HNrates for d in lst])
        X = np.expand_dims(X, axis=-1)  # add a new axis for the input feature
        y = np.array([d['signal'] for lst in self.HNrates for d in lst])
        
