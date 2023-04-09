@@ -489,13 +489,13 @@ class ekoptim():
         else:
             raise ValueError("smb should be either a string or an integer.")
         # Get the last Dyp rows of full_rates for the given symbol
-        past_data = rate[smb_col].tail(self.Dyp)
-    
-        # Normalize the past data using the same min and max values used during training
-        past_data_normalized, mindf, maxdf = self.normalize(past_data)
-        past_data_nm_im =  self.create_2d_image(past_data_normalized.values,'db1')
+        past_data = rate[['open','high','low','close']].tail(self.Dyp)
+        psdt_HH = past_data.max(axis=0)['high']
+        psdt_LL = past_data.min(axis=0)['low']
+        past_data_normalized, mindf, maxdf = self.normalize(past_data, psdt_LL, psdt_HH)
+        past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized.values,'db1')
         # Reshape the past data for input to the neural network
-        X = np.expand_dims(past_data_nm_im, axis=(0, -1))
+        X = np.expand_dims(past_data_normalized_w, axis=(0, -1))
         # Use the trained neural network model to predict the future data
         y_pred = np.array(self.nnmodel.predict(X))
         y_pred = y_pred.squeeze()
