@@ -350,7 +350,7 @@ class ekoptim():
             psdt_LL = past_data.min(axis=0)['low']
             past_data_normalized, mindf, maxdf = self.normalize(past_data, psdt_LL, psdt_HH)
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized.values,'db1')
-            pst_dt_tiled = np.tile(past_data_normalized_w, (8,2))
+            pst_dt_tiled = np.tile(past_data_normalized_w, (1,1))
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled, fdmn, fdmx = self.normalize(future_data, psdt_LL, psdt_HH)
             signal = ((2 if future_data_rescaled.max() > 1.5 else 1 if 1.03 <=
