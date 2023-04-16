@@ -137,9 +137,10 @@ if __name__ == "__main__":
 #%%
     optimizerTV = ekoptim(returnsTV, risk_free_rate, target_SR,
                         target_Return, target_Volat, max_weight,tol,
-                        full_rates = rates_MT5, Dyp=32, Dyf=8, Thi=3)
+                        full_rates = rates_MT5,
+                        Dyp=32, Dyf=8, Thi=3)
 #%%
-    optimizerTV.Prepare_Data('close', 10)
+    optimizerTV.Prepare_Data('close', spn=10, tile_size=(1,1))
 #%%
     optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32, load_train=False)
 #%%
