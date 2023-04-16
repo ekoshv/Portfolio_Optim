@@ -351,12 +351,12 @@ class ekoptim():
             past_data_normalized, mindf, maxdf = self.normalize(past_data, psdt_LL, psdt_HH)
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized.values,'db1')
             pst_dt_tiled = np.tile(past_data_normalized_w, (8,2))
-            future_data = df[['open','high','low','close']].iloc[i:i+self.Dyf]
+            future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled, fdmn, fdmx = self.normalize(future_data, psdt_LL, psdt_HH)
-            signal = ((2 if future_data_rescaled['high'].max() > 1.5 else 1 if 1.03 <=
-                       future_data_rescaled['high'].max() <= 1.5 else 0) +
-                      (-2 if future_data_rescaled['low'].min() < -1.5 else -1 if -1.5 <=
-                       future_data_rescaled['low'].min() <= -1.03 else 0))
+            signal = ((2 if future_data_rescaled.max() > 1.5 else 1 if 1.03 <=
+                       future_data_rescaled.max() <= 1.5 else 0) +
+                      (-2 if future_data_rescaled.min() < -1.5 else -1 if -1.5 <=
+                       future_data_rescaled.min() <= -1.03 else 0))
             new_row = {
                 'past_data': pst_dt_tiled,
                 'future_data': future_data_rescaled,
@@ -433,7 +433,7 @@ class ekoptim():
        opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
        model.compile(optimizer=opt,
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
-              metrics=['accuracy'])
+              metrics=['accuracy', self.r_squared])
 
        #model.compile(optimizer=opt, loss='mape')
    
