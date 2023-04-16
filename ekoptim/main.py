@@ -361,7 +361,7 @@ class ekoptim():
                       (-2 if future_data_rescaled.min() < -1.5 else -1 if -1.5 <=
                        future_data_rescaled.min() <= -1.03 else 0))
             new_row = {
-                'past_data': pst_dt_tiled,
+                'past_data': past_data_normalized,
                 'future_data': future_data_rescaled,
                 'signal': signal,
                 'minmax': [psdt_LL,psdt_HH]
