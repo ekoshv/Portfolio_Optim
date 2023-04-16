@@ -335,7 +335,7 @@ class ekoptim():
         #Normalize a pandas series by scaling its values to the range [0, 1].
         return (data - dmn) / (dmx - dmn), data.min(axis=0)['low'], data.max(axis=0)['high']
 
-    def apply_moving_horizon_norm(self,df,smb,spn,tile_size):
+    def apply_moving_horizon_norm(self,df,smb,spn):
         new_df = []
         if isinstance(smb, str):
             smb_col = smb
@@ -350,7 +350,7 @@ class ekoptim():
             psdt_LL = past_data.min(axis=0)['low']
             past_data_normalized, mindf, maxdf = self.normalize(past_data, psdt_LL, psdt_HH)
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized.values,'db1')
-            pst_dt_tiled = np.tile(past_data_normalized_w, (tile_size[0],tile_size[1]))
+            pst_dt_tiled = np.tile(past_data_normalized_w, (8,2))
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled, fdmn, fdmx = self.normalize(future_data, psdt_LL, psdt_HH)
             signal = ((2 if future_data_rescaled.max() > 1.5 else 1 if 1.03 <=
@@ -367,15 +367,15 @@ class ekoptim():
             new_df.append(new_row)
         return new_df        
 
-    def Hrz_Nrm(self, smb, spn, tile_size):
+    def Hrz_Nrm(self, smb, spn):
         # Apply the moving horizon to each dataframe in rates_lists
-        return [self.apply_moving_horizon_norm(df, smb, spn, tile_size) for 
+        return [self.apply_moving_horizon_norm(df, smb, spn) for 
                 df in tqdm(self.full_rates, desc='Processing DataFrames')]
 
-    def Prepare_Data(self, symb, spn=10, tile_size=[2,2]):
+    def Prepare_Data(self, symb, spn):
         print("Preparing Data...")
         self.spn = spn
-        self.HNrates = self.Hrz_Nrm(symb, spn, tile_size)
+        self.HNrates = self.Hrz_Nrm(symb, spn)
         self.mz = self.HNrates[0][0]['past_data'].shape[0]
         self.nz = self.HNrates[0][0]['past_data'].shape[1]
 
