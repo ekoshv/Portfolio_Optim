@@ -278,6 +278,12 @@ class ekoptim():
         return n, m
     #--- Wavelets ------
     def decompose_and_flatten(self, data, wavelet):
+        if np.ndim(data) <= 1:
+            flattened_coeffs = []
+            coeffs = pywt.wavedec(data, wavelet)
+            lengths = [len(c) for c in coeffs]
+            flattened_coeffs = np.concatenate(coeffs)
+            return flattened_coeffs, lengths
         flattened_coeffs_total = []
         data_transposed = data.T  # Transpose the input data to iterate over columns
         for dx in data_transposed:
