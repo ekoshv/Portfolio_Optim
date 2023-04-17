@@ -346,9 +346,9 @@ class ekoptim():
             raise ValueError("smb should be either a string or an integer.")
 
         for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
-            past_data = df[['open','high','low','close']].iloc[i-self.Dyp:i]
-            psdt_HH = past_data.max(axis=0)['high']
-            psdt_LL = past_data.min(axis=0)['low']
+            past_data = df[smb_col].iloc[i-self.Dyp:i]
+            psdt_HH = past_data.max()
+            psdt_LL = past_data.min()
             past_data_normalized, mindf, maxdf = self.normalize(past_data, psdt_LL, psdt_HH,xrnd)
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
             pst_dt_tiled = np.tile(past_data_normalized, tile_size)
