@@ -340,7 +340,8 @@ class ekoptim():
     def normalize(self,data, dmn, dmx, xrnd=0):
         if isinstance(data, pd.DataFrame):
             data = data.to_numpy()        
-        return ((data - dmn) / (dmx - dmn))+np.random.uniform(-xrnd, xrnd, data.shape), data.min(), data.max()
+        return (((data - dmn) / (dmx - dmn))+
+                np.random.uniform(-xrnd, xrnd, data.shape), data.min(), data.max())
 
     def apply_moving_horizon_norm(self,df,smb,spn, tile_size, xrnd=0):
         new_df = []
