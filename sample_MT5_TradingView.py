@@ -141,13 +141,7 @@ if __name__ == "__main__":
                         target_Return, target_Volat, max_weight,tol,
                         full_rates = rates_MT5,
                         Dyp=Dyp, Dyf=Dyf, Thi=3)
-#%%
-    optimizerTV.Prepare_Data('close', spn=10, tile_size=(Dyp*2,2),xrnd=1e-3)
-#%%
-    optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32, load_train=False)
-#%%
-    optimizerTV.load_model_fit()
-    optimizerTV.predict_all('close')
+
 #%%
     print("Optimization started, please wait...")
     optimized_weights_TV = optimizerTV.optiselect(otp_sel)
@@ -202,6 +196,7 @@ if __name__ == "__main__":
     equity_div_df.sort_values(by="Weight",inplace=True, ignore_index=True)
     returns_selected = pd.concat(returns_selected, axis=1)
     xyz = optimizerTV.cov2corr(100*LedoitWolf().fit(returns_selected).covariance_)
+    selected_symb = equity_div_df['symbol'].tolist()
     print("------------------")
     print(equity_div_df)
     print("------------------")
@@ -209,5 +204,14 @@ if __name__ == "__main__":
     # use Monte Carlo simulation to generate multiple sets of random weights
     optimizerTV.frontPlot(optimized_weights_TV, save=False)
     # shut down connection to the MetaTrader 5 terminal
+#%%
+    optimizerTV.Prepare_Data('close', spn=10,
+                             tile_size=(Dyp*2,2),xrnd=1e-3,
+                             Selected=selected_symb)
+#%%
+    optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32, load_train=False)
+#%%
+    optimizerTV.load_model_fit()
+    optimizerTV.predict_all('close')
 #%%
     mt5.shutdown()

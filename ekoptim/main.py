@@ -376,15 +376,19 @@ class ekoptim():
             new_df.append(new_row)
         return new_df        
 
-    def Hrz_Nrm(self, smb, spn, tile_size, xrnd=0):
+    def Hrz_Nrm(self, rates, smb, spn, tile_size, xrnd=0):
         # Apply the moving horizon to each dataframe in rates_lists
         return [self.apply_moving_horizon_norm(df, smb, spn, tile_size,xrnd) for 
-                df in tqdm(self.full_rates, desc='Processing DataFrames')]
+                df in tqdm(rates, desc='Processing DataFrames')]
 
-    def Prepare_Data(self, symb, spn=1, tile_size=(2,2), xrnd=0):
+    def Prepare_Data(self, symb, spn=1, tile_size=(2,2), xrnd=0, Selected_symbols=None):
         print("Preparing Data...")
         self.spn = spn
-        self.HNrates = self.Hrz_Nrm(symb, spn, tile_size, xrnd)
+        if Selected_symbols is None:
+            self.HNrates = self.Hrz_Nrm(self.full_rates, symb, spn, tile_size, xrnd)
+        else:
+            self.selected_rates = [df for df in self.full_rates if df.columns[-1] in Selected_symbols]
+            self.HNrates = self.Hrz_Nrm(self.selected_rates, symb, spn, tile_size, xrnd)
         self.mz = self.HNrates[0][0]['past_data'].shape[0]
         self.nz = self.HNrates[0][0]['past_data'].shape[1]
 
