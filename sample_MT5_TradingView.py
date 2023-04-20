@@ -136,7 +136,7 @@ if __name__ == "__main__":
     otp_sel = int(input("Which type of opt you wish: "))
 #%%
     Dyp = 8
-    Dyf = 8    
+    Dyf = 16    
     optimizerTV = ekoptim(returnsTV, risk_free_rate, target_SR,
                         target_Return, target_Volat, max_weight,tol,
                         full_rates = rates_MT5,
@@ -208,6 +208,7 @@ if __name__ == "__main__":
     optimizerTV.Prepare_Data('close', spn=10,
                              tile_size=(Dyp*2,2),xrnd=1e-3,
                              Selected_symbols=selected_symb)
+    alphax = optimizerTV.HNrates
 #%%
     optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32, load_train=False)
 #%%
