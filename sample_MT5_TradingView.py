@@ -207,7 +207,7 @@ if __name__ == "__main__":
 #%%
     optimizerTV.Prepare_Data('close', spn=10,
                              tile_size=(Dyp*2,2),xrnd=1e-3,
-                             Selected=selected_symb)
+                             Selected_symbols=selected_symb)
 #%%
     optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32, load_train=False)
 #%%
