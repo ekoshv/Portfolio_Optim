@@ -46,7 +46,7 @@ def backtest_strategy_tf(daily_returns, signals, swap_percentage, commission_per
     return pd.Series(capital_history, index=daily_returns.index)
 
 # Generate random daily returns
-num_days = 15*252  # For example, 252 trading days in a year
+num_days = 5*252  # For example, 252 trading days in a year
 start_date = datetime(2022, 1, 1)
 date_range = pd.date_range(start_date, periods=num_days)
 random_daily_returns = pd.Series([random.uniform(-0.03, 0.03) for _ in range(num_days)], index=date_range)

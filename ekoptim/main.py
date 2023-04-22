@@ -19,13 +19,64 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 import os
 import pywt
 from tqdm import tqdm
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
 
+
+class FuzzySignalCalculator:
+    def __init__(self):
+        # Create the fuzzy control system
+        self.max_value = ctrl.Antecedent(np.arange(-2, 7, 0.1), 'max_value')
+        self.min_value = ctrl.Antecedent(np.arange(-2, 7, 0.1), 'min_value')
+        self.signal = ctrl.Consequent(np.arange(-4, 5, 1), 'signal')
+
+        # Define the fuzzy sets
+        self.max_value['low'] = fuzz.trimf(self.max_value.universe, [-2, 0, 1.03])
+        self.max_value['medium'] = fuzz.trimf(self.max_value.universe, [1.03, 1.5, 2])
+        self.max_value['high'] = fuzz.trimf(self.max_value.universe, [1.5, 3, 7])
+
+        self.min_value['low'] = fuzz.trimf(self.min_value.universe, [-2, 0, 1.03])
+        self.min_value['medium'] = fuzz.trimf(self.min_value.universe, [1.03, 1.5, 2])
+        self.min_value['high'] = fuzz.trimf(self.min_value.universe, [1.5, 3, 7])
+
+        self.signal.automf(names=['-2', '-1', '0', '1', '2'])
+
+        # Define the fuzzy rules and create the control system
+        self.create_rules()
+        self.create_control_system()
+
+    def create_rules(self):
+        self.rules = [
+            ctrl.Rule(self.max_value['low'] & self.min_value['low'], self.signal['0']),
+            ctrl.Rule(self.max_value['medium'] & self.min_value['low'], self.signal['1']),
+            ctrl.Rule(self.max_value['high'] & self.min_value['low'], self.signal['2']),
+            ctrl.Rule(self.max_value['low'] & self.min_value['medium'], self.signal['-1']),
+            ctrl.Rule(self.max_value['low'] & self.min_value['high'], self.signal['-2']),
+            ctrl.Rule(self.max_value['medium'] & self.min_value['medium'], self.signal['0']),
+            ctrl.Rule(self.max_value['high'] & self.min_value['medium'], self.signal['1']),
+            ctrl.Rule(self.max_value['medium'] & self.min_value['high'], self.signal['-1']),
+            ctrl.Rule(self.max_value['high'] & self.min_value['high'], self.signal['0'])
+        ]
+
+    def create_control_system(self):
+        self.signal_ctrl = ctrl.ControlSystem(self.rules)
+        self.signal_simulation = ctrl.ControlSystemSimulation(self.signal_ctrl)
+
+    def calculate_signal(self, future_data_rescaled):
+        max_value_input = future_data_rescaled.max()
+        min_value_input = future_data_rescaled.min()
+
+        self.signal_simulation.input['max_value'] = max_value_input
+        self.signal_simulation.input['min_value'] = min_value_input
+        self.signal_simulation.compute()
+
+        return int(self.signal_simulation.output['signal'])
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
                  target_SR, target_Return, target_Volat,
                  max_weight, toler,
-                 full_rates, Dyp=120, Dyf=16, Thi=3):
+                 full_rates, Dyp=7, Dyf=30, Thi=3):
         try:
             self.returns = returns  # Set returns
             self.target_SR = target_SR  # Set target Sharpe Ratio
@@ -73,6 +124,7 @@ class ekoptim():
             self.full_rates = full_rates
             self.new_full_rates = []
             self.nnmodel = tf.keras.Sequential()
+            self.fuzzy_signal_calculator = FuzzySignalCalculator()
     
         except Exception as e:
             print(f"An error occurred: {e}")
@@ -284,14 +336,15 @@ class ekoptim():
             lengths = [len(c) for c in coeffs]
             flattened_coeffs = np.concatenate(coeffs)
             return flattened_coeffs, lengths
-        flattened_coeffs_total = []
-        data_transposed = data.T  # Transpose the input data to iterate over columns
-        for dx in data_transposed:
-            coeffs = pywt.wavedec(dx, wavelet)
-            lengths = [len(c) for c in coeffs]
-            flattened_coeffs = np.concatenate(coeffs)
-            flattened_coeffs_total.append(flattened_coeffs)
-        return np.vstack(flattened_coeffs_total), lengths    
+        else:
+            flattened_coeffs_total = []
+            data_transposed = data.T  # Transpose the input data to iterate over columns
+            for dx in data_transposed:
+                coeffs = pywt.wavedec(dx, wavelet)
+                lengths = [len(c) for c in coeffs]
+                flattened_coeffs = np.concatenate(coeffs)
+                flattened_coeffs_total.append(flattened_coeffs)
+            return np.vstack(flattened_coeffs_total), lengths    
     
     def reconstruct_from_flattened(self, flattened_coeffs, wavelet, lengths):
         coeffs = []
@@ -353,19 +406,18 @@ class ekoptim():
             raise ValueError("smb should be either a string or an integer.")
 
         for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
-            past_data = df[smb_col].iloc[i-self.Dyp:i]
-            psdt_HH = past_data.max()
-            psdt_LL = past_data.min()
+            past_data = df[['open','high','low','close']].iloc[i-self.Dyp:i]
+            psdt_HH = past_data.max(axis=0)['high']
+            psdt_LL = past_data.min(axis=0)['low']
             past_data_normalized, mindf, maxdf = self.normalize(past_data, psdt_LL, psdt_HH,xrnd)
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
             pst_dt_tiled = np.tile(past_data_normalized, tile_size)
             pst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, pst_dt_tiled.shape)
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled, fdmn, fdmx = self.normalize(future_data, psdt_LL, psdt_HH, xrnd)
-            signal = ((2 if future_data_rescaled.max() > 1.5 else 1 if 1.03 <=
-                       future_data_rescaled.max() <= 1.5 else 0) +
-                      (-2 if future_data_rescaled.min() < -1.5 else -1 if -1.5 <=
-                       future_data_rescaled.min() <= -1.03 else 0))
+   
+            signal = self.fuzzy_signal_calculator.calculate_signal(future_data_rescaled)
+            
             new_row = {
                 'past_data': pst_dt_tiled,
                 'future_data': future_data_rescaled,

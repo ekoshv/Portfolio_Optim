@@ -136,7 +136,7 @@ if __name__ == "__main__":
     otp_sel = int(input("Which type of opt you wish: "))
 #%%
     Dyp = 8
-    Dyf = 16    
+    Dyf = 32
     optimizerTV = ekoptim(returnsTV, risk_free_rate, target_SR,
                         target_Return, target_Volat, max_weight,tol,
                         full_rates = rates_MT5,
