@@ -343,7 +343,7 @@ class ekoptim():
         return (((data - dmn) / (dmx - dmn))+
                 np.random.uniform(-xrnd, xrnd, data.shape), data.min(), data.max())
     
-    def calculate_signal(fd):
+    def calculate_signal(self, fd):
         # Thresholding
         mx_val = min(fd.max(),10)
         mn_val = max(fd.min(),-10)
