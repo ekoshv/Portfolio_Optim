@@ -19,58 +19,6 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 import os
 import pywt
 from tqdm import tqdm
-import skfuzzy as fuzz
-from skfuzzy import control as ctrl
-
-
-class FuzzySignalCalculator:
-    def __init__(self):
-        # Create the fuzzy control system
-        self.max_value = ctrl.Antecedent(np.arange(-2, 7, 0.1), 'max_value')
-        self.min_value = ctrl.Antecedent(np.arange(-2, 7, 0.1), 'min_value')
-        self.signal = ctrl.Consequent(np.arange(-4, 5, 1), 'signal')
-
-        # Define the fuzzy sets
-        self.max_value['low'] = fuzz.trimf(self.max_value.universe, [-2, 0, 1.03])
-        self.max_value['medium'] = fuzz.trimf(self.max_value.universe, [1.03, 1.5, 2])
-        self.max_value['high'] = fuzz.trimf(self.max_value.universe, [1.5, 3, 7])
-
-        self.min_value['low'] = fuzz.trimf(self.min_value.universe, [-2, 0, 1.03])
-        self.min_value['medium'] = fuzz.trimf(self.min_value.universe, [1.03, 1.5, 2])
-        self.min_value['high'] = fuzz.trimf(self.min_value.universe, [1.5, 3, 7])
-
-        self.signal.automf(names=['-2', '-1', '0', '1', '2'])
-
-        # Define the fuzzy rules and create the control system
-        self.create_rules()
-        self.create_control_system()
-
-    def create_rules(self):
-        self.rules = [
-            ctrl.Rule(self.max_value['low'] & self.min_value['low'], self.signal['0']),
-            ctrl.Rule(self.max_value['medium'] & self.min_value['low'], self.signal['1']),
-            ctrl.Rule(self.max_value['high'] & self.min_value['low'], self.signal['2']),
-            ctrl.Rule(self.max_value['low'] & self.min_value['medium'], self.signal['-1']),
-            ctrl.Rule(self.max_value['low'] & self.min_value['high'], self.signal['-2']),
-            ctrl.Rule(self.max_value['medium'] & self.min_value['medium'], self.signal['0']),
-            ctrl.Rule(self.max_value['high'] & self.min_value['medium'], self.signal['1']),
-            ctrl.Rule(self.max_value['medium'] & self.min_value['high'], self.signal['-1']),
-            ctrl.Rule(self.max_value['high'] & self.min_value['high'], self.signal['0'])
-        ]
-
-    def create_control_system(self):
-        self.signal_ctrl = ctrl.ControlSystem(self.rules)
-        self.signal_simulation = ctrl.ControlSystemSimulation(self.signal_ctrl)
-
-    def calculate_signal(self, future_data_rescaled):
-        max_value_input = future_data_rescaled.max()
-        min_value_input = future_data_rescaled.min()
-
-        self.signal_simulation.input['max_value'] = max_value_input
-        self.signal_simulation.input['min_value'] = min_value_input
-        self.signal_simulation.compute()
-
-        return int(self.signal_simulation.output['signal'])
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
@@ -124,7 +72,6 @@ class ekoptim():
             self.full_rates = full_rates
             self.new_full_rates = []
             self.nnmodel = tf.keras.Sequential()
-            self.fuzzy_signal_calculator = FuzzySignalCalculator()
     
         except Exception as e:
             print(f"An error occurred: {e}")
@@ -395,7 +342,33 @@ class ekoptim():
             data = data.to_numpy()        
         return (((data - dmn) / (dmx - dmn))+
                 np.random.uniform(-xrnd, xrnd, data.shape), data.min(), data.max())
-
+    
+    def calculate_signal(fd):
+        # Thresholding
+        mx_val = min(fd.max(),10)
+        mn_val = max(fd.min(),-10)
+        sigs=[]
+        # Conditioning
+        # for mx_val
+        if mx_val>=2.0:
+            sigs.append(2)
+        elif 1.1<=mx_val<2.0:
+            sigs.append(1)
+        elif mx_val<1.1:
+            sigs.append(0)
+        else:
+            sigs.append(0)
+        # for mn_val
+        if mn_val<=-2.0:
+            sigs.append(-2)
+        elif -2<mn_val<=-1.1:
+            sigs.append(-1)
+        elif -1.1<mn_val:
+            sigs.append(0)
+        else:
+            sigs.append(0)
+        return (sum(sigs))
+    
     def apply_moving_horizon_norm(self,df,smb,spn, tile_size, xrnd=0):
         new_df = []
         if isinstance(smb, str):
@@ -416,7 +389,7 @@ class ekoptim():
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled, fdmn, fdmx = self.normalize(future_data, psdt_LL, psdt_HH, xrnd)
    
-            signal = self.fuzzy_signal_calculator.calculate_signal(future_data_rescaled)
+            signal = self.calculate_signal(future_data_rescaled)
             
             new_row = {
                 'past_data': pst_dt_tiled,
