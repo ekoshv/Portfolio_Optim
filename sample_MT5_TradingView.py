@@ -136,8 +136,8 @@ if __name__ == "__main__":
     print("-------------------------")
     otp_sel = int(input("Which type of opt you wish: "))
 #%%
-    Dyp = 32
-    Dyf = 32
+    Dyp = 32 # past 32 days
+    Dyf = 32 # future 32 days
     optimizerTV = ekoptim(returnsTV, risk_free_rate, target_SR,
                         target_Return, target_Volat, max_weight,tol,
                         full_rates = rates_MT5,
@@ -207,7 +207,7 @@ if __name__ == "__main__":
     # shut down connection to the MetaTrader 5 terminal
 #%%
     optimizerTV.Prepare_Data('close', spn=10,
-                             tile_size=(2,4),xrnd=1e-3,
+                             tile_size=(2,16),xrnd=1e-3,
                              Selected_symbols=selected_symb)
     alphax = optimizerTV.HNrates #Dyp*2,2
 #%%

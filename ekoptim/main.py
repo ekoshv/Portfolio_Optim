@@ -604,7 +604,7 @@ class ekoptim():
         y_pred = np.array(self.nnmodel.predict(X))
         y_pred = y_pred.squeeze()
         y_pred = [0 if x<1e-3 else round(100*x)/100 for x in y_pred] 
-        return y_pred
+        return {i: value for i, value in enumerate(y_pred)}
 
     
     def predict_all(self, smb):
