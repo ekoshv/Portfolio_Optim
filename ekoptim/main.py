@@ -546,7 +546,7 @@ class ekoptim():
        
        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
        # Initialize the SMOTE object
-       smote = SMOTE(sampling_strategy='auto', k_neighbors=4, random_state=42)
+       smote = SMOTE(sampling_strategy='auto', k_neighbors=9, random_state=42)
        # Fit and resample the training data
        X_train_flattened = X_train.reshape(X_train.shape[0], -1)
        y_train_flattened = y_train.reshape(y_train.shape[0], -1)
