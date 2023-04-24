@@ -545,19 +545,19 @@ class ekoptim():
        y = np.array([d['state'] for lst in self.HNrates for d in lst])
        
        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
-       # Initialize the SMOTE object
-       smote = SMOTE(sampling_strategy='auto', k_neighbors=2, random_state=42)
-       # Fit and resample the training data
-       X_train_flattened = X_train.reshape(X_train.shape[0], -1)
-       y_train_flattened = y_train.reshape(y_train.shape[0], -1)
+       # # Initialize the SMOTE object
+       # smote = SMOTE(sampling_strategy='auto', k_neighbors=2, random_state=42)
+       # # Fit and resample the training data
+       # X_train_flattened = X_train.reshape(X_train.shape[0], -1)
+       # y_train_flattened = y_train.reshape(y_train.shape[0], -1)
        
-       X_train_resampled, y_train_resampled = smote.fit_resample(X_train_flattened,
-                                                                 y_train_flattened)
-       # Optionally, reshape the resampled data back to its original shape
-       X_train_resampled_reshaped = X_train_resampled.reshape((-1,) + X_train.shape[1:])
-       y_train_resampled_reshaped = y_train_resampled.reshape((-1,) + y_train.shape[1:])
-       X_train = X_train_resampled_reshaped
-       y_train = y_train_resampled_reshaped
+       # X_train_resampled, y_train_resampled = smote.fit_resample(X_train_flattened,
+       #                                                           y_train_flattened)
+       # # Optionally, reshape the resampled data back to its original shape
+       # X_train_resampled_reshaped = X_train_resampled.reshape((-1,) + X_train.shape[1:])
+       # y_train_resampled_reshaped = y_train_resampled.reshape((-1,) + y_train.shape[1:])
+       # X_train = X_train_resampled_reshaped
+       # y_train = y_train_resampled_reshaped
        # Create a label encoder for mapping the class labels
        label_encoder = LabelEncoder()
        unique_labels = np.unique(y_train)
