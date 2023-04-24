@@ -514,7 +514,7 @@ class ekoptim():
        if not os.path.exists(checkpoint_dir):
            os.makedirs(checkpoint_dir)
        filepath = checkpoint_dir + '/best_weights.hdf5'
-       checkpoint_callback = ModelCheckpoint(filepath, monitor=self.custom_loss.__name__,
+       checkpoint_callback = ModelCheckpoint(filepath, monitor='val_custom_loss',
                                              verbose=1, save_best_only=True, mode='min')
    
        # Train the model on the data in new_rates_lists
