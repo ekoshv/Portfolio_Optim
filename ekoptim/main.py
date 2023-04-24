@@ -479,7 +479,7 @@ class ekoptim():
     
     def custom_loss(y_true, y_pred):
         # Calculate the SparseCategoricalCrossentropy loss
-        sce_loss = tf.SparseCategoricalCrossentropy(from_logits=False)
+        sce_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
         loss = sce_loss(y_true, y_pred)
         
         # Calculate the accuracy
@@ -503,7 +503,8 @@ class ekoptim():
        opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
        model.compile(optimizer=opt,
               loss=self.custom_loss,
-              metrics=['accuracy', tf.SparseCategoricalCrossentropy(from_logits=False)])
+              metrics=['accuracy',
+                       tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)])
 
        #model.compile(optimizer=opt, loss='mape')
    
