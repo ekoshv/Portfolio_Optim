@@ -215,5 +215,6 @@ if __name__ == "__main__":
 #%%
     optimizerTV.load_model_fit()
     optimizerTV.predict_all('close')
+    betax = optimizerTV.Predicted_Rates
 #%%
     mt5.shutdown()

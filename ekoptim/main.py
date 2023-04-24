@@ -367,7 +367,27 @@ class ekoptim():
             sigs.append(0)
         else:
             sigs.append(0)
-        return (sum(sigs))
+        
+        if sigs == [2, -2]:
+            state = 0
+        elif sigs == [2, -1]:
+            state = 1
+        elif sigs == [2, 0]:
+            state = 2
+        elif sigs == [1, -2]:
+            state = 3
+        elif sigs == [1, -1]:
+            state = 4
+        elif sigs == [1, 0]:
+            state = 5
+        elif sigs == [0, -2]:
+            state = 6
+        elif sigs == [0, -1]:
+            state = 7
+        elif sigs == [0, 0]:
+            state = 8
+        
+        return state, sigs
     
     def apply_moving_horizon_norm(self,df,smb,spn, tile_size, xrnd=0):
         new_df = []
@@ -389,11 +409,12 @@ class ekoptim():
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled, fdmn, fdmx = self.normalize(future_data, psdt_LL, psdt_HH, xrnd)
    
-            signal = self.calculate_signal(future_data_rescaled)
+            state, signal = self.calculate_signal(future_data_rescaled)
             
             new_row = {
                 'past_data': pst_dt_tiled,
                 'future_data': future_data_rescaled,
+                'state': state,
                 'signal': signal,
                 'minmax': [psdt_LL,psdt_HH]
             }
@@ -473,7 +494,7 @@ class ekoptim():
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
     
-            tf.keras.layers.Dense(5, activation="softmax")
+            tf.keras.layers.Dense(6, activation="softmax")
         ])
         return model
     
@@ -520,11 +541,11 @@ class ekoptim():
        # Train the model on the data in new_rates_lists
        X = np.array([d['past_data'] for lst in self.HNrates for d in lst])
        X = np.expand_dims(X, axis=-1)  # add a new axis for the input feature
-       y = np.array([d['signal'] for lst in self.HNrates for d in lst])
+       y = np.array([d['state'] for lst in self.HNrates for d in lst])
        
        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
-       y_train = pd.Series(y_train).map({-2: 0, -1: 1, 0: 2, 1: 3, 2: 4}).to_numpy()
-       y_test = pd.Series(y_test).map({-2: 0, -1: 1, 0: 2, 1: 3, 2: 4}).to_numpy()
+       # y_train = pd.Series(y_train).map({-2: 0, -1: 1, 0: 2, 1: 3, 2: 4}).to_numpy()
+       # y_test = pd.Series(y_test).map({-2: 0, -1: 1, 0: 2, 1: 3, 2: 4}).to_numpy()
        # Create a label encoder for mapping the class labels
        label_encoder = LabelEncoder()
        unique_labels = np.unique(y_train)
