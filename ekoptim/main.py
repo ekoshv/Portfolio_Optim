@@ -443,25 +443,25 @@ class ekoptim():
         model = tf.keras.Sequential([
             tf.keras.layers.Input(shape=(image_height, image_width, 1)),
 
-            tf.keras.layers.SeparableConv2D(filters=256,
+            tf.keras.layers.Conv2D(filters=128,
                                    kernel_size=9, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.2),
     
-            tf.keras.layers.SeparableConv2D(filters=256,
+            tf.keras.layers.Conv2D(filters=128,
                                    kernel_size=7, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.2),
     
-            tf.keras.layers.SeparableConv2D(filters=256,
+            tf.keras.layers.Conv2D(filters=128,
                                    kernel_size=5, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.2),
 
-            tf.keras.layers.SeparableConv2D(filters=256,
+            tf.keras.layers.Conv2D(filters=128,
                                    kernel_size=3, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
@@ -478,7 +478,7 @@ class ekoptim():
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
 
-            tf.keras.layers.Dense(1024, activation="tanh"),
+            tf.keras.layers.Dense(1024, activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
             
@@ -494,7 +494,7 @@ class ekoptim():
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.5),
     
-            tf.keras.layers.Dense(6, activation="softmax")
+            tf.keras.layers.Dense(9, activation="softmax")
         ])
         return model
     
