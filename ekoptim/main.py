@@ -15,6 +15,7 @@ from sklearn.utils import class_weight
 import traceback
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
+from imblearn.over_sampling import SMOTE
 from tensorflow.keras.callbacks import ModelCheckpoint
 import os
 import pywt
@@ -544,6 +545,10 @@ class ekoptim():
        y = np.array([d['state'] for lst in self.HNrates for d in lst])
        
        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
+       # Initialize the SMOTE object
+       smote = SMOTE(random_state=42)
+       # Fit and resample the training data
+       X_train, y_train = smote.fit_resample(X_train, y_train)
        # y_train = pd.Series(y_train).map({-2: 0, -1: 1, 0: 2, 1: 3, 2: 4}).to_numpy()
        # y_test = pd.Series(y_test).map({-2: 0, -1: 1, 0: 2, 1: 3, 2: 4}).to_numpy()
        # Create a label encoder for mapping the class labels
