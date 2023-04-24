@@ -409,6 +409,7 @@ class ekoptim():
     def Prepare_Data(self, symb, spn=1, tile_size=(2,2), xrnd=0, Selected_symbols=None):
         print("Preparing Data...")
         self.spn = spn
+        self.tile_size = tile_size
         if Selected_symbols is None:
             self.HNrates = self.Hrz_Nrm(self.full_rates, symb, spn, tile_size, xrnd)
         else:
@@ -421,32 +422,14 @@ class ekoptim():
         model = tf.keras.Sequential([
             tf.keras.layers.Input(shape=(image_height, image_width, 1)),
 
-            tf.keras.layers.SeparableConv2D(filters=64,
-                                   kernel_size=5, strides=1,
+            tf.keras.layers.SeparableConv2D(filters=256,
+                                   kernel_size=9, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.2),
     
-            tf.keras.layers.SeparableConv2D(filters=64,
-                                   kernel_size=5, strides=1,
-                                   padding="same", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.2),
-    
-            tf.keras.layers.SeparableConv2D(filters=64,
-                                   kernel_size=5, strides=1,
-                                   padding="same", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.2),
-
-            tf.keras.layers.SeparableConv2D(filters=64,
-                                   kernel_size=5, strides=1,
-                                   padding="same", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.2),
-            
-            tf.keras.layers.SeparableConv2D(filters=64,
-                                   kernel_size=5, strides=1,
+            tf.keras.layers.SeparableConv2D(filters=256,
+                                   kernel_size=7, strides=1,
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.2),
@@ -456,6 +439,13 @@ class ekoptim():
                                    padding="same", activation="relu"),
             tf.keras.layers.BatchNormalization(),
             tf.keras.layers.Dropout(0.2),
+
+            tf.keras.layers.SeparableConv2D(filters=256,
+                                   kernel_size=3, strides=1,
+                                   padding="same", activation="relu"),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.2),
+
     
             tf.keras.layers.GlobalAveragePooling2D(),
     
@@ -486,7 +476,23 @@ class ekoptim():
             tf.keras.layers.Dense(5, activation="softmax")
         ])
         return model
-
+    
+    def custom_loss(y_true, y_pred):
+        # Calculate the SparseCategoricalCrossentropy loss
+        sce_loss = tf.SparseCategoricalCrossentropy(from_logits=False)
+        loss = sce_loss(y_true, y_pred)
+        
+        # Calculate the accuracy
+        accuracy = tf.keras.metrics.sparse_categorical_accuracy(y_true, y_pred)
+        
+        # Calculate the inverse of the accuracy
+        inv_accuracy = 1.0 - tf.reduce_mean(accuracy)
+        
+        # Combine the loss and inverse of the accuracy
+        combined_loss = loss + inv_accuracy
+        
+        return combined_loss
+    
     def NNmake(self,
                learning_rate=0.001, epochs=100, batch_size=32,
                load_train=False):
@@ -496,8 +502,8 @@ class ekoptim():
        # Compile the model with mean squared error loss
        opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
        model.compile(optimizer=opt,
-              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
-              metrics=['accuracy', self.r_squared])
+              loss=self.custom_loss,
+              metrics=['accuracy', tf.SparseCategoricalCrossentropy(from_logits=False)])
 
        #model.compile(optimizer=opt, loss='mape')
    
@@ -506,7 +512,8 @@ class ekoptim():
        if not os.path.exists(checkpoint_dir):
            os.makedirs(checkpoint_dir)
        filepath = checkpoint_dir + '/best_weights.hdf5'
-       checkpoint_callback = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+       checkpoint_callback = ModelCheckpoint(filepath, monitor=self.custom_loss,
+                                             verbose=1, save_best_only=True, mode='min')
    
        # Train the model on the data in new_rates_lists
        X = np.array([d['past_data'] for lst in self.HNrates for d in lst])
@@ -567,8 +574,9 @@ class ekoptim():
         psdt_LL = past_data.min(axis=0)['low']
         past_data_normalized, mindf, maxdf = self.normalize(past_data, psdt_LL, psdt_HH)
         past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized.values,'db1')
+        pst_dt_tiled = np.tile(past_data_normalized, self.tile_size)
         # Reshape the past data for input to the neural network
-        X = np.expand_dims(past_data_normalized_w, axis=(0, -1))
+        X = np.expand_dims(pst_dt_tiled, axis=(0, -1))
         # Use the trained neural network model to predict the future data
         y_pred = np.array(self.nnmodel.predict(X))
         y_pred = y_pred.squeeze()
