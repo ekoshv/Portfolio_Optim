@@ -477,7 +477,7 @@ class ekoptim():
         ])
         return model
     
-    def custom_loss(self, y_true, y_pred):
+    def custom_loss(self, y_true, y_pred, name="custom_loss"):
         # Calculate the SparseCategoricalCrossentropy loss
         sce_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
         loss = sce_loss(y_true, y_pred)
@@ -490,6 +490,7 @@ class ekoptim():
         
         # Combine the loss and inverse of the accuracy
         combined_loss = loss + inv_accuracy
+        combined_loss.__name__ = name
         
         return combined_loss
     
@@ -513,7 +514,7 @@ class ekoptim():
        if not os.path.exists(checkpoint_dir):
            os.makedirs(checkpoint_dir)
        filepath = checkpoint_dir + '/best_weights.hdf5'
-       checkpoint_callback = ModelCheckpoint(filepath, monitor=self.custom_loss,
+       checkpoint_callback = ModelCheckpoint(filepath, monitor=self.custom_loss.__name__,
                                              verbose=1, save_best_only=True, mode='min')
    
        # Train the model on the data in new_rates_lists
