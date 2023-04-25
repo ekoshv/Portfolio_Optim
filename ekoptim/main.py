@@ -517,8 +517,11 @@ class ekoptim():
         return combined_loss
     
     def NNmake(self,
-               learning_rate=0.001, epochs=100, batch_size=32,
+               learning_rate=0.001, epochs=100, batch_size=32, k_n=None,
                load_train=False):
+       self.k_n=5
+       if k_n is not None:
+           self.k_n = k_n
        # Define the neural network
        model = self.create_model(self.mz, self.nz) 
        
@@ -546,7 +549,7 @@ class ekoptim():
        
        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
        # Initialize the SMOTE object
-       smote = SMOTE(sampling_strategy='auto', k_neighbors=5, random_state=42)
+       smote = SMOTE(sampling_strategy='auto', k_neighbors=self.k_n, random_state=42)
        # Fit and resample the training data
        X_train_flattened = X_train.reshape(X_train.shape[0], -1)
        y_train_flattened = y_train.reshape(y_train.shape[0], -1)

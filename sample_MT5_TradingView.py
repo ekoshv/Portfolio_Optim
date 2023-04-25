@@ -141,7 +141,7 @@ if __name__ == "__main__":
     optimizerTV = ekoptim(returnsTV, risk_free_rate, target_SR,
                         target_Return, target_Volat, max_weight,tol,
                         full_rates = rates_MT5,
-                        Dyp=Dyp, Dyf=Dyf, Thi=3)
+                        Dyp=Dyp, Dyf=Dyf, Thi=1)
 
 #%%
     print("Optimization started, please wait...")
@@ -211,7 +211,9 @@ if __name__ == "__main__":
                              Selected_symbols=selected_symb) #None
     alphax = optimizerTV.HNrates #Dyp*2,2
 #%%
-    optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32, load_train=False)
+    optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32,
+                       k_n=4,
+                       load_train=False)
 #%%
     optimizerTV.load_model_fit()
     optimizerTV.predict_all('close')
