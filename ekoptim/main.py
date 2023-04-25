@@ -512,10 +512,20 @@ class ekoptim():
         # Calculate the inverse of the accuracy
         inv_accuracy = 1.0 - tf.reduce_mean(accuracy)
 
+        # Calculate precision and recall
+        true_positives = tf.reduce_sum(y_true * y_pred, axis=0)
+        false_positives = tf.reduce_sum((1 - y_true) * y_pred, axis=0)
+        false_negatives = tf.reduce_sum(y_true * (1 - y_pred), axis=0)
+        
+        precision = true_positives / (true_positives + false_positives + 1e-7)
+        recall = true_positives / (true_positives + false_negatives + 1e-7)
+        
         # Calculate the F1-score
-        f1_score = tfa.metrics.F1Score(num_classes=num_classes, average=average)#
-        f1_score.update_state(y_true, y_pred)
-        mean_f1_score = f1_score.result()
+        f1_score = 2 * (precision * recall) / (precision + recall + 1e-7)
+        mean_f1_score = tf.reduce_mean(f1_score)
+        
+        # Calculate the inverse of the mean F1-score
+        inv_f1_score = 1.0 - mean_f1_score
         
         # Calculate the inverse of the mean F1-score
         inv_f1_score = 1.0 - mean_f1_score
