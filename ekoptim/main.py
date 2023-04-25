@@ -14,6 +14,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import class_weight
 import traceback
 import tensorflow as tf
+import tensorflow_addons as tfa
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 from tensorflow.keras.callbacks import ModelCheckpoint
@@ -500,19 +501,23 @@ class ekoptim():
         ])
         return model
     
-    def custom_loss(self, y_true, y_pred, name="custom_loss"):
+    def custom_loss(self, y_true, y_pred, num_classes=9, average='macro', name="custom_loss"):
         # Calculate the SparseCategoricalCrossentropy loss
         sce_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
         loss = sce_loss(y_true, y_pred)
         
-        # Calculate the accuracy
-        accuracy = tf.keras.metrics.sparse_categorical_accuracy(y_true, y_pred)
+        # Calculate the F1-score
+        f1_score = tfa.metrics.F1Score(num_classes=num_classes, average=average)
+        y_true_one_hot = tf.one_hot(tf.cast(y_true, tf.int32), depth=num_classes)
+        y_pred_one_hot = tf.one_hot(tf.argmax(y_pred, axis=-1), depth=num_classes)
+        f1_score.update_state(y_true_one_hot, y_pred_one_hot)
+        mean_f1_score = f1_score.result()
         
-        # Calculate the inverse of the accuracy
-        inv_accuracy = 1.0 - tf.reduce_mean(accuracy)
+        # Calculate the inverse of the mean F1-score
+        inv_f1_score = 1.0 - mean_f1_score
         
-        # Combine the loss and inverse of the accuracy
-        combined_loss = loss + inv_accuracy
+        # Combine the loss and inverse of the F1-score
+        combined_loss = loss + inv_f1_score
         combined_loss.__name__ = name
         
         return combined_loss
@@ -531,7 +536,8 @@ class ekoptim():
        model.compile(optimizer=opt,
               loss=self.custom_loss,
               metrics=['accuracy',
-                       tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)])
+                       tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
+                       tfa.metrics.F1Score(num_classes=9, average='macro')])
 
        #model.compile(optimizer=opt, loss='mape')
    

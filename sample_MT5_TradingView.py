@@ -206,7 +206,7 @@ if __name__ == "__main__":
     Dyp = 32 # past 32 days
     Dyf = 32 # future 32 days    
     optimizerTV.Prepare_Data('close', spn=10,
-                             tile_size=(2,2*Dyp/4),xrnd=1e-3,#(n*Dyp->m=n*Dyp/4)
+                             tile_size=(2,int(2*Dyp/4)),xrnd=1e-3,#(n*Dyp->m=n*Dyp/4)
                              Selected_symbols=selected_symb,
                              Dyp=Dyp, Dyf=Dyf, Thi=1) #None
     alphax = optimizerTV.HNrates
