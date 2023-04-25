@@ -532,7 +532,7 @@ class ekoptim():
        model.compile(optimizer=opt,
               loss=self.custom_loss,
               metrics=['accuracy',tfa.metrics.F1Score(num_classes=9, average='macro'),
-                       tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)])
+                       tf.keras.losses.CategoricalCrossentropy(from_logits=False)])
 
        #model.compile(optimizer=opt, loss='mape')
    
@@ -571,6 +571,17 @@ class ekoptim():
        label_encoder = LabelEncoder()
        unique_labels = np.unique(y_train)
        encoded_labels = label_encoder.fit_transform(unique_labels)
+        
+       # Fit the label encoder on the training labels and transform both train and test labels
+       y_train_encoded = label_encoder.fit_transform(y_train)
+       y_test_encoded = label_encoder.transform(y_test)
+        
+       # Get the number of unique classes
+       num_classes = len(unique_labels)
+        
+       # Convert the encoded class labels to one-hot encoding
+       y_train_one_hot = tf.keras.utils.to_categorical(y_train_encoded, num_classes=num_classes)
+       y_test_one_hot = tf.keras.utils.to_categorical(y_test_encoded, num_classes=num_classes)
        # Compute the class weights
        class_weights = class_weight.compute_class_weight('balanced',
                                                          classes=unique_labels,
@@ -583,7 +594,7 @@ class ekoptim():
        if(load_train):
             model.load_weights(filepath)
         
-       model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
+       model.fit(X_train, y_train_one_hot, epochs=epochs, batch_size=batch_size,
                  validation_split=0.33, shuffle=True ,
                  callbacks=[tensorboard_callback, checkpoint_callback],
                  class_weight=class_weight_dict)
@@ -591,7 +602,7 @@ class ekoptim():
        model.load_weights(filepath)
        
        # Evaluate the model on the test set
-       score = model.evaluate(X_test, y_test)
+       score = model.evaluate(X_test, y_test_one_hot)
        print(score)
        self.nnmodel = model
 
