@@ -501,32 +501,19 @@ class ekoptim():
         ])
         return model
     
-    def custom_loss(y_true, y_pred, num_classes=9, name="custom_loss"):
+    def custom_loss(self, y_true, y_pred, name="custom_loss"):
         # Calculate the SparseCategoricalCrossentropy loss
         sce_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
         loss = sce_loss(y_true, y_pred)
         
-        # Convert y_true and y_pred to one-hot vectors
-        y_true_one_hot = tf.one_hot(tf.cast(y_true, tf.int32), depth=num_classes)
-        y_pred_one_hot = tf.one_hot(tf.argmax(y_pred, axis=-1), depth=num_classes)
+        # Calculate the accuracy
+        accuracy = tf.keras.metrics.sparse_categorical_accuracy(y_true, y_pred)
         
-        # Calculate precision and recall
-        true_positives = tf.reduce_sum(y_true_one_hot * y_pred_one_hot, axis=0)
-        false_positives = tf.reduce_sum((1 - y_true_one_hot) * y_pred_one_hot, axis=0)
-        false_negatives = tf.reduce_sum(y_true_one_hot * (1 - y_pred_one_hot), axis=0)
+        # Calculate the inverse of the accuracy
+        inv_accuracy = 1.0 - tf.reduce_mean(accuracy)
         
-        precision = true_positives / (true_positives + false_positives + 1e-7)
-        recall = true_positives / (true_positives + false_negatives + 1e-7)
-        
-        # Calculate the F1-score
-        f1_score = 2 * (precision * recall) / (precision + recall + 1e-7)
-        mean_f1_score = tf.reduce_mean(f1_score)
-        
-        # Calculate the inverse of the mean F1-score
-        inv_f1_score = 1.0 - mean_f1_score
-        
-        # Combine the loss and inverse of the F1-score
-        combined_loss = loss + inv_f1_score
+        # Combine the loss and inverse of the accuracy
+        combined_loss = loss + inv_accuracy
         combined_loss.__name__ = name
         
         return combined_loss
