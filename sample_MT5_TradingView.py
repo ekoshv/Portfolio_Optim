@@ -212,7 +212,7 @@ if __name__ == "__main__":
     alphax = optimizerTV.HNrates #Dyp*2,2
 #%%
     optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32,
-                       k_n=4,
+                       k_n=2,
                        load_train=False)
 #%%
     optimizerTV.load_model_fit()

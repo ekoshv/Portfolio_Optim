@@ -600,28 +600,32 @@ class ekoptim():
         self.nnmodel = model
 
     def predict_next(self, rate, smb):
+        try:
+            if isinstance(smb, str):
+                smb_col = smb
+            elif isinstance(smb, int):
+                smb_col = rate.columns[smb]
+            else:
+                raise ValueError("smb should be either a string or an integer.")
+            # Get the last Dyp rows of full_rates for the given symbol
+            past_data = rate[['open','high','low','close']].tail(self.Dyp)
+            psdt_HH = past_data.max(axis=0)['high']
+            psdt_LL = past_data.min(axis=0)['low']
+            past_data_normalized, mindf, maxdf = self.normalize(past_data, psdt_LL, psdt_HH)
+            past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
+            pst_dt_tiled = np.tile(past_data_normalized, self.tile_size)
+            # Reshape the past data for input to the neural network
+            X = np.expand_dims(pst_dt_tiled, axis=(0, -1))
+            # Use the trained neural network model to predict the future data
+            y_pred = np.array(self.nnmodel.predict(X))
+            y_pred = y_pred.squeeze()
+            y_pred = [0 if x<1e-3 else round(100*x)/100 for x in y_pred] 
+            return {i: value for i, value in enumerate(y_pred)}
         
-        if isinstance(smb, str):
-            smb_col = smb
-        elif isinstance(smb, int):
-            smb_col = rate.columns[smb]
-        else:
-            raise ValueError("smb should be either a string or an integer.")
-        # Get the last Dyp rows of full_rates for the given symbol
-        past_data = rate[['open','high','low','close']].tail(self.Dyp)
-        psdt_HH = past_data.max(axis=0)['high']
-        psdt_LL = past_data.min(axis=0)['low']
-        past_data_normalized, mindf, maxdf = self.normalize(past_data, psdt_LL, psdt_HH)
-        past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
-        pst_dt_tiled = np.tile(past_data_normalized, self.tile_size)
-        # Reshape the past data for input to the neural network
-        X = np.expand_dims(pst_dt_tiled, axis=(0, -1))
-        # Use the trained neural network model to predict the future data
-        y_pred = np.array(self.nnmodel.predict(X))
-        y_pred = y_pred.squeeze()
-        y_pred = [0 if x<1e-3 else round(100*x)/100 for x in y_pred] 
-        return {i: value for i, value in enumerate(y_pred)}
-
+        except Exception as e:
+            print(f"An error occurred in Prediction Process: {e}")
+            traceback.print_exc()
+            return None
     
     def predict_all(self, smb):
         # Loop through all dataframes in full_rates
