@@ -525,10 +525,10 @@ class ekoptim():
         mean_f1_score = tf.reduce_mean(f1_score)
         
         # Calculate the inverse of the mean F1-score
-        inv_f1_score = 1.0 - mean_f1_score
+        inv_f1_score = 1.0 / (mean_f1_score+0.001)
         
         # Calculate the inverse of the mean F1-score
-        inv_f1_score = 1.0 - mean_f1_score
+        inv_f1_score = 1.0 / (mean_f1_score+0.001)
         
         # Combine the loss and inverse of the accuracy and F1
         combined_loss = loss + inv_accuracy + inv_f1_score
