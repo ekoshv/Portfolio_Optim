@@ -14,7 +14,6 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import class_weight
 import traceback
 import tensorflow as tf
-import tensorflow_addons as tfa
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 from tensorflow.keras.callbacks import ModelCheckpoint
@@ -431,7 +430,7 @@ class ekoptim():
         print("Preparing Data...")
         self.spn = spn
         self.Dyp = Dyp   # Number of past days to consider in the moving horizon
-        self.Dyf = Dyf    # Number of future days to predict in the moving horizon
+        self.Dyf = Dyf   # Number of future days to predict in the moving horizon
         self.Thi = Thi   # Time horizon interval (in days)
         self.tile_size = tile_size
         if Selected_symbols is None:
@@ -532,8 +531,7 @@ class ekoptim():
        model.compile(optimizer=opt,
               loss=self.custom_loss,
               metrics=['accuracy',
-                       tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
-                       tfa.metrics.F1Score(num_classes=9, average='macro')])
+                       tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)])
 
        #model.compile(optimizer=opt, loss='mape')
    
