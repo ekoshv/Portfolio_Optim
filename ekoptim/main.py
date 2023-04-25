@@ -502,8 +502,8 @@ class ekoptim():
         return model
     
     def custom_loss(self, y_true, y_pred, name="custom_loss"):
-        # Calculate the SparseCategoricalCrossentropy loss
-        sce_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
+        # Calculate the CategoricalCrossentropy loss
+        sce_loss = tf.keras.losses.CategoricalCrossentropy(from_logits=False)
         loss = sce_loss(y_true, y_pred)
         
         # Calculate the accuracy
