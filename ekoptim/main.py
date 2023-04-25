@@ -501,7 +501,7 @@ class ekoptim():
         ])
         return model
     
-    def custom_loss(self, y_true, y_pred, name="custom_loss"):
+    def custom_loss(self, y_true, y_pred, num_classes=9, average='macro', name="custom_loss"):
         # Calculate the CategoricalCrossentropy loss
         sce_loss = tf.keras.losses.CategoricalCrossentropy(from_logits=False)
         loss = sce_loss(y_true, y_pred)
@@ -511,9 +511,17 @@ class ekoptim():
         
         # Calculate the inverse of the accuracy
         inv_accuracy = 1.0 - tf.reduce_mean(accuracy)
+
+        # Calculate the F1-score
+        f1_score = tfa.metrics.F1Score(num_classes=num_classes, average=average)#
+        f1_score.update_state(y_true, y_pred)
+        mean_f1_score = f1_score.result()
         
-        # Combine the loss and inverse of the accuracy
-        combined_loss = loss + inv_accuracy
+        # Calculate the inverse of the mean F1-score
+        inv_f1_score = 1.0 - mean_f1_score
+        
+        # Combine the loss and inverse of the accuracy and F1
+        combined_loss = loss + inv_accuracy + inv_f1_score
         combined_loss.__name__ = name
         
         return combined_loss
