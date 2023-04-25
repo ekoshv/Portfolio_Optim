@@ -25,7 +25,7 @@ class ekoptim():
     def __init__(self, returns, risk_free_rate,
                  target_SR, target_Return, target_Volat,
                  max_weight, toler,
-                 full_rates, Dyp=7, Dyf=30, Thi=3):
+                 full_rates):
         try:
             self.returns = returns  # Set returns
             self.target_SR = target_SR  # Set target Sharpe Ratio
@@ -67,9 +67,6 @@ class ekoptim():
             
             self.HNrates = []
             self.Predicted_Rates=[]
-            self.Dyp = Dyp   # Number of past days to consider in the moving horizon
-            self.Dyf = Dyf    # Number of future days to predict in the moving horizon
-            self.Thi = Thi   # Time horizon interval (in days)
             self.full_rates = full_rates
             self.new_full_rates = []
             self.nnmodel = tf.keras.Sequential()
@@ -428,9 +425,13 @@ class ekoptim():
         return [self.apply_moving_horizon_norm(df, smb, spn, tile_size,xrnd) for 
                 df in tqdm(rates, desc='Processing DataFrames')]
 
-    def Prepare_Data(self, symb, spn=1, tile_size=(2,2), xrnd=0, Selected_symbols=None):
+    def Prepare_Data(self, symb, spn=1, tile_size=(2,2), xrnd=0, Selected_symbols=None,
+                     Dyp=8, Dyf=32, Thi=3):
         print("Preparing Data...")
         self.spn = spn
+        self.Dyp = Dyp   # Number of past days to consider in the moving horizon
+        self.Dyf = Dyf    # Number of future days to predict in the moving horizon
+        self.Thi = Thi   # Time horizon interval (in days)
         self.tile_size = tile_size
         if Selected_symbols is None:
             self.HNrates = self.Hrz_Nrm(self.full_rates, symb, spn, tile_size, xrnd)

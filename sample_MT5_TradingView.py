@@ -136,12 +136,9 @@ if __name__ == "__main__":
     print("-------------------------")
     otp_sel = int(input("Which type of opt you wish: "))
 #%%
-    Dyp = 32 # past 32 days
-    Dyf = 32 # future 32 days
     optimizerTV = ekoptim(returnsTV, risk_free_rate, target_SR,
                         target_Return, target_Volat, max_weight,tol,
-                        full_rates = rates_MT5,
-                        Dyp=Dyp, Dyf=Dyf, Thi=1)
+                        full_rates = rates_MT5)
 
 #%%
     print("Optimization started, please wait...")
@@ -206,13 +203,16 @@ if __name__ == "__main__":
     optimizerTV.frontPlot(optimized_weights_TV, save=False)
     # shut down connection to the MetaTrader 5 terminal
 #%%
+    Dyp = 32 # past 32 days
+    Dyf = 32 # future 32 days    
     optimizerTV.Prepare_Data('close', spn=10,
-                             tile_size=(2,16),xrnd=1e-3,
-                             Selected_symbols=selected_symb) #None
-    alphax = optimizerTV.HNrates #Dyp*2,2
+                             tile_size=(2,2*Dyp/4),xrnd=1e-3,#(n*Dyp->m=n*Dyp/4)
+                             Selected_symbols=selected_symb,
+                             Dyp=Dyp, Dyf=Dyf, Thi=1) #None
+    alphax = optimizerTV.HNrates
 #%%
     optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32,
-                       k_n=2,
+                       k_n=None,
                        load_train=False)
 #%%
     optimizerTV.load_model_fit()
