@@ -507,7 +507,7 @@ class ekoptim():
         loss = sce_loss(y_true, y_pred)
         
         # Calculate the accuracy
-        accuracy = tf.keras.metrics.sparse_categorical_accuracy(y_true, y_pred)
+        accuracy = tf.keras.metrics.categorical_accuracy(y_true, y_pred)
         
         # Calculate the inverse of the accuracy
         inv_accuracy = 1.0 - tf.reduce_mean(accuracy)
