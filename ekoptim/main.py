@@ -14,6 +14,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import class_weight
 import traceback
 import tensorflow as tf
+import tensorflow_addons as tfa
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 from tensorflow.keras.callbacks import ModelCheckpoint
@@ -530,7 +531,7 @@ class ekoptim():
        opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
        model.compile(optimizer=opt,
               loss=self.custom_loss,
-              metrics=['accuracy',
+              metrics=['accuracy',tfa.metrics.F1Score(num_classes=9, average='macro'),
                        tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)])
 
        #model.compile(optimizer=opt, loss='mape')
