@@ -210,6 +210,7 @@ if __name__ == "__main__":
                              Selected_symbols=selected_symb,
                              Dyp=Dyp, Dyf=Dyf, Thi=3) #None
     alphax = optimizerTV.HNrates
+    cetax = optimizerTV.selected_rates
 #%%
     optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32,
                        k_n=None,
