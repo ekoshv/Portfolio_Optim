@@ -208,7 +208,7 @@ if __name__ == "__main__":
     optimizerTV.Prepare_Data('close', spn=10,
                              tile_size=(2,int(2*Dyp/4)),xrnd=1e-3,#(n*Dyp->m=n*Dyp/4)
                              Selected_symbols=selected_symb,
-                             Dyp=Dyp, Dyf=Dyf, Thi=3) #None
+                             Dyp=Dyp, Dyf=Dyf, Thi=1) #None
     alphax = optimizerTV.HNrates
     cetax = optimizerTV.selected_rates
 #%%

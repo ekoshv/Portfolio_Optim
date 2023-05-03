@@ -434,14 +434,15 @@ class ekoptim():
         self.Dyf = Dyf   # Number of future days to predict in the moving horizon
         self.Thi = Thi   # Time horizon interval (in days)
         self.tile_size = tile_size
+        self.HNrates = []
         if Selected_symbols is None:
             for df in self.full_rates:
-                df['state']=0
+                df['state']=-1
             self.HNrates = self.Hrz_Nrm(self.full_rates, symb, spn, tile_size, xrnd)
         else:
             self.selected_rates = [df for df in self.full_rates if df.columns[-1] in Selected_symbols]
             for df in self.selected_rates:
-                df['state']=0
+                df['state']=-1
             self.HNrates = self.Hrz_Nrm(self.selected_rates, symb, spn, tile_size, xrnd)
         self.mz = self.HNrates[0][0]['past_data'].shape[0]
         self.nz = self.HNrates[0][0]['past_data'].shape[1]
