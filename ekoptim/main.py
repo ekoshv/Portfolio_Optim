@@ -440,8 +440,7 @@ class ekoptim():
                 # Find the index of the 'close' column
                 close_idx = df.columns.get_loc('close')
                 df['state']=-1
-                df.insert(close_idx + 1, 'state', df.pop('state'))
-                
+                df.insert(close_idx + 1, 'state', df.pop('state'))    
             self.HNrates = self.Hrz_Nrm(self.full_rates, symb, spn, tile_size, xrnd)
         else:
             self.selected_rates = [df for df in self.full_rates if df.columns[-1] in Selected_symbols]
@@ -450,8 +449,8 @@ class ekoptim():
                 close_idx = df.columns.get_loc('close')
                 df['state']=-1
                 df.insert(close_idx + 1, 'state', df.pop('state'))
-                
             self.HNrates = self.Hrz_Nrm(self.selected_rates, symb, spn, tile_size, xrnd)
+        
         self.mz = self.HNrates[0][0]['past_data'].shape[0]
         self.nz = self.HNrates[0][0]['past_data'].shape[1]
 
