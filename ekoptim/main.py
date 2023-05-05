@@ -454,64 +454,68 @@ class ekoptim():
         self.mz = self.HNrates[0][0]['past_data'].shape[0]
         self.nz = self.HNrates[0][0]['past_data'].shape[1]
 
-    def create_model(self, image_height, image_width):
-        model = tf.keras.Sequential([
-            tf.keras.layers.Input(shape=(image_height, image_width, 1)),
-
-            tf.keras.layers.Conv2D(filters=128,
-                                   kernel_size=9, strides=1,
-                                   padding="same", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.2),
+    def create_model(self, image_height, image_width, model=None):
+        if model is None:
+            model = tf.keras.Sequential([
+                tf.keras.layers.Input(shape=(image_height, image_width, 1)),
     
-            tf.keras.layers.Conv2D(filters=128,
-                                   kernel_size=7, strides=1,
-                                   padding="same", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.2),
+                tf.keras.layers.Conv2D(filters=128,
+                                       kernel_size=9, strides=1,
+                                       padding="same", activation="relu"),
+                tf.keras.layers.BatchNormalization(),
+                tf.keras.layers.Dropout(0.2),
+        
+                tf.keras.layers.Conv2D(filters=128,
+                                       kernel_size=7, strides=1,
+                                       padding="same", activation="relu"),
+                tf.keras.layers.BatchNormalization(),
+                tf.keras.layers.Dropout(0.2),
+        
+                tf.keras.layers.Conv2D(filters=128,
+                                       kernel_size=5, strides=1,
+                                       padding="same", activation="relu"),
+                tf.keras.layers.BatchNormalization(),
+                tf.keras.layers.Dropout(0.2),
     
-            tf.keras.layers.Conv2D(filters=128,
-                                   kernel_size=5, strides=1,
-                                   padding="same", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.2),
-
-            tf.keras.layers.Conv2D(filters=128,
-                                   kernel_size=3, strides=1,
-                                   padding="same", activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.2),
-
+                tf.keras.layers.Conv2D(filters=128,
+                                       kernel_size=3, strides=1,
+                                       padding="same", activation="relu"),
+                tf.keras.layers.BatchNormalization(),
+                tf.keras.layers.Dropout(0.2),
     
-            tf.keras.layers.GlobalAveragePooling2D(),
+        
+                tf.keras.layers.GlobalAveragePooling2D(),
+        
+                tf.keras.layers.Dense(1024, activation=None),
+                tf.keras.layers.BatchNormalization(),
+                tf.keras.layers.Dropout(0.5),
+        
+                tf.keras.layers.Dense(1024, activation=None),
+                tf.keras.layers.BatchNormalization(),
+                tf.keras.layers.Dropout(0.5),
     
-            tf.keras.layers.Dense(1024, activation=None),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
+                tf.keras.layers.Dense(1024, activation="relu"),
+                tf.keras.layers.BatchNormalization(),
+                tf.keras.layers.Dropout(0.5),
+                
+                tf.keras.layers.Dense(1024, activation="relu"),
+                tf.keras.layers.BatchNormalization(),
+                tf.keras.layers.Dropout(0.5),
     
-            tf.keras.layers.Dense(1024, activation=None),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-
-            tf.keras.layers.Dense(1024, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-            
-            tf.keras.layers.Dense(1024, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-
-            tf.keras.layers.Dense(1024, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
-
-            tf.keras.layers.Dense(1024, activation="relu"),
-            tf.keras.layers.BatchNormalization(),
-            tf.keras.layers.Dropout(0.5),
+                tf.keras.layers.Dense(1024, activation="relu"),
+                tf.keras.layers.BatchNormalization(),
+                tf.keras.layers.Dropout(0.5),
     
-            tf.keras.layers.Dense(9, activation="softmax")
-        ])
-        return model
+                tf.keras.layers.Dense(1024, activation="relu"),
+                tf.keras.layers.BatchNormalization(),
+                tf.keras.layers.Dropout(0.5),
+        
+                tf.keras.layers.Dense(9, activation="softmax")
+            ])
+            return model
+        else:
+            return model
+        
     
     def custom_loss(self, y_true, y_pred, num_classes=9, average='macro', name="custom_loss"):
         # Calculate the CategoricalCrossentropy loss
@@ -548,14 +552,14 @@ class ekoptim():
         
         return combined_loss
     
-    def NNmake(self,
+    def NNmake(self, model=None,
                learning_rate=0.001, epochs=100, batch_size=32, k_n=None,
                load_train=False):
        self.k_n=5
        if k_n is not None:
            self.k_n = k_n
        # Define the neural network
-       model = self.create_model(self.mz, self.nz) 
+       model = self.create_model(self.mz, self.nz, model) 
        
        # Compile the model with mean squared error loss
        opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
