@@ -693,6 +693,7 @@ class ekoptim():
             # Filter the DataFrame to get the dates where state == 2 or state == 6
             blue_flash_dates = df[df['state'] == 2].index
             red_flash_dates = df[df['state'] == 6].index
+            st_na = df.columns[-1]
             
             # Create a candlestick chart
             fig = go.Figure(go.Candlestick(x=df.index,
@@ -716,7 +717,7 @@ class ekoptim():
                                      name='Purple Flash Down'))
             
             # Customize chart layout
-            fig.update_layout(title='Stock Price with Blue and Red Flashes',
+            fig.update_layout(title=f'{st_na}Stock Price with Blue and Red Flashes',
                               xaxis_title='Date',
                               yaxis_title='Price',
                               xaxis_rangeslider_visible=False)
