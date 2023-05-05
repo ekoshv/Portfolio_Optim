@@ -717,7 +717,7 @@ class ekoptim():
                                      name='Purple Flash Down'))
             
             # Customize chart layout
-            fig.update_layout(title=f'{st_na}Stock Price with Blue and Red Flashes',
+            fig.update_layout(title=f'{st_na} Stock Price with Blue and Red Flashes',
                               xaxis_title='Date',
                               yaxis_title='Price',
                               xaxis_rangeslider_visible=False)
