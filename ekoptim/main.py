@@ -417,7 +417,8 @@ class ekoptim():
                 'future_data': future_data_rescaled,
                 'state': state,
                 'signal': signal,
-                'minmax': [psdt_LL,psdt_HH]
+                'minmax': [psdt_LL,psdt_HH],
+                'dati': df.index[i]
             }
             #print(new_row)
             new_df.append(new_row)
