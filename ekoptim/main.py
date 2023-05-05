@@ -705,15 +705,15 @@ class ekoptim():
             fig.add_trace(go.Scatter(x=blue_flash_dates,
                                      y=df[df['state'] == 2]['high'],
                                      mode='markers',
-                                     marker=dict(color='blue', size=10, symbol='triangle-up'),
+                                     marker=dict(color='blue', size=15, symbol='triangle-up'),
                                      name='Blue Flash Up'))
             
             # Add red flash down markers
             fig.add_trace(go.Scatter(x=red_flash_dates,
                                      y=df[df['state'] == 6]['low'],
                                      mode='markers',
-                                     marker=dict(color='purple', size=10, symbol='triangle-down'),
-                                     name='Red Flash Down'))
+                                     marker=dict(color='purple', size=15, symbol='triangle-down'),
+                                     name='Purple Flash Down'))
             
             # Customize chart layout
             fig.update_layout(title='Stock Price with Blue and Red Flashes',
