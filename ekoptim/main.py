@@ -693,21 +693,21 @@ class ekoptim():
         
         # Create a candlestick chart
         fig = go.Figure(go.Candlestick(x=df.index,
-                                       open=df['Open'],
-                                       high=df['High'],
-                                       low=df['Low'],
-                                       close=df['Close']))
+                                       open=df['open'],
+                                       high=df['high'],
+                                       low=df['low'],
+                                       close=df['close']))
         
         # Add blue flash up markers
         fig.add_trace(go.Scatter(x=blue_flash_dates,
-                                 y=df[df['state'] == 2]['High'],
+                                 y=df[df['state'] == 2]['high'],
                                  mode='markers',
                                  marker=dict(color='blue', size=10, symbol='triangle-up'),
                                  name='Blue Flash Up'))
         
         # Add red flash down markers
         fig.add_trace(go.Scatter(x=red_flash_dates,
-                                 y=df[df['state'] == 6]['Low'],
+                                 y=df[df['state'] == 6]['low'],
                                  mode='markers',
                                  marker=dict(color='red', size=10, symbol='triangle-down'),
                                  name='Red Flash Down'))
