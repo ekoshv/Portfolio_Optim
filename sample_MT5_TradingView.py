@@ -203,7 +203,7 @@ if __name__ == "__main__":
     optimizerTV.frontPlot(optimized_weights_TV, save=False)
     # shut down connection to the MetaTrader 5 terminal
 #%%
-    Dyp = 32 # past 32 days
+    Dyp = 8 # past 32 days
     Dyf = 32 # future 32 days    
     optimizerTV.Prepare_Data('close', spn=10,
                              tile_size=(2,int(2*Dyp/4)),xrnd=1e-3,#(n*Dyp->m=n*Dyp/4)
@@ -213,7 +213,7 @@ if __name__ == "__main__":
     cetax = optimizerTV.selected_rates
 #%%
     optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32,
-                       k_n=None,
+                       k_n=4,
                        load_train=False)
 #%%
     optimizerTV.load_model_fit()

@@ -59,9 +59,7 @@ class FuzzySignal:
         self.signal_simulation.compute()
 
         # Extract the output
-        state = self.signal_simulation.output['state']
-        state_mf = self.signal_simulation.
-        
+        state = self.signal_simulation.output['state']        
         sigs = [mx_val, mn_val]
 
         return state, sigs
