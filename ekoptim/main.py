@@ -21,6 +21,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 import os
 import pywt
 from tqdm import tqdm
+import plotly.graph_objects as go
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
@@ -684,6 +685,41 @@ class ekoptim():
             # Predict the next values for the given symbol using the predict_next method
             y_pred = self.predict_next(df, smb)
             self.Predicted_Rates.append(y_pred)
+    
+    def draw_states(self, df):
+        # Filter the DataFrame to get the dates where state == 2 or state == 6
+        blue_flash_dates = df[df['state'] == 2].index
+        red_flash_dates = df[df['state'] == 6].index
+        
+        # Create a candlestick chart
+        fig = go.Figure(go.Candlestick(x=df.index,
+                                       open=df['Open'],
+                                       high=df['High'],
+                                       low=df['Low'],
+                                       close=df['Close']))
+        
+        # Add blue flash up markers
+        fig.add_trace(go.Scatter(x=blue_flash_dates,
+                                 y=df[df['state'] == 2]['High'],
+                                 mode='markers',
+                                 marker=dict(color='blue', size=10, symbol='triangle-up'),
+                                 name='Blue Flash Up'))
+        
+        # Add red flash down markers
+        fig.add_trace(go.Scatter(x=red_flash_dates,
+                                 y=df[df['state'] == 6]['Low'],
+                                 mode='markers',
+                                 marker=dict(color='red', size=10, symbol='triangle-down'),
+                                 name='Red Flash Down'))
+        
+        # Customize chart layout
+        fig.update_layout(title='Stock Price with Blue and Red Flashes',
+                          xaxis_title='Date',
+                          yaxis_title='Price',
+                          xaxis_rangeslider_visible=False)
+        
+        # Display the chart
+        fig.show()
     #-------------------------------
     #---Optimizations---------------
     #-------------------------------
