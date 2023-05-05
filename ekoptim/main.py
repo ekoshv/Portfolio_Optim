@@ -723,7 +723,7 @@ class ekoptim():
             
             # Display the chart
             # Save the chart to an HTML file
-            pio.write_html(fig, file='stock_chart_with_flashes.html', auto_open=True)
+            #pio.write_html(fig, file='stock_chart_with_flashes.html', auto_open=True)
             fig.show()
         except Exception as e:
             print(f"Caught an exception during Drawing: {e}")
