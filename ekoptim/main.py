@@ -22,6 +22,7 @@ import os
 import pywt
 from tqdm import tqdm
 import plotly.graph_objects as go
+import plotly.io as pio
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
@@ -687,39 +688,46 @@ class ekoptim():
             self.Predicted_Rates.append(y_pred)
     
     def draw_states(self, df):
-        # Filter the DataFrame to get the dates where state == 2 or state == 6
-        blue_flash_dates = df[df['state'] == 2].index
-        red_flash_dates = df[df['state'] == 6].index
-        
-        # Create a candlestick chart
-        fig = go.Figure(go.Candlestick(x=df.index,
-                                       open=df['open'],
-                                       high=df['high'],
-                                       low=df['low'],
-                                       close=df['close']))
-        
-        # Add blue flash up markers
-        fig.add_trace(go.Scatter(x=blue_flash_dates,
-                                 y=df[df['state'] == 2]['high'],
-                                 mode='markers',
-                                 marker=dict(color='blue', size=10, symbol='triangle-up'),
-                                 name='Blue Flash Up'))
-        
-        # Add red flash down markers
-        fig.add_trace(go.Scatter(x=red_flash_dates,
-                                 y=df[df['state'] == 6]['low'],
-                                 mode='markers',
-                                 marker=dict(color='red', size=10, symbol='triangle-down'),
-                                 name='Red Flash Down'))
-        
-        # Customize chart layout
-        fig.update_layout(title='Stock Price with Blue and Red Flashes',
-                          xaxis_title='Date',
-                          yaxis_title='Price',
-                          xaxis_rangeslider_visible=False)
-        
-        # Display the chart
-        fig.show()
+        try:
+            pio.renderers.default = "browser"
+            # Filter the DataFrame to get the dates where state == 2 or state == 6
+            blue_flash_dates = df[df['state'] == 2].index
+            red_flash_dates = df[df['state'] == 6].index
+            
+            # Create a candlestick chart
+            fig = go.Figure(go.Candlestick(x=df.index,
+                                           open=df['open'],
+                                           high=df['high'],
+                                           low=df['low'],
+                                           close=df['close']))
+            
+            # Add blue flash up markers
+            fig.add_trace(go.Scatter(x=blue_flash_dates,
+                                     y=df[df['state'] == 2]['high'],
+                                     mode='markers',
+                                     marker=dict(color='blue', size=10, symbol='triangle-up'),
+                                     name='Blue Flash Up'))
+            
+            # Add red flash down markers
+            fig.add_trace(go.Scatter(x=red_flash_dates,
+                                     y=df[df['state'] == 6]['low'],
+                                     mode='markers',
+                                     marker=dict(color='red', size=10, symbol='triangle-down'),
+                                     name='Red Flash Down'))
+            
+            # Customize chart layout
+            fig.update_layout(title='Stock Price with Blue and Red Flashes',
+                              xaxis_title='Date',
+                              yaxis_title='Price',
+                              xaxis_rangeslider_visible=False)
+            
+            # Display the chart
+            # Save the chart to an HTML file
+            pio.write_html(fig, file='stock_chart_with_flashes.html', auto_open=True)
+            fig.show()
+        except Exception as e:
+            print(f"Caught an exception during Drawing: {e}")
+            traceback.print_exc() 
     #-------------------------------
     #---Optimizations---------------
     #-------------------------------
