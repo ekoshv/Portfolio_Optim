@@ -203,8 +203,8 @@ if __name__ == "__main__":
     optimizerTV.frontPlot(optimized_weights_TV, save=False)
     # shut down connection to the MetaTrader 5 terminal
 #%%
-    Dyp = 8 # past 32 days
-    Dyf = 32 # future 32 days    
+    Dyp = 8 # past days
+    Dyf = 8 # future days    
     optimizerTV.Prepare_Data('close', spn=10,
                              tile_size=(2,int(2*Dyp/4)),xrnd=1e-3,#(n*Dyp->m=n*Dyp/4)
                              Selected_symbols=selected_symb,

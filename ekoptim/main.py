@@ -712,7 +712,7 @@ class ekoptim():
             fig.add_trace(go.Scatter(x=red_flash_dates,
                                      y=df[df['state'] == 6]['low'],
                                      mode='markers',
-                                     marker=dict(color='red', size=10, symbol='triangle-down'),
+                                     marker=dict(color='purple', size=10, symbol='triangle-down'),
                                      name='Red Flash Down'))
             
             # Customize chart layout
