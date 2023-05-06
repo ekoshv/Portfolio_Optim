@@ -23,6 +23,7 @@ import pywt
 from tqdm import tqdm
 import plotly.graph_objects as go
 import plotly.io as pio
+import talib
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
@@ -444,7 +445,12 @@ class ekoptim():
                 # Find the index of the 'close' column
                 close_idx = df.columns.get_loc('close')
                 df['state']=-1
-                df.insert(close_idx + 1, 'state', df.pop('state'))    
+                df.insert(close_idx + 1, 'state', df.pop('state'))
+                # Calculate the SMA with a time window of 10 days
+                sma = talib.SMA(df['close'], timeperiod=200)
+                # Add the SMA values to the DataFrame
+                df['SMA200'] = sma
+                df.insert(close_idx + 2, 'SMA200', df.pop('SMA200'))
             self.HNrates = self.Hrz_Nrm(self.full_rates, symb, spn, tile_size, xrnd)
         else:
             self.selected_rates = [df for df in self.full_rates if df.columns[-1] in Selected_symbols]
@@ -453,6 +459,11 @@ class ekoptim():
                 close_idx = df.columns.get_loc('close')
                 df['state']=-1
                 df.insert(close_idx + 1, 'state', df.pop('state'))
+                # Calculate the SMA with a time window of 10 days
+                sma = talib.SMA(df['close'], timeperiod=200)
+                # Add the SMA values to the DataFrame
+                df['SMA200'] = sma
+                df.insert(close_idx + 2, 'SMA200', df.pop('SMA200'))
             self.HNrates = self.Hrz_Nrm(self.selected_rates, symb, spn, tile_size, xrnd)
         
         self.mz = self.HNrates[0][0]['past_data'].shape[0]
