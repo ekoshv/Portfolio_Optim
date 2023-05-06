@@ -411,7 +411,7 @@ class ekoptim():
             future_data_rescaled, fdmn, fdmx = self.normalize(future_data, psdt_LL, psdt_HH, xrnd)
    
             state, signal = self.calculate_signal(future_data_rescaled)
-            df.at[df.index[i], 'state'] = state
+            df.at[df.index[i-1], 'state'] = state
             new_row = {
                 'past_data': pst_dt_tiled,
                 'future_data': future_data_rescaled,
@@ -419,7 +419,7 @@ class ekoptim():
                 'signal': signal,
                 'pstraw': past_data,
                 'minmax': [psdt_LL,psdt_HH],
-                'dati': df.index[i]
+                'dati': df.index[i-1]
             }
             #print(new_row)
             new_df.append(new_row)
