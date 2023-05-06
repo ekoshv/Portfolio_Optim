@@ -431,8 +431,10 @@ class ekoptim():
         return [self.apply_moving_horizon_norm(df, smb, spn, tile_size,xrnd) for 
                 df in tqdm(rates, desc='Processing DataFrames')]
 
-    def Prepare_Data(self, symb, spn=1, tile_size=(2,2), xrnd=0, Selected_symbols=None,
-                     Dyp=8, Dyf=32, Thi=3):
+    def Prepare_Data(self, symb, spn=1, tile_size=(2,2), xrnd=0,
+                     Selected_symbols=None,
+                     Dyp=8, Dyf=32, Thi=3,
+                     SMAP=[144,45,12]):
         print("Preparing Data...")
         self.spn = spn
         self.Dyp = Dyp   # Number of past days to consider in the moving horizon
@@ -446,11 +448,22 @@ class ekoptim():
                 close_idx = df.columns.get_loc('close')
                 df['state']=-1
                 df.insert(close_idx + 1, 'state', df.pop('state'))
-                # Calculate the SMA with a time window of 10 days
-                sma = talib.SMA(df['close'], timeperiod=200)
+                # Calculate the SMA with a time window of SMAP days
+                #---G
+                gsma = talib.SMA(df['close'], timeperiod=SMAP[0])
                 # Add the SMA values to the DataFrame
-                df['SMA200'] = sma
-                df.insert(close_idx + 2, 'SMA200', df.pop('SMA200'))
+                df['GSMA'] = gsma
+                df.insert(close_idx + 2, 'GSMA', df.pop('GSMA'))
+                #---M
+                msma = talib.SMA(df['close'], timeperiod=SMAP[1])
+                # Add the SMA values to the DataFrame
+                df['MSMA'] = msma
+                df.insert(close_idx + 3, 'MSMA', df.pop('MSMA'))
+                #---S
+                ssma = talib.SMA(df['close'], timeperiod=SMAP[2])
+                # Add the SMA values to the DataFrame
+                df['SSMA'] = ssma
+                df.insert(close_idx + 4, 'SSMA', df.pop('SSMA'))
             self.HNrates = self.Hrz_Nrm(self.full_rates, symb, spn, tile_size, xrnd)
         else:
             self.selected_rates = [df for df in self.full_rates if df.columns[-1] in Selected_symbols]
@@ -459,11 +472,22 @@ class ekoptim():
                 close_idx = df.columns.get_loc('close')
                 df['state']=-1
                 df.insert(close_idx + 1, 'state', df.pop('state'))
-                # Calculate the SMA with a time window of 10 days
-                sma = talib.SMA(df['close'], timeperiod=200)
+                # Calculate the SMA with a time window of SMAP days
+                #---G
+                gsma = talib.SMA(df['close'], timeperiod=SMAP[0])
                 # Add the SMA values to the DataFrame
-                df['SMA200'] = sma
-                df.insert(close_idx + 2, 'SMA200', df.pop('SMA200'))
+                df['GSMA'] = gsma
+                df.insert(close_idx + 2, 'GSMA', df.pop('GSMA'))
+                #---M
+                msma = talib.SMA(df['close'], timeperiod=SMAP[1])
+                # Add the SMA values to the DataFrame
+                df['MSMA'] = msma
+                df.insert(close_idx + 3, 'MSMA', df.pop('MSMA'))
+                #---S
+                ssma = talib.SMA(df['close'], timeperiod=SMAP[2])
+                # Add the SMA values to the DataFrame
+                df['SSMA'] = ssma
+                df.insert(close_idx + 4, 'SSMA', df.pop('SSMA'))
             self.HNrates = self.Hrz_Nrm(self.selected_rates, symb, spn, tile_size, xrnd)
         
         self.mz = self.HNrates[0][0]['past_data'].shape[0]
