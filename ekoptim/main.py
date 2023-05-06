@@ -417,6 +417,7 @@ class ekoptim():
                 'future_data': future_data_rescaled,
                 'state': state,
                 'signal': signal,
+                'pstraw': past_data,
                 'minmax': [psdt_LL,psdt_HH],
                 'dati': df.index[i]
             }
