@@ -400,7 +400,7 @@ class ekoptim():
         else:
             raise ValueError("smb should be either a string or an integer.")
 
-        for i in range(self.Dyp, len(df)-self.Dyf+1, self.Thi):
+        for i in range(self.Dyp+self.SMAP[0]+1, len(df)-self.Dyf+1, self.Thi):
             past_data = df[['open','high','low','close','GSMA','MSMA','SSMA']].iloc[i-self.Dyp:i]
             psdt_HH = past_data[['open','high','low','close']].max(axis=0)['high']
             psdt_LL = past_data[['open','high','low','close']].min(axis=0)['low']
@@ -457,6 +457,7 @@ class ekoptim():
         self.Dyf = Dyf   # Number of future days to predict in the moving horizon
         self.Thi = Thi   # Time horizon interval (in days)
         self.tile_size = tile_size
+        self.SMAP = SMAP
         
         if Selected_symbols is None:
             for df in self.full_rates:
