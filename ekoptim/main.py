@@ -409,7 +409,14 @@ class ekoptim():
             pst_dt_tiled = np.tile(past_data_normalized, tile_size)
             pst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, pst_dt_tiled.shape)
             
+            past_data['dayofweek'] = past_data.index.dayofweek/7
+            past_data['dayofmonth'] = past_data.index.day/31
+            past_data['monthofyear'] = past_data.index.monthofyear/12
+            
             # Calculate the difference for each column
+            past_data['MSMA_GSMA'] = (past_data['MSMA'] - past_data['GSMA']) / past_data['GSMA']
+            past_data['SSMA_GSMA'] = (past_data['SSMA'] - past_data['GSMA']) / past_data['GSMA']
+            
             past_data['open_GSMA'] = (past_data['open'] - past_data['GSMA']) / past_data['GSMA']
             past_data['high_GSMA'] = (past_data['high'] - past_data['GSMA']) / past_data['GSMA']
             past_data['low_GSMA'] = (past_data['low'] - past_data['GSMA']) / past_data['GSMA']
@@ -458,55 +465,35 @@ class ekoptim():
         self.Thi = Thi   # Time horizon interval (in days)
         self.tile_size = tile_size
         self.SMAP = SMAP
-        
+        srates = []
         if Selected_symbols is None:
-            for df in self.full_rates:
-                # Find the index of the 'close' column
-                close_idx = df.columns.get_loc('close')
-                df['state']=-1
-                df.insert(close_idx + 1, 'state', df.pop('state'))
-                # Calculate the SMA with a time window of SMAP days
-                #---G
-                gsma = talib.SMA(df['close'], timeperiod=SMAP[0])
-                # Add the SMA values to the DataFrame
-                df['GSMA'] = gsma
-                df.insert(close_idx + 2, 'GSMA', df.pop('GSMA'))
-                #---M
-                msma = talib.SMA(df['close'], timeperiod=SMAP[1])
-                # Add the SMA values to the DataFrame
-                df['MSMA'] = msma
-                df.insert(close_idx + 3, 'MSMA', df.pop('MSMA'))
-                #---S
-                ssma = talib.SMA(df['close'], timeperiod=SMAP[2])
-                # Add the SMA values to the DataFrame
-                df['SSMA'] = ssma
-                df.insert(close_idx + 4, 'SSMA', df.pop('SSMA'))
-            self.HNrates = self.Hrz_Nrm(self.full_rates, symb, spn, tile_size, xrnd)
+            srates = self.full_rates
         else:
-            self.selected_rates = [df for df in self.full_rates if df.columns[-1] in Selected_symbols]
-            for df in self.selected_rates:
-                # Find the index of the 'close' column
-                close_idx = df.columns.get_loc('close')
-                df['state']=-1
-                df.insert(close_idx + 1, 'state', df.pop('state'))
-                # Calculate the SMA with a time window of SMAP days
-                #---G
-                gsma = talib.SMA(df['close'], timeperiod=SMAP[0])
-                # Add the SMA values to the DataFrame
-                df['GSMA'] = gsma
-                df.insert(close_idx + 2, 'GSMA', df.pop('GSMA'))
-                #---M
-                msma = talib.SMA(df['close'], timeperiod=SMAP[1])
-                # Add the SMA values to the DataFrame
-                df['MSMA'] = msma
-                df.insert(close_idx + 3, 'MSMA', df.pop('MSMA'))
-                #---S
-                ssma = talib.SMA(df['close'], timeperiod=SMAP[2])
-                # Add the SMA values to the DataFrame
-                df['SSMA'] = ssma
-                df.insert(close_idx + 4, 'SSMA', df.pop('SSMA'))
-            self.HNrates = self.Hrz_Nrm(self.selected_rates, symb, spn, tile_size, xrnd)
-        
+            self.selected_rates = [df for df in self.full_rates 
+                                   if df.columns[-1] in Selected_symbols]
+            srates = self.selected_rates
+        for df in srates:
+            # Find the index of the 'close' column
+            close_idx = df.columns.get_loc('close')
+            df['state']=-1
+            df.insert(close_idx + 1, 'state', df.pop('state'))
+            # Calculate the SMA with a time window of SMAP days
+            #---G
+            gsma = talib.SMA(df['close'], timeperiod=SMAP[0])
+            # Add the SMA values to the DataFrame
+            df['GSMA'] = gsma
+            df.insert(close_idx + 2, 'GSMA', df.pop('GSMA'))
+            #---M
+            msma = talib.SMA(df['close'], timeperiod=SMAP[1])
+            # Add the SMA values to the DataFrame
+            df['MSMA'] = msma
+            df.insert(close_idx + 3, 'MSMA', df.pop('MSMA'))
+            #---S
+            ssma = talib.SMA(df['close'], timeperiod=SMAP[2])
+            # Add the SMA values to the DataFrame
+            df['SSMA'] = ssma
+            df.insert(close_idx + 4, 'SSMA', df.pop('SSMA'))
+        self.HNrates = self.Hrz_Nrm(srates, symb, spn, tile_size, xrnd)            
         self.mz = self.HNrates[0][0]['past_data'].shape[0]
         self.nz = self.HNrates[0][0]['past_data'].shape[1]
 
