@@ -411,7 +411,7 @@ class ekoptim():
             
             past_data['dayofweek'] = past_data.index.dayofweek/7
             past_data['dayofmonth'] = past_data.index.day/31
-            past_data['monthofyear'] = past_data.index.monthofyear/12
+            past_data['monthofyear'] = past_data.index.month/12
             
             # Calculate the difference for each column
             past_data['MSMA_GSMA'] = (past_data['MSMA'] - past_data['GSMA']) / past_data['GSMA']
