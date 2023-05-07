@@ -756,6 +756,14 @@ class ekoptim():
                                            low=df['low'],
                                            close=df['close']))
             
+            # Add moving averages
+            fig.add_trace(go.Scatter(x=df.index, y=df['GSMA'],
+                                     mode='lines', name='GSMA', line=dict(color='orange')))
+            fig.add_trace(go.Scatter(x=df.index, y=df['MSMA'],
+                                     mode='lines', name='MSMA', line=dict(color='green')))
+            fig.add_trace(go.Scatter(x=df.index, y=df['SSMA'],
+                                     mode='lines', name='SSMA', line=dict(color='purple')))
+            
             # Add blue flash up markers
             fig.add_trace(go.Scatter(x=blue_flash_dates,
                                      y=df[df['state'] == 2]['high'],
@@ -767,8 +775,8 @@ class ekoptim():
             fig.add_trace(go.Scatter(x=red_flash_dates,
                                      y=df[df['state'] == 6]['low'],
                                      mode='markers',
-                                     marker=dict(color='purple', size=15, symbol='triangle-down'),
-                                     name='Purple Flash Down'))
+                                     marker=dict(color='red', size=15, symbol='triangle-down'),
+                                     name='Red Flash Down'))
             
             # Customize chart layout
             fig.update_layout(title=f'{st_na} Stock Price with Blue and Red Flashes',
@@ -777,12 +785,11 @@ class ekoptim():
                               xaxis_rangeslider_visible=False)
             
             # Display the chart
-            # Save the chart to an HTML file
-            #pio.write_html(fig, file='stock_chart_with_flashes.html', auto_open=True)
             fig.show()
         except Exception as e:
             print(f"Caught an exception during Drawing: {e}")
-            traceback.print_exc() 
+            traceback.print_exc()
+
     #-------------------------------
     #---Optimizations---------------
     #-------------------------------
