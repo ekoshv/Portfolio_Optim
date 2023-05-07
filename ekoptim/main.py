@@ -410,20 +410,20 @@ class ekoptim():
             pst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, pst_dt_tiled.shape)
             
             # Calculate the difference for each column
-            past_data['open_GSMA_diff'] = (past_data['open'] - past_data['GSMA']) / past_data['GSMA']
-            past_data['high_GSMA_diff'] = (past_data['high'] - past_data['GSMA']) / past_data['GSMA']
-            past_data['low_GSMA_diff'] = (past_data['low'] - past_data['GSMA']) / past_data['GSMA']
-            past_data['close_GSMA_diff'] = (past_data['close'] - past_data['GSMA']) / past_data['GSMA']
+            past_data['open_GSMA'] = (past_data['open'] - past_data['GSMA']) / past_data['GSMA']
+            past_data['high_GSMA'] = (past_data['high'] - past_data['GSMA']) / past_data['GSMA']
+            past_data['low_GSMA'] = (past_data['low'] - past_data['GSMA']) / past_data['GSMA']
+            past_data['close_GSMA'] = (past_data['close'] - past_data['GSMA']) / past_data['GSMA']
             
-            past_data['open_MSMA_diff'] = (past_data['open'] - past_data['MSMA']) / past_data['MSMA']
-            past_data['high_MSMA_diff'] = (past_data['high'] - past_data['MSMA']) / past_data['MSMA']
-            past_data['low_MSMA_diff'] = (past_data['low'] - past_data['MSMA']) / past_data['MSMA']
-            past_data['close_MSMA_diff'] = (past_data['close'] - past_data['MSMA']) / past_data['MSMA']
+            past_data['open_MSMA'] = (past_data['open'] - past_data['MSMA']) / past_data['MSMA']
+            past_data['high_MSMA'] = (past_data['high'] - past_data['MSMA']) / past_data['MSMA']
+            past_data['low_MSMA'] = (past_data['low'] - past_data['MSMA']) / past_data['MSMA']
+            past_data['close_MSMA'] = (past_data['close'] - past_data['MSMA']) / past_data['MSMA']
             
-            past_data['open_SSMA_diff'] = (past_data['open'] - past_data['SSMA']) / past_data['SSMA']
-            past_data['high_SSMA_diff'] = (past_data['high'] - past_data['SSMA']) / past_data['SSMA']
-            past_data['low_SSMA_diff'] = (past_data['low'] - past_data['SSMA']) / past_data['SSMA']
-            past_data['close_SSMA_diff'] = (past_data['close'] - past_data['SSMA']) / past_data['SSMA']
+            past_data['open_SSMA'] = (past_data['open'] - past_data['SSMA']) / past_data['SSMA']
+            past_data['high_SSMA'] = (past_data['high'] - past_data['SSMA']) / past_data['SSMA']
+            past_data['low_SSMA'] = (past_data['low'] - past_data['SSMA']) / past_data['SSMA']
+            past_data['close_SSMA'] = (past_data['close'] - past_data['SSMA']) / past_data['SSMA']
             
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled, fdmn, fdmx = self.normalize(future_data, psdt_LL, psdt_HH, xrnd)
