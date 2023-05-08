@@ -242,6 +242,7 @@ if __name__ == "__main__":
                              Dyp=Dyp, Dyf=Dyf, Thi=1) #None
     alphax = optimizerTV.HNrates[-1][1]
     cetax = optimizerTV.selected_rates
+    optimizerTV.draw_states(cetax[-2])
 #%%
     optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32,
                        k_n=4,
