@@ -8,6 +8,7 @@ from ekoptim import ekoptim
 from ekoView import TradingViewfeed, Interval
 import datetime
 from tqdm import tqdm
+import traceback
 from sklearn.covariance import LedoitWolf
 
 def connect_to_metatrader(path, username, password, server):
@@ -62,9 +63,13 @@ if __name__ == "__main__":
         symbols = mt5.symbols_get()
         filtered_symbols = filter_symbols_by_path(symbols, Path_Name)
         allsymb = [s.name for s in filtered_symbols]
+    oil = input("Enter the Oil name: e.g.(.BrentCrude):")
+    oil_smb = mt5.symbol_info(oil)
+    gold = input("Enter the Gold name: e.g.(XAUUSAD):")
+    gold_smb = mt5.symbol_info(gold)
     History_Days = int(input("How many historical days: "))
     #is_weighted = bool(input("Do you want it to be weighted(True/False): "))
-    
+#%%    
     returns_TV = []
     returns_MT5 = []
     rates_TV = []
@@ -84,7 +89,9 @@ if __name__ == "__main__":
             datamt5 = mt5.copy_rates_from_pos(s.name, mt5.TIMEFRAME_D1, 0, History_Days)
             #print(rates)
             if(len(rates)>=round(0.75*History_Days) and
+               len(datamt5)>=round(0.75*History_Days) and
                (rates.index[0] >= begindate)):
+                print('***',len(rates),', ',rates.index[0],', ',s.name)
                 rates[s.name] = ((rates['close']).
                                  interpolate(method='polynomial', order=2)).pct_change()
                 rates[s.name] = rates[s.name].interpolate(method='polynomial', order=2)
@@ -101,11 +108,30 @@ if __name__ == "__main__":
                 data[s.name] = data[s.name].fillna(0)
                 rates_MT5.append(data)
                 returns_MT5.append(data[s.name])
-        except:
+        except Exception as e:
             print("---------")
-            print("An exception occurred: ", s.name)
+            print(f"An error occurred in downloading {s.name}: {e}")
+            traceback.print_exc()
             print("---------")
     
+    for s in tqdm([gold_smb, oil_smb]):
+        try:
+            datamt5 = mt5.copy_rates_from_pos(s.name, mt5.TIMEFRAME_D1, 0, History_Days)
+            data = pd.DataFrame(data=datamt5, columns=["time", "open", "high", "low",
+                                                     "close", "tick_volume", "spread", "real_volume"])
+            # convert time in seconds into the datetime format
+            data['time']=pd.to_datetime(data['time'], unit='s')
+            data.set_index('time', inplace=True)
+            data[s.name] = data["close"].pct_change()
+            data[s.name] = data[s.name].fillna(0)
+            rates_MT5.append(data)
+            returns_MT5.append(data[s.name])
+        except Exception as e:
+            print("---------")
+            print(f"An error occurred in downloading {s.name}: {e}")
+            traceback.print_exc()
+            print("---------")
+            
     returnsTV = pd.concat(returns_TV, axis=1)
     returnsMT5= pd.concat(returns_MT5, axis=1)
     returnsTV.fillna(0,inplace=True)
@@ -163,17 +189,21 @@ if __name__ == "__main__":
     for i, weight in enumerate(optimized_weights_TV):
         try:
             symbol_info = mt5.symbol_info(returnsTV.columns[i])
-            if (weight>threshold and not(symbol_info.volume_min*symbol_info.bid>
+            if symbol_info.bid<=0:
+                kapla=rates_MT5[i]['close'][-1]
+            else:
+                kapla=symbol_info.bid
+            if (weight>threshold and not(symbol_info.volume_min*kapla>
                                           1.1*total_equity*weight)):#
-                # print("Name: ",symbol_info.name,", Bid: ",
-                #       symbol_info.bid,", step: ",symbol_info.volume_step)
+                print("Name: ",symbol_info.name,", Bid: ",
+                      kapla,", step: ",symbol_info.volume_step)
                 equity_div_x = {"symbol": symbol_info.name,"Weight":round(weight*10000)/100,
                                 "Allocation": round(max(symbol_info.volume_min,
-                                                  round(total_equity*weight/symbol_info.bid,
+                                                  round(total_equity*weight/kapla,
                                                         -int(np.floor(np.log10(symbol_info.volume_step))+
-                                                              1)+1))*symbol_info.bid),
+                                                              1)+1))*kapla),
                                 "Volume": max(symbol_info.volume_min,
-                                              round(total_equity*weight/symbol_info.bid,
+                                              round(total_equity*weight/kapla,
                                                                           -int(np.floor(np.log10(symbol_info.volume_step))+
                                                                                 1)+1))}
                 returns_selected.append(returnsTV[returnsTV.columns[i]])
@@ -210,7 +240,7 @@ if __name__ == "__main__":
                              tile_size=(n_t,int(n_t*Dyp/4)),xrnd=1e-3,#(n*Dyp->m=n*Dyp/4)
                              Selected_symbols=selected_symb,
                              Dyp=Dyp, Dyf=Dyf, Thi=1) #None
-    alphax = optimizerTV.HNrates[0][1]
+    alphax = optimizerTV.HNrates[-1][1]
     cetax = optimizerTV.selected_rates
 #%%
     optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32,

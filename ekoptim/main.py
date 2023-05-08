@@ -471,6 +471,8 @@ class ekoptim():
         else:
             self.selected_rates = [df for df in self.full_rates 
                                    if df.columns[-1] in Selected_symbols]
+            self.selected_rates.append(self.full_rates[-2])
+            self.selected_rates.append(self.full_rates[-1])
             srates = self.selected_rates
         for df in srates:
             # Find the index of the 'close' column
