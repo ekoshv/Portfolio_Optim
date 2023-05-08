@@ -391,7 +391,36 @@ class ekoptim():
         
         return state, sigs
     
-    def apply_moving_horizon_norm(self,df,smb,spn, tile_size, xrnd=0):
+    def more_data(self, dfp):
+        dfp['dayofweek'] = dfp.index.dayofweek/7
+        dfp['dayofmonth'] = dfp.index.day/31
+        dfp['monthofyear'] = dfp.index.month/12
+        
+        # Calculate the difference for each column
+        dfp['MSMA_GSMA'] = (dfp['MSMA'] - dfp['GSMA']) / dfp['GSMA']
+        dfp['SSMA_GSMA'] = (dfp['SSMA'] - dfp['GSMA']) / dfp['GSMA']
+        
+        dfp['open_GSMA'] = (dfp['open'] - dfp['GSMA']) / dfp['GSMA']
+        dfp['high_GSMA'] = (dfp['high'] - dfp['GSMA']) / dfp['GSMA']
+        dfp['low_GSMA'] = (dfp['low'] - dfp['GSMA']) / dfp['GSMA']
+        dfp['close_GSMA'] = (dfp['close'] - dfp['GSMA']) / dfp['GSMA']
+        
+        dfp['open_MSMA'] = (dfp['open'] - dfp['MSMA']) / dfp['MSMA']
+        dfp['high_MSMA'] = (dfp['high'] - dfp['MSMA']) / dfp['MSMA']
+        dfp['low_MSMA'] = (dfp['low'] - dfp['MSMA']) / dfp['MSMA']
+        dfp['close_MSMA'] = (dfp['close'] - dfp['MSMA']) / dfp['MSMA']
+        
+        dfp['open_SSMA'] = (dfp['open'] - dfp['SSMA']) / dfp['SSMA']
+        dfp['high_SSMA'] = (dfp['high'] - dfp['SSMA']) / dfp['SSMA']
+        dfp['low_SSMA'] = (dfp['low'] - dfp['SSMA']) / dfp['SSMA']
+        dfp['close_SSMA'] = (dfp['close'] - dfp['SSMA']) / dfp['SSMA']
+        
+        return dfp
+    
+    def apply_moving_horizon_norm(self,dfs,smb,spn, tile_size, xrnd=0):
+        df = dfs[0]
+        gld = dfs[1]
+        oil = dfs[2]
         new_df = []
         if isinstance(smb, str):
             smb_col = smb
@@ -402,6 +431,9 @@ class ekoptim():
 
         for i in range(self.Dyp+self.SMAP[0]+1, len(df)-self.Dyf+1, self.Thi):
             past_data = df[['open','high','low','close','GSMA','MSMA','SSMA']].iloc[i-self.Dyp:i]
+            # Extract data from df2 using index of df1 and fill missing rows with NaN
+            past_gld = gld.reindex(past_data.index)
+            past_oil = oil.reindex(past_data.index)
             psdt_HH = past_data[['open','high','low','close']].max(axis=0)['high']
             psdt_LL = past_data[['open','high','low','close']].min(axis=0)['low']
             past_data_normalized, mindf, maxdf = self.normalize(past_data[['open','high','low','close']], psdt_LL, psdt_HH,xrnd)
@@ -409,35 +441,16 @@ class ekoptim():
             pst_dt_tiled = np.tile(past_data_normalized, tile_size)
             pst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, pst_dt_tiled.shape)
             
-            past_data['dayofweek'] = past_data.index.dayofweek/7
-            past_data['dayofmonth'] = past_data.index.day/31
-            past_data['monthofyear'] = past_data.index.month/12
-            
-            # Calculate the difference for each column
-            past_data['MSMA_GSMA'] = (past_data['MSMA'] - past_data['GSMA']) / past_data['GSMA']
-            past_data['SSMA_GSMA'] = (past_data['SSMA'] - past_data['GSMA']) / past_data['GSMA']
-            
-            past_data['open_GSMA'] = (past_data['open'] - past_data['GSMA']) / past_data['GSMA']
-            past_data['high_GSMA'] = (past_data['high'] - past_data['GSMA']) / past_data['GSMA']
-            past_data['low_GSMA'] = (past_data['low'] - past_data['GSMA']) / past_data['GSMA']
-            past_data['close_GSMA'] = (past_data['close'] - past_data['GSMA']) / past_data['GSMA']
-            
-            past_data['open_MSMA'] = (past_data['open'] - past_data['MSMA']) / past_data['MSMA']
-            past_data['high_MSMA'] = (past_data['high'] - past_data['MSMA']) / past_data['MSMA']
-            past_data['low_MSMA'] = (past_data['low'] - past_data['MSMA']) / past_data['MSMA']
-            past_data['close_MSMA'] = (past_data['close'] - past_data['MSMA']) / past_data['MSMA']
-            
-            past_data['open_SSMA'] = (past_data['open'] - past_data['SSMA']) / past_data['SSMA']
-            past_data['high_SSMA'] = (past_data['high'] - past_data['SSMA']) / past_data['SSMA']
-            past_data['low_SSMA'] = (past_data['low'] - past_data['SSMA']) / past_data['SSMA']
-            past_data['close_SSMA'] = (past_data['close'] - past_data['SSMA']) / past_data['SSMA']
+            past_data = self.more_data(past_data)
+            past_gld = self.more_data(past_gld)
+            past_oil = self.more_data(past_oil)
             
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled, fdmn, fdmx = self.normalize(future_data, psdt_LL, psdt_HH, xrnd)
             state, signal = self.calculate_signal(future_data_rescaled)
             df.at[df.index[i-1], 'state'] = state
             new_row = {
-                'past_data': pst_dt_tiled,
+                'past_data': [pst_dt_tiled, past_gld, past_oil],
                 'future_data': future_data_rescaled,
                 'state': state,
                 'signal': signal,
@@ -451,7 +464,7 @@ class ekoptim():
 
     def Hrz_Nrm(self, rates, smb, spn, tile_size, xrnd=0):
         # Apply the moving horizon to each dataframe in rates_lists
-        return [self.apply_moving_horizon_norm(df, smb, spn, tile_size,xrnd) for 
+        return [self.apply_moving_horizon_norm([df,rates[-2],rates[-1]], smb, spn, tile_size,xrnd) for 
                 df in tqdm(rates, desc='Processing DataFrames')]
 
     def Prepare_Data(self, symb, spn=1, tile_size=(2,2), xrnd=0,
