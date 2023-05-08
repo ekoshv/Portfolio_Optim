@@ -65,7 +65,7 @@ if __name__ == "__main__":
         allsymb = [s.name for s in filtered_symbols]
     oil = input("Enter the Oil name: e.g.(.BrentCrude):")
     oil_smb = mt5.symbol_info(oil)
-    gold = input("Enter the Gold name: e.g.(XAUUSAD):")
+    gold = input("Enter the Gold name: e.g.(XAUUSD):")
     gold_smb = mt5.symbol_info(gold)
     History_Days = int(input("How many historical days: "))
     #is_weighted = bool(input("Do you want it to be weighted(True/False): "))
@@ -136,7 +136,17 @@ if __name__ == "__main__":
     returnsMT5= pd.concat(returns_MT5, axis=1)
     returnsTV.fillna(0,inplace=True)
     returnsMT5.fillna(0,inplace=True)
+    
+    # rates_MT5_cnt = pd.concat(rates_MT5, axis=1)
+    # # Find the first non-NaN row
+    # first_valid_index = rates_MT5_cnt.apply(lambda x: x.first_valid_index()).max()
 
+    # # Find the last non-NaN row
+    # last_valid_index = rates_MT5_cnt.apply(lambda x: x.last_valid_index()).min()
+
+    # # Slice the DataFrame from the first non-NaN row to the last non-NaN row
+    # clean_rates_MT5_cnt = rates_MT5_cnt.loc[first_valid_index:last_valid_index]
+    # #clean_rates_MT5_cnt = clean_rates_MT5_cnt.interpolate(method='polynomial', order=3)
         
     risk_free_rate = 0.03
     tol = None
