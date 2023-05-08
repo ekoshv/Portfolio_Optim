@@ -751,7 +751,7 @@ class ekoptim():
             fig.add_trace(go.Scatter(x=df.index, y=df['MSMA'],
                                      mode='lines', name='MSMA', line=dict(color='green')))
             fig.add_trace(go.Scatter(x=df.index, y=df['SSMA'],
-                                     mode='lines', name='SSMA', line=dict(color='purple')))
+                                     mode='lines', name='SSMA', line=dict(color='red')))
             
             # Add blue flash up markers
             fig.add_trace(go.Scatter(x=blue_flash_dates,
