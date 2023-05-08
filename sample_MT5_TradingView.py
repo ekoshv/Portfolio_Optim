@@ -204,12 +204,13 @@ if __name__ == "__main__":
     # shut down connection to the MetaTrader 5 terminal
 #%%
     Dyp = 8 # past days
-    Dyf = 32 # future days    
+    Dyf = 32 # future days
+    n_t = 2 # tile size    
     optimizerTV.Prepare_Data('close', spn=10,
-                             tile_size=(2,int(2*Dyp/4)),xrnd=1e-3,#(n*Dyp->m=n*Dyp/4)
+                             tile_size=(n_t,int(n_t*Dyp/4)),xrnd=1e-3,#(n*Dyp->m=n*Dyp/4)
                              Selected_symbols=selected_symb,
                              Dyp=Dyp, Dyf=Dyf, Thi=1) #None
-    alphax = optimizerTV.HNrates
+    alphax = optimizerTV.HNrates[0][1]
     cetax = optimizerTV.selected_rates
 #%%
     optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32,
