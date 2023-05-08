@@ -509,8 +509,8 @@ class ekoptim():
             df['SSMA'] = ssma
             df.insert(close_idx + 4, 'SSMA', df.pop('SSMA'))
         self.HNrates = self.Hrz_Nrm(srates, symb, spn, tile_size, xrnd)            
-        self.mz = self.HNrates[0][0]['past_data'].shape[0]
-        self.nz = self.HNrates[0][0]['past_data'].shape[1]
+        # self.mz = self.HNrates[0][0]['past_data'][0].shape[0]
+        # self.nz = self.HNrates[0][0]['past_data'][0].shape[1]
 
     def create_model(self, image_height, image_width, model=None):
         if model is None:
@@ -617,6 +617,8 @@ class ekoptim():
        if k_n is not None:
            self.k_n = k_n
        # Define the neural network
+       self.mz = self.HNrates[0][0]['past_data'][0].shape[0]
+       self.nz = self.HNrates[0][0]['past_data'][0].shape[1]
        model = self.create_model(self.mz, self.nz, model) 
        
        # Compile the model with mean squared error loss
