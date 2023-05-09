@@ -450,7 +450,9 @@ class ekoptim():
             state, signal = self.calculate_signal(future_data_rescaled)
             df.at[df.index[i-1], 'state'] = state
             new_row = {
-                'past_data': [pst_dt_tiled, past_gld, past_oil],
+                'past_data': [pst_dt_tiled,
+                              past_gld.loc[:, 'dayofweek':],
+                              past_oil.loc[:, 'dayofweek':]],
                 'future_data': future_data_rescaled,
                 'state': state,
                 'signal': signal,
