@@ -24,6 +24,7 @@ from tqdm import tqdm
 import plotly.graph_objects as go
 import plotly.io as pio
 import talib
+from numba import jit
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
@@ -450,6 +451,7 @@ class ekoptim():
             state, signal = self.calculate_signal(future_data_rescaled)
             df.at[df.index[i-1], 'state'] = state
             new_row = {
+                'name': df.name,
                 'past_data': [pst_dt_tiled,
                               past_gld.loc[:, 'dayofweek':],
                               past_oil.loc[:, 'dayofweek':]],
@@ -469,6 +471,7 @@ class ekoptim():
         return [self.apply_moving_horizon_norm([df,rates[-2],rates[-1]], smb, spn, tile_size,xrnd) for 
                 df in tqdm(rates, desc='Processing DataFrames')]
 
+    @jit(nopython=True)
     def Prepare_Data(self, symb, spn=1, tile_size=(2,2), xrnd=0,
                      Selected_symbols=None,
                      Dyp=8, Dyf=32, Thi=3,
@@ -491,6 +494,7 @@ class ekoptim():
             srates = self.selected_rates
         for df in srates:
             # Find the index of the 'close' column
+            snam = df.columns[-1]
             close_idx = df.columns.get_loc('close')
             df['state']=-1
             df.insert(close_idx + 1, 'state', df.pop('state'))
@@ -510,6 +514,7 @@ class ekoptim():
             # Add the SMA values to the DataFrame
             df['SSMA'] = ssma
             df.insert(close_idx + 4, 'SSMA', df.pop('SSMA'))
+            df.name = snam
         self.HNrates = self.Hrz_Nrm(srates, symb, spn, tile_size, xrnd)            
         # self.mz = self.HNrates[0][0]['past_data'][0].shape[0]
         # self.nz = self.HNrates[0][0]['past_data'][0].shape[1]
