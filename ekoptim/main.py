@@ -339,7 +339,8 @@ class ekoptim():
             }
             new_df = new_df.append(new_row, ignore_index=True)
         return new_df
-
+    
+    @jit(nopython=True)
     def normalize(self,data, dmn, dmx, xrnd=0):
         if isinstance(data, pd.DataFrame):
             data = data.to_numpy()        
@@ -471,7 +472,6 @@ class ekoptim():
         return [self.apply_moving_horizon_norm([df,rates[-2],rates[-1]], smb, spn, tile_size,xrnd) for 
                 df in tqdm(rates, desc='Processing DataFrames')]
 
-    @jit(nopython=True)
     def Prepare_Data(self, symb, spn=1, tile_size=(2,2), xrnd=0,
                      Selected_symbols=None,
                      Dyp=8, Dyf=32, Thi=3,
