@@ -434,7 +434,9 @@ class ekoptim():
             past_data = df[['open','high','low','close','GSMA','MSMA','SSMA']].iloc[i-self.Dyp:i]
             # Extract data from df2 using index of df1 and fill missing rows with NaN
             past_gld = gld.reindex(past_data.index)
+            past_gld = past_gld.fillna(0)
             past_oil = oil.reindex(past_data.index)
+            past_oil = past_oil.fillna(0)
             psdt_HH = past_data[['open','high','low','close']].max(axis=0)['high']
             psdt_LL = past_data[['open','high','low','close']].min(axis=0)['low']
             past_data_normalized, mindf, maxdf = self.normalize(past_data[['open','high','low','close']], psdt_LL, psdt_HH,xrnd)
