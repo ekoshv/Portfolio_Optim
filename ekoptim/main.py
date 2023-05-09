@@ -339,8 +339,7 @@ class ekoptim():
             }
             new_df = new_df.append(new_row, ignore_index=True)
         return new_df
-    
-    @jit(nopython=True)
+
     def normalize(self,data, dmn, dmx, xrnd=0):
         if isinstance(data, pd.DataFrame):
             data = data.to_numpy()        
