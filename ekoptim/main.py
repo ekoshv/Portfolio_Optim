@@ -438,8 +438,10 @@ class ekoptim():
             # Extract data from df2 using index of df1 and fill missing rows with NaN
             past_gld = gld.reindex(past_data.index)
             past_oil = oil.reindex(past_data.index)
-            if not (past_gld.isnull().any().any() or np.isinf(past_gld).any().any() or
-                    past_oil.isnull().any().any() or np.isinf(past_oil).any().any()):
+            if (past_gld.isnull().any().any() or np.isinf(past_gld).any().any() or 
+                past_oil.isnull().any().any() or np.isinf(past_oil).any().any()):
+                pass
+            else:
                 psdt_HH = past_data[['open','high','low','close']].max(axis=0)['high']
                 psdt_LL = past_data[['open','high','low','close']].min(axis=0)['low']
                 past_data_normalized, mindf, maxdf = self.normalize(past_data[['open','high','low','close']], psdt_LL, psdt_HH,xrnd)
@@ -470,10 +472,7 @@ class ekoptim():
                 #print(new_row)
                 new_df.append(new_row)
                 return new_df
-            else:
-                pass
-                #return new_df
-            
+        
     def Hrz_Nrm(self, rates, smb, spn, tile_size, xrnd=0):
         # Apply the moving horizon to each dataframe in rates_lists
         return [self.apply_moving_horizon_norm([df,rates[-2],rates[-1]], smb, spn, tile_size,xrnd) for 
