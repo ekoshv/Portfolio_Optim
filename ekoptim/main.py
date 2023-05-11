@@ -458,8 +458,8 @@ class ekoptim():
                 new_row = {
                     'name': df.name,
                     'past_data': [pst_dt_tiled,
-                                  past_gld.loc[:, 'dayofweek':].fillna(0),
-                                  past_oil.loc[:, 'dayofweek':]].fillna(0),
+                                  (past_gld.loc[:, 'dayofweek':]).fillna(0),
+                                  (past_oil.loc[:, 'dayofweek':]).fillna(0)],
                     'future_data': future_data_rescaled,
                     'state': state,
                     'signal': signal,
