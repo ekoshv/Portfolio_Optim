@@ -457,8 +457,9 @@ class ekoptim():
             new_row = {
                 'name': df.name,
                 'past_data': [pst_dt_tiled,
-                              past_gld.loc[:, 'dayofweek':].fillna(0),
-                              past_oil.loc[:, 'dayofweek':].fillna(0)],
+                              past_data.loc[:, 'dayofweek':].fillna(0),
+                              past_gld.loc[:, 'MSMA_GSMA':].fillna(0),
+                              past_oil.loc[:, 'MSMA_GSMA':].fillna(0)],
                 'future_data': future_data_rescaled,
                 'state': state,
                 'signal': signal,
@@ -602,16 +603,25 @@ class ekoptim():
 
         self.mz2 = self.HNrates[0][0]['past_data'][2].shape[0]
         self.nz2 = self.HNrates[0][0]['past_data'][2].shape[1]
-       
+
+        self.mz3 = self.HNrates[0][0]['past_data'][3].shape[0]
+        self.nz3 = self.HNrates[0][0]['past_data'][3].shape[1]        
+
         input0, output0 = self.create_model(self.mz0, self.nz0)
         input1, output1 = self.create_model(self.mz1, self.nz1)
         input2, output2 = self.create_model(self.mz2, self.nz2)
-        combined_output = Concatenate()([output0, output1, output2])
-        x = tf.keras.layers.Dense(5*self.Dyf, activation="relu")(combined_output)
+        input3, output3 = self.create_model(self.mz3, self.nz3)
+        combined_output = Concatenate()([output0, output1, output2, output3])
+
+        x = tf.keras.layers.Dense(1024, activation="relu")(combined_output)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.3)(x)
+
+        x = tf.keras.layers.Dense(5*self.Dyf, activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.3)(x)
         final_output = tf.keras.layers.Dense(9, activation='softmax')(x)
-        model = Model(inputs=[input0, input1, input2], outputs=final_output)
+        model = Model(inputs=[input0, input1, input2, input3], outputs=final_output)
         # Compile the model with mean squared error loss
         opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         model.compile(optimizer=opt,
@@ -633,10 +643,12 @@ class ekoptim():
         X0 = np.array([d['past_data'][0] for lst in self.HNrates for d in lst])
         X1 = np.array([d['past_data'][1] for lst in self.HNrates for d in lst])
         X2 = np.array([d['past_data'][2] for lst in self.HNrates for d in lst])
+        X3 = np.array([d['past_data'][3] for lst in self.HNrates for d in lst])
         
         X0 = np.expand_dims(X0, axis=-1)
         X1 = np.expand_dims(X1, axis=-1)
         X2 = np.expand_dims(X2, axis=-1)
+        X3 = np.expand_dims(X3, axis=-1)
         
         y = np.array([d['state'] for lst in self.HNrates for d in lst])
 
@@ -644,6 +656,7 @@ class ekoptim():
         X_train0, X_test0 = X0[train_indices], X0[test_indices]
         X_train1, X_test1 = X1[train_indices], X1[test_indices]
         X_train2, X_test2 = X2[train_indices], X2[test_indices]
+        X_train3, X_test3 = X3[train_indices], X3[test_indices]
         y_train, y_test = y[train_indices], y[test_indices]
  
         self.k_n=5
@@ -657,11 +670,13 @@ class ekoptim():
         X_train0_resampled, y_train_resampled = smote.fit_resample(X_train0.reshape(X_train0.shape[0], -1), y_train)
         X_train1_resampled, _ = smote.fit_resample(X_train1.reshape(X_train1.shape[0], -1), y_train)
         X_train2_resampled, _ = smote.fit_resample(X_train2.reshape(X_train2.shape[0], -1), y_train)
+        X_train3_resampled, _ = smote.fit_resample(X_train3.reshape(X_train3.shape[0], -1), y_train)
         
         # Reshape the resampled data back to its original shape
         X_train0 = X_train0_resampled.reshape((-1,) + X_train0.shape[1:])
         X_train1 = X_train1_resampled.reshape((-1,) + X_train1.shape[1:])
         X_train2 = X_train2_resampled.reshape((-1,) + X_train2.shape[1:])
+        X_train3 = X_train3_resampled.reshape((-1,) + X_train3.shape[1:])
         
         # Create a label encoder for mapping the class labels
         label_encoder = LabelEncoder()
@@ -690,7 +705,7 @@ class ekoptim():
         if(load_train):
             model.load_weights(filepath)
         
-        model.fit([X_train0, X_train1, X_train2], y_train_one_hot, epochs=epochs, batch_size=batch_size,
+        model.fit([X_train0, X_train1, X_train2, X_train3], y_train_one_hot, epochs=epochs, batch_size=batch_size,
                   validation_split=0.33, shuffle=True,
                   callbacks=[tensorboard_callback, checkpoint_callback],
                   class_weight=class_weight_dict)
@@ -699,7 +714,7 @@ class ekoptim():
         model.load_weights(filepath)
         
         # Evaluate the model on the test set
-        score = model.evaluate([X_test0, X_test1, X_test2], y_test_one_hot)
+        score = model.evaluate([X_test0, X_test1, X_test2, X_test3], y_test_one_hot)
         print(score)
         self.nnmodel = model
 
@@ -712,7 +727,10 @@ class ekoptim():
         model.load_weights(filepath)
         self.nnmodel = model
 
-    def predict_next(self, rate, smb):
+    def predict_next(self, rates, smb):
+        rate = rates[0]
+        gld = rates[1]
+        oil = rates[2]
         try:
             if isinstance(smb, str):
                 smb_col = smb
@@ -721,16 +739,35 @@ class ekoptim():
             else:
                 raise ValueError("smb should be either a string or an integer.")
             # Get the last Dyp rows of full_rates for the given symbol
-            past_data = rate[['open','high','low','close']].tail(self.Dyp)
+            past_data = rate[['open','high','low','close','GSMA','MSMA','SSMA']].tail(self.Dyp)
+            past_gld = gld.reindex(past_data.index)
+            past_oil = oil.reindex(past_data.index)
+            
             psdt_HH = past_data.max(axis=0)['high']
             psdt_LL = past_data.min(axis=0)['low']
             past_data_normalized, mindf, maxdf = self.normalize(past_data, psdt_LL, psdt_HH)
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
             pst_dt_tiled = np.tile(past_data_normalized, self.tile_size)
+            
+            past_data = self.more_data(past_data)
+            past_gld = self.more_data(past_gld)
+            past_oil = self.more_data(past_oil)
+
             # Reshape the past data for input to the neural network
-            X = np.expand_dims(pst_dt_tiled, axis=(0, -1))
+
+            
+            X0 = pst_dt_tiled
+            X1 = past_data.loc[:, 'dayofweek':].fillna(0)
+            X2 = past_gld.loc[:, 'MSMA_GSMA':].fillna(0)
+            X3 = past_oil.loc[:, 'MSMA_GSMA':].fillna(0)
+
+            X0 = np.expand_dims(X0, axis=(0, -1))
+            X1 = np.expand_dims(X1, axis=(0, -1))
+            X2 = np.expand_dims(X2, axis=(0, -1))
+            X3 = np.expand_dims(X3, axis=(0, -1))
+            
             # Use the trained neural network model to predict the future data
-            y_pred = np.array(self.nnmodel.predict(X))
+            y_pred = np.array(self.nnmodel.predict([X0, X1, X2, X3]))
             y_pred = y_pred.squeeze()
             y_pred = [0 if x<1e-3 else round(100*x)/100 for x in y_pred] 
             return {i: value for i, value in enumerate(y_pred)}
@@ -745,6 +782,7 @@ class ekoptim():
         self.Predicted_Rates = []
         for df in self.full_rates:
             # Predict the next values for the given symbol using the predict_next method
+            idf = [df, self.full_rates[-2], self.full_rates[-1]]
             y_pred = self.predict_next(df, smb)
             self.Predicted_Rates.append(y_pred)
     

@@ -250,7 +250,7 @@ if __name__ == "__main__":
                              tile_size=(n_t,int(n_t*Dyp/4)),xrnd=1e-3,#(n*Dyp->m=n*Dyp/4)
                              Selected_symbols=selected_symb,
                              Dyp=Dyp, Dyf=Dyf, Thi=1) #None
-    alphax = optimizerTV.HNrates[3]
+    alphax = optimizerTV.HNrates[1]
     cetax = optimizerTV.selected_rates
     optimizerTV.draw_states(cetax[-2])
 #%%
