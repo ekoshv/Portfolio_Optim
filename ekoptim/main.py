@@ -437,40 +437,42 @@ class ekoptim():
             past_data = df[['open','high','low','close','GSMA','MSMA','SSMA']].iloc[i-self.Dyp:i]
             # Extract data from df2 using index of df1 and fill missing rows with NaN
             past_gld = gld.reindex(past_data.index)
-            past_gld = past_gld.fillna(0)
             past_oil = oil.reindex(past_data.index)
-            past_oil = past_oil.fillna(0)
-            psdt_HH = past_data[['open','high','low','close']].max(axis=0)['high']
-            psdt_LL = past_data[['open','high','low','close']].min(axis=0)['low']
-            past_data_normalized, mindf, maxdf = self.normalize(past_data[['open','high','low','close']], psdt_LL, psdt_HH,xrnd)
-            past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
-            pst_dt_tiled = np.tile(past_data_normalized, tile_size)
-            pst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, pst_dt_tiled.shape)
+            if not (past_gld.isnull().any().any() or np.isinf(past_gld).any().any() or
+                    past_oil.isnull().any().any() or np.isinf(past_oil).any().any()):
+                psdt_HH = past_data[['open','high','low','close']].max(axis=0)['high']
+                psdt_LL = past_data[['open','high','low','close']].min(axis=0)['low']
+                past_data_normalized, mindf, maxdf = self.normalize(past_data[['open','high','low','close']], psdt_LL, psdt_HH,xrnd)
+                past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
+                pst_dt_tiled = np.tile(past_data_normalized, tile_size)
+                pst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, pst_dt_tiled.shape)
+                
+                past_data = self.more_data(past_data)
+                past_gld = self.more_data(past_gld)
+                past_oil = self.more_data(past_oil)
+                
+                future_data = df[smb_col].iloc[i:i+self.Dyf]
+                future_data_rescaled, fdmn, fdmx = self.normalize(future_data, psdt_LL, psdt_HH, xrnd)
+                state, signal = self.calculate_signal(future_data_rescaled)
+                df.at[df.index[i-1], 'state'] = state
+                new_row = {
+                    'name': df.name,
+                    'past_data': [pst_dt_tiled,
+                                  past_gld.loc[:, 'dayofweek':].fillna(0),
+                                  past_oil.loc[:, 'dayofweek':]].fillna(0),
+                    'future_data': future_data_rescaled,
+                    'state': state,
+                    'signal': signal,
+                    'pstraw': past_data,
+                    'minmax': [psdt_LL,psdt_HH],
+                    'dati': df.index[i-1]
+                }
+                #print(new_row)
+                new_df.append(new_row)
+                return new_df
+            else:
+                pass
             
-            past_data = self.more_data(past_data)
-            past_gld = self.more_data(past_gld)
-            past_oil = self.more_data(past_oil)
-            
-            future_data = df[smb_col].iloc[i:i+self.Dyf]
-            future_data_rescaled, fdmn, fdmx = self.normalize(future_data, psdt_LL, psdt_HH, xrnd)
-            state, signal = self.calculate_signal(future_data_rescaled)
-            df.at[df.index[i-1], 'state'] = state
-            new_row = {
-                'name': df.name,
-                'past_data': [pst_dt_tiled,
-                              past_gld.loc[:, 'dayofweek':],
-                              past_oil.loc[:, 'dayofweek':]],
-                'future_data': future_data_rescaled,
-                'state': state,
-                'signal': signal,
-                'pstraw': past_data,
-                'minmax': [psdt_LL,psdt_HH],
-                'dati': df.index[i-1]
-            }
-            #print(new_row)
-            new_df.append(new_row)
-        return new_df        
-
     def Hrz_Nrm(self, rates, smb, spn, tile_size, xrnd=0):
         # Apply the moving horizon to each dataframe in rates_lists
         return [self.apply_moving_horizon_norm([df,rates[-2],rates[-1]], smb, spn, tile_size,xrnd) for 
