@@ -14,8 +14,11 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import class_weight
 import traceback
 import tensorflow as tf
+from tensorflow.keras.layers import Concatenate
+from tensorflow.keras.models import Model
 import tensorflow_addons as tfa
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import ShuffleSplit
 from imblearn.over_sampling import SMOTE
 from tensorflow.keras.callbacks import ModelCheckpoint
 import os
@@ -24,7 +27,7 @@ from tqdm import tqdm
 import plotly.graph_objects as go
 import plotly.io as pio
 import talib
-from numba import jit
+#from numba import jit
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
@@ -520,69 +523,36 @@ class ekoptim():
         # self.mz = self.HNrates[0][0]['past_data'][0].shape[0]
         # self.nz = self.HNrates[0][0]['past_data'][0].shape[1]
 
-    def create_model(self, image_height, image_width, model=None):
-        if model is None:
-            model = tf.keras.Sequential([
-                tf.keras.layers.Input(shape=(image_height, image_width, 1)),
+    def create_model(self, image_height, image_width):
+        input_layer = tf.keras.layers.Input(shape=(image_height, image_width, 1))
     
-                tf.keras.layers.Conv2D(filters=128,
-                                       kernel_size=9, strides=1,
-                                       padding="same", activation="relu"),
-                tf.keras.layers.BatchNormalization(),
-                tf.keras.layers.Dropout(0.2),
-        
-                tf.keras.layers.Conv2D(filters=128,
-                                       kernel_size=7, strides=1,
-                                       padding="same", activation="relu"),
-                tf.keras.layers.BatchNormalization(),
-                tf.keras.layers.Dropout(0.2),
-        
-                tf.keras.layers.Conv2D(filters=128,
-                                       kernel_size=5, strides=1,
-                                       padding="same", activation="relu"),
-                tf.keras.layers.BatchNormalization(),
-                tf.keras.layers.Dropout(0.2),
+        x = tf.keras.layers.Conv2D(filters=128, kernel_size=7, strides=1,
+                                    padding="same", activation="relu")(input_layer)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.2)(x)
     
-                tf.keras.layers.Conv2D(filters=128,
-                                       kernel_size=3, strides=1,
-                                       padding="same", activation="relu"),
-                tf.keras.layers.BatchNormalization(),
-                tf.keras.layers.Dropout(0.2),
+        x = tf.keras.layers.Conv2D(filters=128, kernel_size=5, strides=1,
+                                    padding="same", activation="relu")(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.2)(x)
     
-        
-                tf.keras.layers.GlobalAveragePooling2D(),
-        
-                tf.keras.layers.Dense(1024, activation=None),
-                tf.keras.layers.BatchNormalization(),
-                tf.keras.layers.Dropout(0.5),
-        
-                tf.keras.layers.Dense(1024, activation=None),
-                tf.keras.layers.BatchNormalization(),
-                tf.keras.layers.Dropout(0.5),
+        x = tf.keras.layers.Conv2D(filters=128, kernel_size=3, strides=1,
+                                    padding="same", activation="relu")(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.2)(x)
     
-                tf.keras.layers.Dense(1024, activation="relu"),
-                tf.keras.layers.BatchNormalization(),
-                tf.keras.layers.Dropout(0.5),
-                
-                tf.keras.layers.Dense(1024, activation="relu"),
-                tf.keras.layers.BatchNormalization(),
-                tf.keras.layers.Dropout(0.5),
+        x = tf.keras.layers.GlobalAveragePooling2D()(x)
     
-                tf.keras.layers.Dense(1024, activation="relu"),
-                tf.keras.layers.BatchNormalization(),
-                tf.keras.layers.Dropout(0.5),
+        x = tf.keras.layers.Dense(1024, activation="relu")(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.5)(x)
     
-                tf.keras.layers.Dense(1024, activation="relu"),
-                tf.keras.layers.BatchNormalization(),
-                tf.keras.layers.Dropout(0.5),
-        
-                tf.keras.layers.Dense(9, activation="softmax")
-            ])
-            return model
-        else:
-            return model
-        
+        x = tf.keras.layers.Dense(1024, activation="relu")(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        output_layer = tf.keras.layers.Dropout(0.5)(x)
     
+        return input_layer, output_layer
+
     def custom_loss(self, y_true, y_pred, num_classes=9, average='macro', name="custom_loss"):
         # Calculate the CategoricalCrossentropy loss
         sce_loss = tf.keras.losses.CategoricalCrossentropy(from_logits=False)
@@ -621,92 +591,118 @@ class ekoptim():
     def NNmake(self, model=None,
                learning_rate=0.001, epochs=100, batch_size=32, k_n=None,
                load_train=False):
-       self.k_n=5
-       if k_n is not None:
-           self.k_n = k_n
-       # Define the neural network
-       self.mz = self.HNrates[0][0]['past_data'][0].shape[0]
-       self.nz = self.HNrates[0][0]['past_data'][0].shape[1]
-       model = self.create_model(self.mz, self.nz, model) 
-       
-       # Compile the model with mean squared error loss
-       opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-       model.compile(optimizer=opt,
-              loss=self.custom_loss,
-              metrics=['accuracy',tfa.metrics.F1Score(num_classes=9, average='macro'),
-                       tf.keras.losses.CategoricalCrossentropy(from_logits=False)])
+        self.k_n=5
+        if k_n is not None:
+            self.k_n = k_n
+        # Define the neural network
+        self.mz0 = self.HNrates[0][0]['past_data'][0].shape[0]
+        self.nz0 = self.HNrates[0][0]['past_data'][0].shape[1]
 
-       #model.compile(optimizer=opt, loss='mape')
+        self.mz1 = self.HNrates[0][0]['past_data'][1].shape[0]
+        self.nz1 = self.HNrates[0][0]['past_data'][1].shape[1]
+
+        self.mz2 = self.HNrates[0][0]['past_data'][2].shape[0]
+        self.nz2 = self.HNrates[0][0]['past_data'][2].shape[1]
+       
+        input0, output0 = self.create_model(self.mz0, self.nz0)
+        input1, output1 = self.create_model(self.mz1, self.nz1)
+        input2, output2 = self.create_model(self.mz2, self.nz2)
+        combined_output = Concatenate()([output0, output1, output2])
+        x = tf.keras.layers.Dense(5*self.Dyf, activation="relu")(combined_output)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.3)(x)
+        final_output = tf.keras.layers.Dense(9, activation='softmax')(x)
+        model = Model(inputs=[input0, input1, input2], outputs=final_output)
+        # Compile the model with mean squared error loss
+        opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+        model.compile(optimizer=opt,
+               loss=self.custom_loss,
+               metrics=['accuracy',tfa.metrics.F1Score(num_classes=9, average='macro'),
+                        tf.keras.losses.CategoricalCrossentropy(from_logits=False)])
+
+        #model.compile(optimizer=opt, loss='mape')
    
-       # Set up the callback to save the best model weights
-       checkpoint_dir = './checkpoints'
-       if not os.path.exists(checkpoint_dir):
-           os.makedirs(checkpoint_dir)
-       filepath = checkpoint_dir + '/best_weights.hdf5'
-       checkpoint_callback = ModelCheckpoint(filepath, monitor='val_loss',
-                                             verbose=1, save_best_only=True, mode='min')
+        # Set up the callback to save the best model weights
+        checkpoint_dir = './checkpoints'
+        if not os.path.exists(checkpoint_dir):
+            os.makedirs(checkpoint_dir)
+        filepath = checkpoint_dir + '/best_weights.hdf5'
+        checkpoint_callback = ModelCheckpoint(filepath, monitor='val_loss',
+                                              verbose=1, save_best_only=True, mode='min')
    
-       # Train the model on the data in new_rates_lists
-       X = np.array([d['past_data'] for lst in self.HNrates for d in lst])
-       X = np.expand_dims(X, axis=-1)  # add a new axis for the input feature
-       y = np.array([d['state'] for lst in self.HNrates for d in lst])
-       
-       X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33)
-       self.k_n=5
-       if k_n is not None:
-           self.k_n = k_n 
-           # Initialize the SMOTE object
-           smote = SMOTE(sampling_strategy='auto', k_neighbors=self.k_n, random_state=42)
-           # Fit and resample the training data
-           X_train_flattened = X_train.reshape(X_train.shape[0], -1)
-           y_train_flattened = y_train.reshape(y_train.shape[0], -1)
-       
-           X_train_resampled, y_train_resampled = smote.fit_resample(X_train_flattened,
-                                                                  y_train_flattened)
-           # Optionally, reshape the resampled data back to its original shape
-           X_train_resampled_reshaped = X_train_resampled.reshape((-1,) + X_train.shape[1:])
-           y_train_resampled_reshaped = y_train_resampled.reshape((-1,) + y_train.shape[1:])
-           X_train = X_train_resampled_reshaped
-           y_train = y_train_resampled_reshaped
-       
-       # Create a label encoder for mapping the class labels
-       label_encoder = LabelEncoder()
-       unique_labels = np.unique(y_train)
-       encoded_labels = label_encoder.fit_transform(unique_labels)
+        # Train the model on the data in new_rates_lists
+        X0 = np.array([d['past_data'][0] for lst in self.HNrates for d in lst])
+        X1 = np.array([d['past_data'][1] for lst in self.HNrates for d in lst])
+        X2 = np.array([d['past_data'][2] for lst in self.HNrates for d in lst])
         
-       # Fit the label encoder on the training labels and transform both train and test labels
-       y_train_encoded = label_encoder.fit_transform(y_train)
-       y_test_encoded = label_encoder.transform(y_test)
+        X0 = np.expand_dims(X0, axis=-1)
+        X1 = np.expand_dims(X1, axis=-1)
+        X2 = np.expand_dims(X2, axis=-1)
         
-       # Get the number of unique classes
-       num_classes = len(unique_labels)
+        y = np.array([d['state'] for lst in self.HNrates for d in lst])
+
+        train_indices, test_indices = next(iter(ShuffleSplit(n_splits=1, test_size=0.33).split(X0)))
+        X_train0, X_test0 = X0[train_indices], X0[test_indices]
+        X_train1, X_test1 = X1[train_indices], X1[test_indices]
+        X_train2, X_test2 = X2[train_indices], X2[test_indices]
+        y_train, y_test = y[train_indices], y[test_indices]
+ 
+        self.k_n=5
+        if k_n is not None:
+            self.k_n = k_n 
         
-       # Convert the encoded class labels to one-hot encoding
-       y_train_one_hot = tf.keras.utils.to_categorical(y_train_encoded, num_classes=num_classes)
-       y_test_one_hot = tf.keras.utils.to_categorical(y_test_encoded, num_classes=num_classes)
-       # Compute the class weights
-       class_weights = class_weight.compute_class_weight('balanced',
-                                                         classes=unique_labels,
-                                                         y=y_train)
-       class_weight_dict = dict(zip(encoded_labels, class_weights))
-       print(f"The class weights: {class_weight_dict}")
-       tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
-       model.summary()
-       print("Training Model...")
-       if(load_train):
+        # Initialize the SMOTE object
+        smote = SMOTE(sampling_strategy='auto', k_neighbors=self.k_n, random_state=42)
+        
+        # Fit and resample the training data for each dataset
+        X_train0_resampled, y_train_resampled = smote.fit_resample(X_train0.reshape(X_train0.shape[0], -1), y_train)
+        X_train1_resampled, _ = smote.fit_resample(X_train1.reshape(X_train1.shape[0], -1), y_train)
+        X_train2_resampled, _ = smote.fit_resample(X_train2.reshape(X_train2.shape[0], -1), y_train)
+        
+        # Reshape the resampled data back to its original shape
+        X_train0 = X_train0_resampled.reshape((-1,) + X_train0.shape[1:])
+        X_train1 = X_train1_resampled.reshape((-1,) + X_train1.shape[1:])
+        X_train2 = X_train2_resampled.reshape((-1,) + X_train2.shape[1:])
+        
+        # Create a label encoder for mapping the class labels
+        label_encoder = LabelEncoder()
+        unique_labels = np.unique(y_train_resampled)
+        encoded_labels = label_encoder.fit_transform(unique_labels)
+        
+        # Fit the label encoder on the training labels and transform both train and test labels
+        y_train_encoded = label_encoder.transform(y_train_resampled)
+        y_test_encoded = label_encoder.transform(y_test)
+        
+        # Get the number of unique classes
+        num_classes = len(unique_labels)
+        
+        # Convert the encoded class labels to one-hot encoding
+        y_train_one_hot = tf.keras.utils.to_categorical(y_train_encoded, num_classes=num_classes)
+        y_test_one_hot = tf.keras.utils.to_categorical(y_test_encoded, num_classes=num_classes)
+        
+        # Compute the class weights
+        class_weights = class_weight.compute_class_weight('balanced', classes=unique_labels, y=y_train_resampled)
+        class_weight_dict = dict(zip(encoded_labels, class_weights))
+        print(f"The class weights: {class_weight_dict}")
+        
+        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
+        model.summary()
+        print("Training Model...")
+        if(load_train):
             model.load_weights(filepath)
         
-       model.fit(X_train, y_train_one_hot, epochs=epochs, batch_size=batch_size,
-                 validation_split=0.33, shuffle=True ,
-                 callbacks=[tensorboard_callback, checkpoint_callback],
-                 class_weight=class_weight_dict)
-       # Load the best model weights
-       model.load_weights(filepath)
-       
-       # Evaluate the model on the test set
-       score = model.evaluate(X_test, y_test_one_hot)
-       print(score)
-       self.nnmodel = model
+        model.fit([X_train0, X_train1, X_train2], y_train_one_hot, epochs=epochs, batch_size=batch_size,
+                  validation_split=0.33, shuffle=True,
+                  callbacks=[tensorboard_callback, checkpoint_callback],
+                  class_weight=class_weight_dict)
+        
+        # Load the best model weights
+        model.load_weights(filepath)
+        
+        # Evaluate the model on the test set
+        score = model.evaluate([X_test0, X_test1, X_test2], y_test_one_hot)
+        print(score)
+        self.nnmodel = model
 
     def load_model_fit(self):
         model = self.create_model(self.mz, self.nz)
