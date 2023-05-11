@@ -472,6 +472,7 @@ class ekoptim():
                 return new_df
             else:
                 pass
+                #return new_df
             
     def Hrz_Nrm(self, rates, smb, spn, tile_size, xrnd=0):
         # Apply the moving horizon to each dataframe in rates_lists
