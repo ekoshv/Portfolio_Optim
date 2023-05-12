@@ -68,7 +68,8 @@ if __name__ == "__main__":
     gold = input("Enter the Gold name: e.g.(XAUUSD):")
     gold_smb = mt5.symbol_info(gold)
     History_Days = int(input("How many historical days: "))
-    mt5same = bool(input("Length of MT5 as of TradingView?(True/False)"))
+    mt5same = input("Length of MT5 as of TradingView?(True/False): ")
+    mt5same = True if mt5same.lower() == "true" else False
 #%%    
     returns_TV = []
     returns_MT5 = []

@@ -650,6 +650,7 @@ class ekoptim():
             X_train3_resampled, _ = smote.fit_resample(X_train3.reshape(X_train3.shape[0], -1), y_train)
             
             # Reshape the resampled data back to its original shape
+            y_train = y_train_resampled.reshape((-1,) + y_train.shape[1:])
             X_train0 = X_train0_resampled.reshape((-1,) + X_train0.shape[1:])
             X_train1 = X_train1_resampled.reshape((-1,) + X_train1.shape[1:])
             X_train2 = X_train2_resampled.reshape((-1,) + X_train2.shape[1:])
@@ -657,11 +658,11 @@ class ekoptim():
         
         # Create a label encoder for mapping the class labels
         label_encoder = LabelEncoder()
-        unique_labels = np.unique(y_train_resampled)
+        unique_labels = np.unique(y_train)
         encoded_labels = label_encoder.fit_transform(unique_labels)
         
         # Fit the label encoder on the training labels and transform both train and test labels
-        y_train_encoded = label_encoder.transform(y_train_resampled)
+        y_train_encoded = label_encoder.transform(y_train)
         y_test_encoded = label_encoder.transform(y_test)
         
         # Get the number of unique classes
