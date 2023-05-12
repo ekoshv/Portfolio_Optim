@@ -435,8 +435,8 @@ class ekoptim():
                 'name': df.name,
                 'past_data': [pst_dt_tiled,
                               past_data.loc[:, 'dayofweek':].fillna(0),
-                              past_gld.loc[:, 'MSMA_GSMA':].fillna(0),
-                              past_oil.loc[:, 'MSMA_GSMA':].fillna(0)],
+                              past_gld.loc[:, 'dayofweek':].fillna(0),
+                              past_oil.loc[:, 'dayofweek':].fillna(0)],
                 'future_data': future_data_rescaled,
                 'state': state,
                 'signal': signal,
@@ -736,8 +736,8 @@ class ekoptim():
             
             X0 = pst_dt_tiled
             X1 = past_data.loc[:, 'dayofweek':].fillna(0)
-            X2 = past_gld.loc[:, 'MSMA_GSMA':].fillna(0)
-            X3 = past_oil.loc[:, 'MSMA_GSMA':].fillna(0)
+            X2 = past_gld.loc[:, 'dayofweek':].fillna(0)
+            X3 = past_oil.loc[:, 'dayofweek':].fillna(0)
 
             X0 = np.expand_dims(X0, axis=(0, -1))
             X1 = np.expand_dims(X1, axis=(0, -1))
