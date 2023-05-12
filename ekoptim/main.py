@@ -663,20 +663,20 @@ class ekoptim():
         if k_n is not None:
             self.k_n = k_n 
         
-        # Initialize the SMOTE object
-        smote = SMOTE(sampling_strategy='auto', k_neighbors=self.k_n, random_state=42)
-        
-        # Fit and resample the training data for each dataset
-        X_train0_resampled, y_train_resampled = smote.fit_resample(X_train0.reshape(X_train0.shape[0], -1), y_train)
-        X_train1_resampled, _ = smote.fit_resample(X_train1.reshape(X_train1.shape[0], -1), y_train)
-        X_train2_resampled, _ = smote.fit_resample(X_train2.reshape(X_train2.shape[0], -1), y_train)
-        X_train3_resampled, _ = smote.fit_resample(X_train3.reshape(X_train3.shape[0], -1), y_train)
-        
-        # Reshape the resampled data back to its original shape
-        X_train0 = X_train0_resampled.reshape((-1,) + X_train0.shape[1:])
-        X_train1 = X_train1_resampled.reshape((-1,) + X_train1.shape[1:])
-        X_train2 = X_train2_resampled.reshape((-1,) + X_train2.shape[1:])
-        X_train3 = X_train3_resampled.reshape((-1,) + X_train3.shape[1:])
+            # Initialize the SMOTE object
+            smote = SMOTE(sampling_strategy='auto', k_neighbors=self.k_n, random_state=42)
+            
+            # Fit and resample the training data for each dataset
+            X_train0_resampled, y_train_resampled = smote.fit_resample(X_train0.reshape(X_train0.shape[0], -1), y_train)
+            X_train1_resampled, _ = smote.fit_resample(X_train1.reshape(X_train1.shape[0], -1), y_train)
+            X_train2_resampled, _ = smote.fit_resample(X_train2.reshape(X_train2.shape[0], -1), y_train)
+            X_train3_resampled, _ = smote.fit_resample(X_train3.reshape(X_train3.shape[0], -1), y_train)
+            
+            # Reshape the resampled data back to its original shape
+            X_train0 = X_train0_resampled.reshape((-1,) + X_train0.shape[1:])
+            X_train1 = X_train1_resampled.reshape((-1,) + X_train1.shape[1:])
+            X_train2 = X_train2_resampled.reshape((-1,) + X_train2.shape[1:])
+            X_train3 = X_train3_resampled.reshape((-1,) + X_train3.shape[1:])
         
         # Create a label encoder for mapping the class labels
         label_encoder = LabelEncoder()

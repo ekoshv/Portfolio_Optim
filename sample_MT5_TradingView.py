@@ -68,7 +68,7 @@ if __name__ == "__main__":
     gold = input("Enter the Gold name: e.g.(XAUUSD):")
     gold_smb = mt5.symbol_info(gold)
     History_Days = int(input("How many historical days: "))
-    #is_weighted = bool(input("Do you want it to be weighted(True/False): "))
+    mt5same = bool(input("Length of MT5 as of TradingView?(True/False)"))
 #%%    
     returns_TV = []
     returns_MT5 = []
@@ -89,7 +89,7 @@ if __name__ == "__main__":
             datamt5 = mt5.copy_rates_from_pos(s.name, mt5.TIMEFRAME_D1, 0, History_Days)
             #print(rates)
             if(len(rates)>=round(0.75*History_Days) and
-               len(datamt5)>=round(0.75*History_Days) and
+               (len(datamt5)>=round(0.75*History_Days) or not mt5same) and
                (rates.index[0] >= begindate)):
                 print('***',len(rates),', ',rates.index[0],', ',s.name)
                 rates[s.name] = ((rates['close']).
@@ -255,7 +255,7 @@ if __name__ == "__main__":
     optimizerTV.draw_states(cetax[-2])
 #%%
     optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32,
-                       k_n=4,
+                       k_n=None,
                        load_train=False)
 #%%
     optimizerTV.load_model_fit()
