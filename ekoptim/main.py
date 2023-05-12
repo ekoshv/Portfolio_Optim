@@ -375,24 +375,9 @@ class ekoptim():
         else:
             sigs.append(0)
         
-        if sigs == [2, -2]:
-            state = 0
-        elif sigs == [2, -1]:
-            state = 1
-        elif sigs == [2, 0]:
-            state = 2
-        elif sigs == [1, -2]:
-            state = 3
-        elif sigs == [1, -1]:
-            state = 4
-        elif sigs == [1, 0]:
-            state = 5
-        elif sigs == [0, -2]:
-            state = 6
-        elif sigs == [0, -1]:
-            state = 7
-        elif sigs == [0, 0]:
-            state = 8
+        state_map = {(2, -2): 0, (2, -1): 1, (2, 0): 2, (1, -2): 3, (1, -1): 4, (1, 0): 5, 
+                     (0, -2): 6, (0, -1): 7, (0, 0): 8}
+        state = state_map[tuple(sigs)]
         
         return state, sigs
     
@@ -402,23 +387,15 @@ class ekoptim():
         dfp['monthofyear'] = dfp.index.month/12
         
         # Calculate the difference for each column
-        dfp['MSMA_GSMA'] = (dfp['MSMA'] - dfp['GSMA']) / dfp['GSMA']
-        dfp['SSMA_GSMA'] = (dfp['SSMA'] - dfp['GSMA']) / dfp['GSMA']
+        msma_gsma = dfp['MSMA'] - dfp['GSMA']
+        ssma_gsma = dfp['SSMA'] - dfp['GSMA']
+        dfp['MSMA_GSMA'] = msma_gsma / dfp['GSMA']
+        dfp['SSMA_GSMA'] = ssma_gsma / dfp['GSMA']
         
-        dfp['open_GSMA'] = (dfp['open'] - dfp['GSMA']) / dfp['GSMA']
-        dfp['high_GSMA'] = (dfp['high'] - dfp['GSMA']) / dfp['GSMA']
-        dfp['low_GSMA'] = (dfp['low'] - dfp['GSMA']) / dfp['GSMA']
-        dfp['close_GSMA'] = (dfp['close'] - dfp['GSMA']) / dfp['GSMA']
-        
-        dfp['open_MSMA'] = (dfp['open'] - dfp['MSMA']) / dfp['MSMA']
-        dfp['high_MSMA'] = (dfp['high'] - dfp['MSMA']) / dfp['MSMA']
-        dfp['low_MSMA'] = (dfp['low'] - dfp['MSMA']) / dfp['MSMA']
-        dfp['close_MSMA'] = (dfp['close'] - dfp['MSMA']) / dfp['MSMA']
-        
-        dfp['open_SSMA'] = (dfp['open'] - dfp['SSMA']) / dfp['SSMA']
-        dfp['high_SSMA'] = (dfp['high'] - dfp['SSMA']) / dfp['SSMA']
-        dfp['low_SSMA'] = (dfp['low'] - dfp['SSMA']) / dfp['SSMA']
-        dfp['close_SSMA'] = (dfp['close'] - dfp['SSMA']) / dfp['SSMA']
+        for ma in ['GSMA', 'MSMA', 'SSMA']:
+            for price in ['open', 'high', 'low', 'close']:
+                diff = dfp[price] - dfp[ma]
+                dfp[f'{price}_{ma}'] = diff / dfp[ma]
         
         return dfp
     
