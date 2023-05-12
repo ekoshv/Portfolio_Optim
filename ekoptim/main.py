@@ -673,7 +673,7 @@ class ekoptim():
         y_test_one_hot = tf.keras.utils.to_categorical(y_test_encoded, num_classes=num_classes)
         
         # Compute the class weights
-        class_weights = class_weight.compute_class_weight('balanced', classes=unique_labels, y=y_train_resampled)
+        class_weights = class_weight.compute_class_weight('balanced', classes=unique_labels, y=y_train)
         class_weight_dict = dict(zip(encoded_labels, class_weights))
         print(f"The class weights: {class_weight_dict}")
         
