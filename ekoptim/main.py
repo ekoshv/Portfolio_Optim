@@ -710,10 +710,10 @@ class ekoptim():
         model.load_weights(filepath)
         self.nnmodel = model
 
-    def predict_next(self, rates, smb):
-        rate = rates[0]
-        gld = rates[1]
-        oil = rates[2]
+    def predict_next(self, idf, smb):
+        rate = idf[0]
+        gld = idf[1]
+        oil = idf[2]
         try:
             if isinstance(smb, str):
                 smb_col = smb
@@ -766,7 +766,7 @@ class ekoptim():
         for df in self.full_rates:
             # Predict the next values for the given symbol using the predict_next method
             idf = [df, self.full_rates[-2], self.full_rates[-1]]
-            y_pred = self.predict_next(df, smb)
+            y_pred = self.predict_next(idf, smb)
             self.Predicted_Rates.append(y_pred)
     
     def draw_states(self, df):
