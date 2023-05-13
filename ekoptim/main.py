@@ -734,13 +734,13 @@ class ekoptim():
             # Reshape the past data for input to the neural network       
             X0 = pst_dt_tiled
             X1 = rate.loc[:, 'dayofweek':].fillna(0)
-            X2 = past_gld.loc[:, 'dayofweek':].fillna(0)
-            X3 = past_oil.loc[:, 'dayofweek':].fillna(0)
+            self.X2 = past_gld.loc[:, 'dayofweek':].fillna(0)
+            self.X3 = past_oil.loc[:, 'dayofweek':].fillna(0)
 
             X0 = np.expand_dims(X0, axis=(0, -1))
             X1 = np.expand_dims(X1, axis=(0, -1))
-            X2 = np.expand_dims(X2, axis=(0, -1))
-            X3 = np.expand_dims(X3, axis=(0, -1))
+            X2 = np.expand_dims(self.X2, axis=(0, -1))
+            X3 = np.expand_dims(self.X3, axis=(0, -1))
             
             # Use the trained neural network model to predict the future data
             y_pred = np.array(self.nnmodel.predict([X0, X1, X2, X3]))
