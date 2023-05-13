@@ -756,7 +756,7 @@ class ekoptim():
     def predict_all(self, smb):
         # Loop through all dataframes in full_rates
         self.Predicted_Rates = []
-        for df in self.selected_rates[0:3]:
+        for df in self.selected_rates:
             df = self.more_data(df)
             gol = self.more_data(self.full_rates[-2])
             oil = self.more_data(self.full_rates[-1])
@@ -764,6 +764,7 @@ class ekoptim():
             idf = [df, gol, oil]
             y_pred = self.predict_next(idf, smb)
             self.Predicted_Rates.append(y_pred)
+            #print(self.Predicted_Rates)
     
     def draw_states(self, df):
         try:
