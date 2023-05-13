@@ -757,6 +757,7 @@ class ekoptim():
         # Loop through all dataframes in full_rates
         self.Predicted_Rates = []
         for df in self.selected_rates[0:3]:
+            df = self.more_data(df)
             # Predict the next values for the given symbol using the predict_next method
             idf = [df, self.full_rates[-2], self.full_rates[-1]]
             y_pred = self.predict_next(idf, smb)
