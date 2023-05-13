@@ -731,14 +731,7 @@ class ekoptim():
             past_data_normalized, mindf, maxdf = self.normalize(past_data, psdt_LL, psdt_HH)
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
             pst_dt_tiled = np.tile(past_data_normalized, self.tile_size)
-            
-            past_data = self.more_data(past_data)
-            past_gld = self.more_data(past_gld)
-            past_oil = self.more_data(past_oil)
-
-            # Reshape the past data for input to the neural network
-
-            
+            # Reshape the past data for input to the neural network       
             X0 = pst_dt_tiled
             X1 = past_data.loc[:, 'dayofweek':].fillna(0)
             X2 = past_gld.loc[:, 'dayofweek':].fillna(0)
@@ -765,8 +758,8 @@ class ekoptim():
         self.Predicted_Rates = []
         for df in self.selected_rates[0:3]:
             # Predict the next values for the given symbol using the predict_next method
-            self.idf = [df, self.full_rates[-2], self.full_rates[-1]]
-            y_pred = self.predict_next(self.idf, smb)
+            idf = [df, self.full_rates[-2], self.full_rates[-1]]
+            y_pred = self.predict_next(idf, smb)
             self.Predicted_Rates.append(y_pred)
     
     def draw_states(self, df):
