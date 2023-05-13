@@ -758,8 +758,10 @@ class ekoptim():
         self.Predicted_Rates = []
         for df in self.selected_rates[0:3]:
             df = self.more_data(df)
+            gol = self.more_data(self.full_rates[-2])
+            oil = self.more_data(self.full_rates[-1])
             # Predict the next values for the given symbol using the predict_next method
-            idf = [df, self.full_rates[-2], self.full_rates[-1]]
+            idf = [df, gol, oil]
             y_pred = self.predict_next(idf, smb)
             self.Predicted_Rates.append(y_pred)
     
