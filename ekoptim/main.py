@@ -765,8 +765,8 @@ class ekoptim():
         self.Predicted_Rates = []
         for df in self.selected_rates[0]:
             # Predict the next values for the given symbol using the predict_next method
-            idf = [df, self.full_rates[-2], self.full_rates[-1]]
-            y_pred = self.predict_next(idf, smb)
+            self.idf = [df, self.full_rates[-2], self.full_rates[-1]]
+            y_pred = self.predict_next(self.idf, smb)
             self.Predicted_Rates.append(y_pred)
     
     def draw_states(self, df):
