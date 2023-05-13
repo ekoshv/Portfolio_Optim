@@ -733,7 +733,7 @@ class ekoptim():
             pst_dt_tiled = np.tile(past_data_normalized, self.tile_size)
             # Reshape the past data for input to the neural network       
             X0 = pst_dt_tiled
-            X1 = past_data.loc[:, 'dayofweek':].fillna(0)
+            X1 = rate.loc[:, 'dayofweek':].fillna(0)
             X2 = past_gld.loc[:, 'dayofweek':].fillna(0)
             X3 = past_oil.loc[:, 'dayofweek':].fillna(0)
 
