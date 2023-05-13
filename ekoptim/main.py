@@ -269,6 +269,24 @@ class ekoptim():
         
         return r2
 
+    def matthews_correlation(self, y_true, y_pred):
+        y_pred_pos = tf.round(tf.clip_by_value(y_pred, 0, 1))
+        y_pred_neg = 1 - y_pred_pos
+    
+        y_pos = tf.round(tf.clip_by_value(y_true, 0, 1))
+        y_neg = 1 - y_pos
+    
+        tp = tf.reduce_sum(y_pos * y_pred_pos)
+        tn = tf.reduce_sum(y_neg * y_pred_neg)
+    
+        fp = tf.reduce_sum(y_neg * y_pred_pos)
+        fn = tf.reduce_sum(y_pos * y_pred_neg)
+    
+        numerator = (tp * tn) - (fp * fn)
+        denominator = tf.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+    
+        return numerator / (denominator + tf.keras.backend.epsilon())
+
     def reshape_nm(self, L):
     
         # Find the factors of L
@@ -577,8 +595,11 @@ class ekoptim():
         # Calculate the inverse of the mean F1-score
         inv_f1_score = 1.0 / (mean_f1_score+0.001)
         
+        # Calculate Matthews Correlation Coefficient (MCC)
+        rmcc = 1.0 - self.matthews_correlation(y_true, y_pred)
+        
         # Combine the loss and inverse of the accuracy and F1
-        combined_loss = loss + inv_accuracy + inv_f1_score
+        combined_loss = (loss + 2*inv_accuracy + 4*inv_f1_score + 8*rmcc)/15
         combined_loss.__name__ = name
         
         return combined_loss
@@ -609,7 +630,8 @@ class ekoptim():
         model.compile(optimizer=opt,
                loss=self.custom_loss,
                metrics=['accuracy',tfa.metrics.F1Score(num_classes=9, average='macro'),
-                        tf.keras.losses.CategoricalCrossentropy(from_logits=False)])
+                        tf.keras.losses.CategoricalCrossentropy(from_logits=False),
+                        self.matthews_correlation])
 
         #model.compile(optimizer=opt, loss='mape')
    
