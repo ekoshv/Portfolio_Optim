@@ -530,6 +530,24 @@ class ekoptim():
     
         return input_layer, output_layer
 
+    def create_modelX(self):
+        input0, output0 = self.create_model(self.mz0, self.nz0)
+        input1, output1 = self.create_model(self.mz1, self.nz1)
+        input2, output2 = self.create_model(self.mz2, self.nz2)
+        input3, output3 = self.create_model(self.mz3, self.nz3)
+        combined_output = Concatenate()([output0, output1, output2, output3])
+
+        x = tf.keras.layers.Dense(1024, activation="relu")(combined_output)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.3)(x)
+
+        x = tf.keras.layers.Dense(5*self.Dyf, activation="relu")(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.3)(x)
+        final_output = tf.keras.layers.Dense(9, activation='softmax')(x)
+        model = Model(inputs=[input0, input1, input2, input3], outputs=final_output)
+        return model
+
     def custom_loss(self, y_true, y_pred, num_classes=9, average='macro', name="custom_loss"):
         # Calculate the CategoricalCrossentropy loss
         sce_loss = tf.keras.losses.CategoricalCrossentropy(from_logits=False)
@@ -584,21 +602,8 @@ class ekoptim():
         self.mz3 = self.HNrates[0][0]['past_data'][3].shape[0]
         self.nz3 = self.HNrates[0][0]['past_data'][3].shape[1]        
 
-        input0, output0 = self.create_model(self.mz0, self.nz0)
-        input1, output1 = self.create_model(self.mz1, self.nz1)
-        input2, output2 = self.create_model(self.mz2, self.nz2)
-        input3, output3 = self.create_model(self.mz3, self.nz3)
-        combined_output = Concatenate()([output0, output1, output2, output3])
-
-        x = tf.keras.layers.Dense(1024, activation="relu")(combined_output)
-        x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.Dropout(0.3)(x)
-
-        x = tf.keras.layers.Dense(5*self.Dyf, activation="relu")(x)
-        x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.Dropout(0.3)(x)
-        final_output = tf.keras.layers.Dense(9, activation='softmax')(x)
-        model = Model(inputs=[input0, input1, input2, input3], outputs=final_output)
+        model = self.create_modelX()
+        
         # Compile the model with mean squared error loss
         opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         model.compile(optimizer=opt,
@@ -697,7 +702,7 @@ class ekoptim():
         self.nnmodel = model
 
     def load_model_fit(self):
-        model = self.create_model(self.mz, self.nz)
+        model = self.create_modelX()
         checkpoint_dir = './checkpoints'
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
