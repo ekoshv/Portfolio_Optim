@@ -732,13 +732,13 @@ class ekoptim():
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
             pst_dt_tiled = np.tile(past_data_normalized, self.tile_size)
             # Reshape the past data for input to the neural network       
-            X0 = pst_dt_tiled
-            X1 = rate.loc[:, 'dayofweek':].fillna(0)
+            self.X0 = pst_dt_tiled
+            self.X1 = rate.loc[:, 'dayofweek':].fillna(0)
             self.X2 = past_gld.loc[:, 'dayofweek':].fillna(0)
             self.X3 = past_oil.loc[:, 'dayofweek':].fillna(0)
 
-            X0 = np.expand_dims(X0, axis=(0, -1))
-            X1 = np.expand_dims(X1, axis=(0, -1))
+            X0 = np.expand_dims(self.X0, axis=(0, -1))
+            X1 = np.expand_dims(self.X1, axis=(0, -1))
             X2 = np.expand_dims(self.X2, axis=(0, -1))
             X3 = np.expand_dims(self.X3, axis=(0, -1))
             
