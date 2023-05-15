@@ -298,7 +298,7 @@ class ekoptim():
         class_weights = []
     
         # create a lookup table
-        keys = list(self.class_weight_dict.keys())
+        keys = tf.constant(list(self.class_weight_dict.keys()), dtype=tf.int32)
         values = list(self.class_weight_dict.values())
         table = tf.lookup.StaticHashTable(
             initializer=tf.lookup.KeyValueTensorInitializer(keys, values), 
@@ -319,17 +319,14 @@ class ekoptim():
             mcc_per_class.append(mcc_k)
     
             # get the class weight for class k from lookup table
-            weight_k = table.lookup(k)
+            weight_k = table.lookup(tf.cast(k, tf.int32))
     
             class_weights.append(weight_k)
     
         # compute the weighted average mcc
-        weighted_avg_mcc = (tf.reduce_sum(tf.multiply(tf.stack(mcc_per_class),
-                                                      tf.stack(class_weights))) /
-                            tf.reduce_sum(tf.stack(class_weights)))
+        weighted_avg_mcc = tf.reduce_sum(tf.multiply(tf.stack(mcc_per_class), tf.stack(class_weights))) / tf.reduce_sum(tf.stack(class_weights))
     
         return weighted_avg_mcc
-
 
     def reshape_nm(self, L):
     
@@ -731,7 +728,7 @@ class ekoptim():
         # Create a label encoder for mapping the class labels
         label_encoder = LabelEncoder()
         unique_labels = np.unique(y_train)
-        encoded_labels = label_encoder.fit_transform(unique_labels)
+        encoded_labels = label_encoder.fit_transform(unique_labels).astype(np.int32)
         
         # Fit the label encoder on the training labels and transform both train and test labels
         y_train_encoded = label_encoder.transform(y_train)
