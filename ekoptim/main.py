@@ -1,5 +1,6 @@
 import numpy as np
 from sklearnex import patch_sklearn
+from sklearn.metrics import matthews_corrcoef
 patch_sklearn()
 import math
 from scipy.optimize import minimize
@@ -292,45 +293,26 @@ class ekoptim():
         y_pred = tf.argmax(y_pred, axis=-1)
     
         # cast to int64
-        y_true = tf.squeeze(tf.cast(y_true, tf.int64), axis=-1)
         y_pred = tf.cast(y_pred, tf.int64)
     
-        # total number of samples
-        s = tf.size(y_true, out_type=tf.int64)
-    
-        # total number of correctly predicted labels
-        c = s - tf.math.count_nonzero(y_true - y_pred)
-    
-        # number of times each class truely occured
-        t = []
-    
-        # number of times each class was predicted
-        p = []
+        mcc_per_class = []
     
         for k in range(num_classes):
             k = tf.cast(k, tf.int64)
-        
-            # number of times that the class truely occured
-            t.append(tf.reduce_sum(tf.cast(tf.equal(k, y_true), tf.int32)))
     
-            # number of times that the class was predicted
-            p.append(tf.reduce_sum(tf.cast(tf.equal(k, y_pred), tf.int32)))
+            # treat k as the positive class and all others as the negative class
+            y_true_binary = tf.cast(tf.equal(k, y_true), tf.int32)
+            y_pred_binary = tf.cast(tf.equal(k, y_pred), tf.int32)
     
+            # compute the mcc for class k
+            mcc_k = tf.py_function(matthews_corrcoef, [y_true_binary, y_pred_binary], Tout=tf.float32)
     
-        t = tf.expand_dims(tf.stack(t), 0)
-        p = tf.expand_dims(tf.stack(p), 0)
+            mcc_per_class.append(mcc_k)
     
-        s = tf.cast(s, tf.int32)
-        c = tf.cast(c, tf.int32)
+        # compute the average mcc
+        avg_mcc = tf.reduce_mean(tf.stack(mcc_per_class))
     
-        num = tf.cast(c*s - tf.matmul(t, tf.transpose(p)), tf.float32)
-        dem = tf.math.sqrt(tf.cast(s**2 - tf.matmul(p, tf.transpose(p)), tf.float32)) \
-              * tf.math.sqrt(tf.cast(s**2 - tf.matmul(t, tf.transpose(t)), tf.float32))
-    
-    
-        mcc = tf.divide(num, dem + 1e-6)
-    
-        return mcc
+        return avg_mcc
 
     def reshape_nm(self, L):
     
