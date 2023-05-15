@@ -297,6 +297,15 @@ class ekoptim():
         mcc_per_class = []
         class_weights = []
     
+        # create a lookup table
+        keys = list(self.class_weight_dict.keys())
+        values = list(self.class_weight_dict.values())
+        table = tf.lookup.StaticHashTable(
+            initializer=tf.lookup.KeyValueTensorInitializer(keys, values), 
+            default_value=tf.constant(-1.0),
+            name="class_weight"
+        )
+    
         for k in range(num_classes):
             k = tf.cast(k, tf.int64)
     
@@ -309,17 +318,18 @@ class ekoptim():
     
             mcc_per_class.append(mcc_k)
     
-            # get the class weight for class k
-            weight_k = self.class_weight_dict[k.numpy()]  # assuming self.class_weight_dict is available
+            # get the class weight for class k from lookup table
+            weight_k = table.lookup(k)
     
             class_weights.append(weight_k)
     
         # compute the weighted average mcc
         weighted_avg_mcc = (tf.reduce_sum(tf.multiply(tf.stack(mcc_per_class),
-                                                     tf.stack(class_weights))) /
+                                                      tf.stack(class_weights))) /
                             tf.reduce_sum(tf.stack(class_weights)))
     
         return weighted_avg_mcc
+
 
     def reshape_nm(self, L):
     
