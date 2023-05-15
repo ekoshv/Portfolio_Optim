@@ -287,9 +287,11 @@ class ekoptim():
     
         return numerator / (denominator + tf.keras.backend.epsilon())
 
-    def multiclass_mcc(self, y_true, y_pred):
-        confusion_matrix = tf.math.confusion_matrix(y_true, y_pred)
-        #n_classes = tf.shape(confusion_matrix)[0]
+    def multiclass_mcc(y_true, y_pred):
+        y_true_classes = tf.argmax(y_true, 1)
+        y_pred_classes = tf.argmax(y_pred, 1)
+    
+        confusion_matrix = tf.math.confusion_matrix(y_true_classes, y_pred_classes)
     
         sum_rows = tf.reduce_sum(confusion_matrix, axis=1)
         sum_cols = tf.reduce_sum(confusion_matrix, axis=0)
@@ -302,7 +304,7 @@ class ekoptim():
         # Calculate the denominator
         denominator = sum_all**2 - tf.tensordot(sum_rows, sum_cols, axes=1)
     
-        mcc = numerator / denominator
+        mcc = numerator / tf.sqrt(tf.cast(denominator, tf.float32))
         mcc = tf.where(tf.math.is_nan(mcc), tf.zeros_like(mcc), mcc)
     
         return tf.reduce_mean(mcc)
