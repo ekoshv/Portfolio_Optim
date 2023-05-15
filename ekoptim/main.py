@@ -290,7 +290,9 @@ class ekoptim():
     def multiclass_mcc(self, y_true, y_pred):
         y_true_classes = tf.argmax(y_true, axis=1)
         y_pred_classes = tf.argmax(y_pred, axis=1)
-        confusion_matrix = tf.math.confusion_matrix(y_true_classes, y_pred_classes)
+        confusion_matrix = tf.math.confusion_matrix(y_true_classes,
+                                                    y_pred_classes,
+                                                    dtype=tf.dtypes.float32)
         
         sum_rows = tf.reduce_sum(confusion_matrix, axis=1)
         sum_cols = tf.reduce_sum(confusion_matrix, axis=0)
