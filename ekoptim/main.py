@@ -297,14 +297,12 @@ class ekoptim():
         sum_all = tf.reduce_sum(sum_rows)
 
         numerator = tf.cast(sum_all, tf.float32) * tf.reduce_sum(tf.linalg.diag_part(confusion_matrix)) - tf.tensordot(sum_rows, sum_cols, axes=1)
-        denominator = sum_all**2 - tf.tensordot(sum_rows, sum_cols, axes=1)
+        denominator = sum_all ** 2 - tf.tensordot(sum_rows, sum_cols, axes=1)
 
-        # casting both numerator and denominator to float32 to avoid dtype mismatch
-        numerator = tf.cast(numerator, tf.float32)
-        denominator = tf.cast(denominator, tf.float32)
+        numerator = tf.cast(numerator, tf.float32)  # Cast numerator to float32
 
-        mcc = numerator / tf.sqrt(denominator)
-        
+        mcc = numerator / tf.sqrt(tf.cast(denominator, tf.float32))
+
         # Handling potential NaNs
         mcc = tf.where(tf.math.is_nan(mcc), tf.zeros_like(mcc), mcc)
 
