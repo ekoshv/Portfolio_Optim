@@ -296,8 +296,11 @@ class ekoptim():
         sum_cols = tf.reduce_sum(confusion_matrix, axis=0)
         sum_all = tf.reduce_sum(sum_rows)
 
-        numerator = tf.cast(sum_all, tf.float32) * tf.reduce_sum(tf.linalg.diag_part(confusion_matrix)) - tf.tensordot(sum_rows, sum_cols, axes=1)
-        denominator = sum_all ** 2 - tf.tensordot(sum_rows, sum_cols, axes=1)
+        numerator = (tf.cast(sum_all, tf.float32) * 
+                     tf.cast(tf.reduce_sum(tf.linalg.diag_part(confusion_matrix)),
+                             tf.float32))
+        denominator = (tf.cast(sum_all, tf.float32) ** 2 - 
+                       tf.cast(tf.tensordot(sum_rows, sum_cols, axes=1), tf.float32))
 
         numerator = tf.cast(numerator, tf.float32)  # Cast numerator to float32
 
