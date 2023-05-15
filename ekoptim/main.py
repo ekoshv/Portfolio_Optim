@@ -562,17 +562,17 @@ class ekoptim():
     def create_model(self, image_height, image_width):
         input_layer = tf.keras.layers.Input(shape=(image_height, image_width, 1))
     
-        x = tf.keras.layers.Conv2D(filters=128, kernel_size=7, strides=1,
+        x = tf.keras.layers.Conv2D(filters=256, kernel_size=8, strides=1,
                                     padding="same", activation="relu")(input_layer)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
     
-        x = tf.keras.layers.Conv2D(filters=128, kernel_size=5, strides=1,
+        x = tf.keras.layers.Conv2D(filters=256, kernel_size=7, strides=1,
                                     padding="same", activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
     
-        x = tf.keras.layers.Conv2D(filters=128, kernel_size=3, strides=1,
+        x = tf.keras.layers.Conv2D(filters=256, kernel_size=5, strides=1,
                                     padding="same", activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
