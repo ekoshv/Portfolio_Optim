@@ -324,10 +324,15 @@ class ekoptim():
     
             class_weights.append(weight_k)
     
-        # compute the weighted average mcc
-        weighted_avg_mcc = tf.reduce_sum(tf.multiply(tf.stack(mcc_per_class), tf.stack(class_weights))) / tf.reduce_sum(tf.stack(class_weights))
-    
-        return weighted_avg_mcc
+        if self.mcc_w:    
+            # compute the weighted average mcc
+            weighted_avg_mcc = (tf.reduce_sum(tf.multiply(tf.stack(mcc_per_class),
+                                                          tf.stack(class_weights))) /
+                                tf.reduce_sum(tf.stack(class_weights)))
+            return weighted_avg_mcc
+        else:
+            avg_mcc = tf.reduce_mean(tf.stack(mcc_per_class))
+            return avg_mcc
 
     def f1_score(self, y_true, y_pred):
         def recall_m(y_true, y_pred):
@@ -383,10 +388,16 @@ class ekoptim():
     
             class_weights.append(weight_k)
     
-        # compute the weighted average f1
-        weighted_avg_f1 = tf.reduce_sum(tf.multiply(tf.stack(f1_per_class), tf.stack(class_weights))) / tf.reduce_sum(tf.stack(class_weights))
-    
-        return weighted_avg_f1
+        if self.f1_w:
+            # compute the weighted average f1
+            weighted_avg_f1 = (tf.reduce_sum(tf.multiply(tf.stack(f1_per_class),
+                                                         tf.stack(class_weights))) /
+                               tf.reduce_sum(tf.stack(class_weights)))
+            return weighted_avg_f1
+        else:
+            avg_f1 = tf.reduce_mean(tf.stack(f1_per_class))
+            return avg_f1
+
 
     def reshape_nm(self, L):
     
@@ -707,7 +718,10 @@ class ekoptim():
     
     def NNmake(self, model=None,
                learning_rate=0.001, epochs=100, batch_size=32, k_n=None,
+               f1_w = False, mcc_w = False,
                load_train=False):
+        self.f1_w = f1_w
+        self.mcc_w = mcc_w
         self.k_n=5
         if k_n is not None:
             self.k_n = k_n
