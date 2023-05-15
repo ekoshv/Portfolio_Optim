@@ -295,6 +295,7 @@ class ekoptim():
         y_true = tf.argmax(y_true, axis=-1)
     
         mcc_per_class = []
+        class_weights = []
     
         for k in range(num_classes):
             k = tf.cast(k, tf.int64)
@@ -308,10 +309,17 @@ class ekoptim():
     
             mcc_per_class.append(mcc_k)
     
-        # compute the average mcc
-        avg_mcc = tf.reduce_mean(tf.stack(mcc_per_class))
+            # get the class weight for class k
+            weight_k = self.class_weight_dict[k.numpy()]  # assuming self.class_weight_dict is available
     
-        return avg_mcc
+            class_weights.append(weight_k)
+    
+        # compute the weighted average mcc
+        weighted_avg_mcc = (tf.reduce_sum(tf.multiply(tf.stack(mcc_per_class),
+                                                     tf.stack(class_weights))) /
+                            tf.reduce_sum(tf.stack(class_weights)))
+    
+        return weighted_avg_mcc
 
     def reshape_nm(self, L):
     
@@ -729,6 +737,7 @@ class ekoptim():
         # Compute the class weights
         class_weights = class_weight.compute_class_weight('balanced', classes=unique_labels, y=y_train)
         class_weight_dict = dict(zip(encoded_labels, class_weights))
+        self.class_weight_dict = class_weight_dict
         print(f"The class weights: {class_weight_dict}")
         
         tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="./logs")
