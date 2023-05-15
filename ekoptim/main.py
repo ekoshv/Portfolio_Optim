@@ -288,27 +288,22 @@ class ekoptim():
         return numerator / (denominator + tf.keras.backend.epsilon())
 
     def multiclass_mcc(self, y_true, y_pred):
-        y_true_classes = tf.argmax(y_true, 1)
-        y_pred_classes = tf.argmax(y_pred, 1)
-        confusion_matrix = tf.math.confusion_matrix(y_true_classes, y_pred_classes, num_classes=self.n_classes)
-
+        y_true_classes = tf.argmax(y_true, axis=1)
+        y_pred_classes = tf.argmax(y_pred, axis=1)
+        confusion_matrix = tf.math.confusion_matrix(y_true_classes, y_pred_classes)
+        
         sum_rows = tf.reduce_sum(confusion_matrix, axis=1)
         sum_cols = tf.reduce_sum(confusion_matrix, axis=0)
         sum_all = tf.reduce_sum(sum_rows)
-
-        numerator = (tf.cast(sum_all, tf.float32) * 
-                     tf.cast(tf.reduce_sum(tf.linalg.diag_part(confusion_matrix)),
-                             tf.float32))
-        denominator = (tf.cast(sum_all, tf.float32) ** 2 - 
-                       tf.cast(tf.tensordot(sum_rows, sum_cols, axes=1), tf.float32))
-
-        numerator = tf.cast(numerator, tf.float32)  # Cast numerator to float32
-
-        mcc = numerator / tf.sqrt(tf.cast(denominator, tf.float32))
-
+        
+        numerator = (sum_all * tf.reduce_sum(tf.linalg.diag_part(confusion_matrix)))
+        denominator = (sum_all ** 2 - tf.tensordot(sum_rows, sum_cols, axes=1))
+        
+        mcc = numerator / tf.sqrt(denominator)
+        
         # Handling potential NaNs
         mcc = tf.where(tf.math.is_nan(mcc), tf.zeros_like(mcc), mcc)
-
+        
         return tf.reduce_mean(mcc)
 
     def reshape_nm(self, L):
