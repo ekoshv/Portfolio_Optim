@@ -287,11 +287,50 @@ class ekoptim():
     
         return numerator / (denominator + tf.keras.backend.epsilon())
 
-    def multiclass_mcc(self, y_true, y_pred):
-        metric = tfa.metrics.MatthewsCorrelationCoefficient(num_classes=self.n_classes)
-        metric.update_state(y_true, y_pred)
-        result = metric.result()
-        return result.numpy()
+    def multiclass_mcc(self, y_true, y_pred, num_classes=9):
+        # obtain predictions here, we can add in a threshold if we would like to
+        y_pred = tf.argmax(y_pred, axis=-1)
+    
+        # cast to int64
+        y_true = tf.squeeze(tf.cast(y_true, tf.int64), axis=-1)
+        y_pred = tf.cast(y_pred, tf.int64)
+    
+        # total number of samples
+        s = tf.size(y_true, out_type=tf.int64)
+    
+        # total number of correctly predicted labels
+        c = s - tf.math.count_nonzero(y_true - y_pred)
+    
+        # number of times each class truely occured
+        t = []
+    
+        # number of times each class was predicted
+        p = []
+    
+        for k in range(num_classes):
+            k = tf.cast(k, tf.int64)
+        
+            # number of times that the class truely occured
+            t.append(tf.reduce_sum(tf.cast(tf.equal(k, y_true), tf.int32)))
+    
+            # number of times that the class was predicted
+            p.append(tf.reduce_sum(tf.cast(tf.equal(k, y_pred), tf.int32)))
+    
+    
+        t = tf.expand_dims(tf.stack(t), 0)
+        p = tf.expand_dims(tf.stack(p), 0)
+    
+        s = tf.cast(s, tf.int32)
+        c = tf.cast(c, tf.int32)
+    
+        num = tf.cast(c*s - tf.matmul(t, tf.transpose(p)), tf.float32)
+        dem = tf.math.sqrt(tf.cast(s**2 - tf.matmul(p, tf.transpose(p)), tf.float32)) \
+              * tf.math.sqrt(tf.cast(s**2 - tf.matmul(t, tf.transpose(t)), tf.float32))
+    
+    
+        mcc = tf.divide(num, dem + 1e-6)
+    
+        return mcc
 
     def reshape_nm(self, L):
     
