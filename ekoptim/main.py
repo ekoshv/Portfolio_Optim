@@ -591,6 +591,7 @@ class ekoptim():
 
     def custom_loss(self, y_true, y_pred, num_classes=9, average='macro', name="custom_loss"):
         # Calculate the CategoricalCrossentropy loss
+        self.n_classes = num_classes
         sce_loss = tf.keras.losses.CategoricalCrossentropy(from_logits=False)
         loss = sce_loss(y_true, y_pred)
         
