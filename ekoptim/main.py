@@ -631,7 +631,7 @@ class ekoptim():
         inv_f1_score = 1.0 / (mean_f1_score+0.001)
         
         # Calculate Matthews Correlation Coefficient (MCC)
-        rmcc = 2.0 - self.multiclass_mcc(y_true, y_pred)
+        rmcc = 1.0 - self.multiclass_mcc(y_true, y_pred)
         
         # Combine the loss and inverse of the accuracy and F1
         combined_loss = (loss + 2*inv_accuracy + 4*inv_f1_score + 8*rmcc)/15
