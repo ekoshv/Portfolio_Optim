@@ -287,6 +287,26 @@ class ekoptim():
     
         return numerator / (denominator + tf.keras.backend.epsilon())
 
+    def multiclass_mcc(self, y_true, y_pred):
+        confusion_matrix = tf.math.confusion_matrix(y_true, y_pred)
+        #n_classes = tf.shape(confusion_matrix)[0]
+    
+        sum_rows = tf.reduce_sum(confusion_matrix, axis=1)
+        sum_cols = tf.reduce_sum(confusion_matrix, axis=0)
+        sum_all = tf.reduce_sum(confusion_matrix)
+    
+        # Calculate the numerator
+        diag_sum = tf.reduce_sum(tf.linalg.diag_part(confusion_matrix))
+        numerator = diag_sum * sum_all - tf.tensordot(sum_rows, sum_cols, axes=1)
+    
+        # Calculate the denominator
+        denominator = sum_all**2 - tf.tensordot(sum_rows, sum_cols, axes=1)
+    
+        mcc = numerator / denominator
+        mcc = tf.where(tf.math.is_nan(mcc), tf.zeros_like(mcc), mcc)
+    
+        return tf.reduce_mean(mcc)
+
     def reshape_nm(self, L):
     
         # Find the factors of L
@@ -596,7 +616,7 @@ class ekoptim():
         inv_f1_score = 1.0 / (mean_f1_score+0.001)
         
         # Calculate Matthews Correlation Coefficient (MCC)
-        rmcc = 1.0 - self.matthews_correlation(y_true, y_pred)
+        rmcc = 2.0 - self.multiclass_mcc(y_true, y_pred)
         
         # Combine the loss and inverse of the accuracy and F1
         combined_loss = (loss + 2*inv_accuracy + 4*inv_f1_score + 8*rmcc)/15
@@ -631,7 +651,7 @@ class ekoptim():
                loss=self.custom_loss,
                metrics=['accuracy',tfa.metrics.F1Score(num_classes=9, average='macro'),
                         tf.keras.losses.CategoricalCrossentropy(from_logits=False),
-                        self.matthews_correlation])
+                        self.multiclass_mcc])
 
         #model.compile(optimizer=opt, loss='mape')
    
