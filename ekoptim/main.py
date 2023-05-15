@@ -291,7 +291,7 @@ class ekoptim():
         metric = tfa.metrics.MatthewsCorrelationCoefficient(num_classes=self.n_classes)
         metric.update_state(y_true, y_pred)
         result = metric.result()
-        return result
+        return result.numpy()
 
     def reshape_nm(self, L):
     
