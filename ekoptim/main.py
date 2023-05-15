@@ -1,6 +1,5 @@
 import numpy as np
 from sklearnex import patch_sklearn
-from sklearn.metrics import matthews_corrcoef
 patch_sklearn()
 import math
 from scipy.optimize import minimize
@@ -19,7 +18,7 @@ import tensorflow as tf
 from tensorflow.keras.layers import Concatenate
 from tensorflow.keras.models import Model
 import tensorflow_addons as tfa
-from sklearn.model_selection import train_test_split
+#from sklearn.model_selection import train_test_split
 from sklearn.model_selection import ShuffleSplit
 from imblearn.over_sampling import SMOTE
 from tensorflow.keras.callbacks import ModelCheckpoint
@@ -292,8 +291,8 @@ class ekoptim():
         # obtain predictions here, we can add in a threshold if we would like to
         y_pred = tf.argmax(y_pred, axis=-1)
     
-        # cast to int64
-        y_pred = tf.cast(y_pred, tf.int64)
+        # convert one-hot encoded y_true to class indices
+        y_true = tf.argmax(y_true, axis=-1)
     
         mcc_per_class = []
     
@@ -301,11 +300,11 @@ class ekoptim():
             k = tf.cast(k, tf.int64)
     
             # treat k as the positive class and all others as the negative class
-            y_true_binary = tf.cast(tf.equal(k, y_true), tf.int32)
-            y_pred_binary = tf.cast(tf.equal(k, y_pred), tf.int32)
+            y_true_binary = tf.cast(tf.equal(k, y_true), tf.float32)
+            y_pred_binary = tf.cast(tf.equal(k, y_pred), tf.float32)
     
             # compute the mcc for class k
-            mcc_k = tf.py_function(matthews_corrcoef, [y_true_binary, y_pred_binary], Tout=tf.float32)
+            mcc_k = self.matthews_correlation(y_true_binary, y_pred_binary)
     
             mcc_per_class.append(mcc_k)
     
