@@ -288,7 +288,7 @@ class ekoptim():
         return numerator / (denominator + tf.keras.backend.epsilon())
 
     def multiclass_mcc(self, y_true, y_pred):
-        metric = tfa.metrics.MatthewsCorrelationCoefficient(num_classes=self.num_classes)
+        metric = tfa.metrics.MatthewsCorrelationCoefficient(num_classes=self.n_classes)
         metric.update_state(y_true, y_pred)
         result = metric.result()
         return result
