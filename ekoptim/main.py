@@ -630,20 +630,35 @@ class ekoptim():
         # self.mz = self.HNrates[0][0]['past_data'][0].shape[0]
         # self.nz = self.HNrates[0][0]['past_data'][0].shape[1]
 
-    def create_model(self, image_height, image_width):
+    def create_model(self, image_height, image_width, filters = 128):
         input_layer = tf.keras.layers.Input(shape=(image_height, image_width, 1))
     
-        x = tf.keras.layers.Conv2D(filters=256, kernel_size=8, strides=1,
+        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=8, strides=1,
                                     padding="same", activation="relu")(input_layer)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
     
-        x = tf.keras.layers.Conv2D(filters=256, kernel_size=7, strides=1,
+        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=7, strides=1,
                                     padding="same", activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
     
-        x = tf.keras.layers.Conv2D(filters=256, kernel_size=5, strides=1,
+        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=6, strides=1,
+                                    padding="same", activation="relu")(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.2)(x)
+
+        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=5, strides=1,
+                                    padding="same", activation="relu")(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.2)(x)
+
+        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=4, strides=1,
+                                    padding="same", activation="relu")(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.2)(x)
+        
+        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=3, strides=1,
                                     padding="same", activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
@@ -654,20 +669,28 @@ class ekoptim():
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.5)(x)
     
-        x = tf.keras.layers.Dense(1024, activation="relu")(x)
+        x = tf.keras.layers.Dense(512, activation="relu")(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        output_layer = tf.keras.layers.Dropout(0.5)(x)
+
+        x = tf.keras.layers.Dense(256, activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         output_layer = tf.keras.layers.Dropout(0.5)(x)
     
         return input_layer, output_layer
 
-    def create_modelX(self):
-        input0, output0 = self.create_model(self.mz0, self.nz0)
-        input1, output1 = self.create_model(self.mz1, self.nz1)
-        input2, output2 = self.create_model(self.mz2, self.nz2)
-        input3, output3 = self.create_model(self.mz3, self.nz3)
+    def create_modelX(self, filters=128):
+        input0, output0 = self.create_model(self.mz0, self.nz0, filters = filters)
+        input1, output1 = self.create_model(self.mz1, self.nz1, filters = filters)
+        input2, output2 = self.create_model(self.mz2, self.nz2, filters = filters)
+        input3, output3 = self.create_model(self.mz3, self.nz3, filters = filters)
         combined_output = Concatenate()([output0, output1, output2, output3])
 
         x = tf.keras.layers.Dense(1024, activation="relu")(combined_output)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.3)(x)
+
+        x = tf.keras.layers.Dense(512, activation="relu")(combined_output)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.3)(x)
 
@@ -718,7 +741,7 @@ class ekoptim():
     
     def NNmake(self, model=None,
                learning_rate=0.001, epochs=100, batch_size=32, k_n=None,
-               f1_w = False, mcc_w = False,
+               f1_w = False, mcc_w = False, filters = 128,
                load_train=False):
         self.f1_w = f1_w
         self.mcc_w = mcc_w
@@ -738,7 +761,7 @@ class ekoptim():
         self.mz3 = self.HNrates[0][0]['past_data'][3].shape[0]
         self.nz3 = self.HNrates[0][0]['past_data'][3].shape[1]        
 
-        model = self.create_modelX()
+        model = self.create_modelX(filters = filters)
         
         # Compile the model with mean squared error loss
         opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
