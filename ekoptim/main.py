@@ -633,47 +633,28 @@ class ekoptim():
     def create_model(self, image_height, image_width, filters = 128):
         input_layer = tf.keras.layers.Input(shape=(image_height, image_width, 1))
     
-        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=8, strides=1,
+        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=7, strides=1,
                                     padding="same", activation="relu")(input_layer)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
     
-        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=7, strides=1,
-                                    padding="same", activation="relu")(x)
-        x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.Dropout(0.2)(x)
-    
-        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=6, strides=1,
-                                    padding="same", activation="relu")(x)
-        x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.Dropout(0.2)(x)
-
         x = tf.keras.layers.Conv2D(filters=filters, kernel_size=5, strides=1,
                                     padding="same", activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
-
-        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=4, strides=1,
-                                    padding="same", activation="relu")(x)
-        x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.Dropout(0.2)(x)
-        
+    
         x = tf.keras.layers.Conv2D(filters=filters, kernel_size=3, strides=1,
                                     padding="same", activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
-    
+        
         x = tf.keras.layers.GlobalAveragePooling2D()(x)
     
         x = tf.keras.layers.Dense(1024, activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.5)(x)
-    
-        x = tf.keras.layers.Dense(512, activation="relu")(x)
-        x = tf.keras.layers.BatchNormalization()(x)
-        output_layer = tf.keras.layers.Dropout(0.5)(x)
 
-        x = tf.keras.layers.Dense(256, activation="relu")(x)
+        x = tf.keras.layers.Dense(1024, activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         output_layer = tf.keras.layers.Dropout(0.5)(x)
     
@@ -690,13 +671,14 @@ class ekoptim():
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.3)(x)
 
-        x = tf.keras.layers.Dense(512, activation="relu")(combined_output)
+        x = tf.keras.layers.Dense(512, activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.3)(x)
 
         x = tf.keras.layers.Dense(5*self.Dyf, activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.3)(x)
+        
         final_output = tf.keras.layers.Dense(9, activation='softmax')(x)
         model = Model(inputs=[input0, input1, input2, input3], outputs=final_output)
         return model
