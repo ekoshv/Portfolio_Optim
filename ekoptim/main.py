@@ -550,12 +550,17 @@ class ekoptim():
             psdt_LL = past_data[['open','high','low','close']].min(axis=0)['low']
             past_data_normalized, mindf, maxdf = self.normalize(past_data[['open','high','low','close']], psdt_LL, psdt_HH,xrnd)
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
-            pst_dt_tiled = np.tile(past_data_normalized, tile_size)
+            pst_dt_tiled = np.tile(past_data_normalized_w, tile_size)
             pst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, pst_dt_tiled.shape)
             
             past_data = self.more_data(past_data)
             past_gld = self.more_data(past_gld)
             past_oil = self.more_data(past_oil)
+            
+            x1 = pst_dt_tiled
+            x2 = np.tile(past_data.loc[:, 'dayofweek':].fillna(0),(2,2))
+            x3 = np.tile(past_gld.loc[:, 'dayofweek':].fillna(0),(2,2))
+            x4 = np.tile(past_oil.loc[:, 'dayofweek':].fillna(0),(2,2))
             
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled, fdmn, fdmx = self.normalize(future_data, psdt_LL, psdt_HH, xrnd)
@@ -563,10 +568,7 @@ class ekoptim():
             df.at[df.index[i-1], 'state'] = state
             new_row = {
                 'name': df.name,
-                'past_data': [pst_dt_tiled,
-                              past_data.loc[:, 'dayofweek':].fillna(0),
-                              past_gld.loc[:, 'dayofweek':].fillna(0),
-                              past_oil.loc[:, 'dayofweek':].fillna(0)],
+                'past_data': [x1, x2, x3, x4],
                 'future_data': future_data_rescaled,
                 'state': state,
                 'signal': signal,
@@ -873,12 +875,12 @@ class ekoptim():
             psdt_LL = past_data.min(axis=0)['low']
             past_data_normalized, mindf, maxdf = self.normalize(past_data[['open','high','low','close']], psdt_LL, psdt_HH)
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
-            pst_dt_tiled = np.tile(past_data_normalized, self.tile_size)
+            pst_dt_tiled = np.tile(past_data_normalized_w, self.tile_size)
             # Reshape the past data for input to the neural network       
             self.X0 = pst_dt_tiled
-            self.X1 = (rate.tail(self.Dyp)).loc[:, 'dayofweek':].fillna(0)
-            self.X2 = past_gld.loc[:, 'dayofweek':].fillna(0)
-            self.X3 = past_oil.loc[:, 'dayofweek':].fillna(0)
+            self.X1 = np.tile((rate.tail(self.Dyp)).loc[:, 'dayofweek':].fillna(0),(2,2))
+            self.X2 = np.tile(past_gld.loc[:, 'dayofweek':].fillna(0),(2,2))
+            self.X3 = np.tile(past_oil.loc[:, 'dayofweek':].fillna(0),(2,2))
 
             X0 = np.expand_dims(self.X0, axis=(0, -1))
             X1 = np.expand_dims(self.X1, axis=(0, -1))
