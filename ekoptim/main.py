@@ -557,10 +557,15 @@ class ekoptim():
             past_gld = self.more_data(past_gld)
             past_oil = self.more_data(past_oil)
             
+            # x1 = pst_dt_tiled
+            # x2 = np.tile(past_data.loc[:, 'dayofweek':].fillna(0),(2,2))
+            # x3 = np.tile(past_gld.loc[:, 'dayofweek':].fillna(0),(2,2))
+            # x4 = np.tile(past_oil.loc[:, 'dayofweek':].fillna(0),(2,2))
+            
             x1 = pst_dt_tiled
-            x2 = np.tile(past_data.loc[:, 'dayofweek':].fillna(0),(2,2))
-            x3 = np.tile(past_gld.loc[:, 'dayofweek':].fillna(0),(2,2))
-            x4 = np.tile(past_oil.loc[:, 'dayofweek':].fillna(0),(2,2))
+            x2 = past_data.loc[:, 'dayofweek':].fillna(0)
+            x3 = past_gld.loc[:, 'dayofweek':].fillna(0)
+            x4 = past_oil.loc[:, 'dayofweek':].fillna(0)
             
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled, fdmn, fdmx = self.normalize(future_data, psdt_LL, psdt_HH, xrnd)
