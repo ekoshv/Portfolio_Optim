@@ -546,8 +546,12 @@ class ekoptim():
                             'GSMA','MSMA','SSMA',
                             'ROCS', 'ROCM', 'ROCG']].iloc[i-self.Dyp:i]
             # Extract data from df2 using index of df1 and fill missing rows with NaN
-            past_gld = gld.reindex(past_data.index)
-            past_oil = oil.reindex(past_data.index)
+            past_gld = gld[['open','high','low','close',
+                            'GSMA','MSMA','SSMA',
+                            'ROCS', 'ROCM', 'ROCG']].reindex(past_data.index)
+            past_oil = oil[['open','high','low','close',
+                            'GSMA','MSMA','SSMA',
+                            'ROCS', 'ROCM', 'ROCG']].reindex(past_data.index)
             psdt_HH = past_data[['open','high','low','close']].max(axis=0)['high']
             psdt_LL = past_data[['open','high','low','close']].min(axis=0)['low']
             past_data_normalized, mindf, maxdf = self.normalize(past_data[['open',
@@ -639,17 +643,17 @@ class ekoptim():
             df['SSMA'] = ssma
             df.insert(close_idx + 4, 'SSMA', df.pop('SSMA'))
             #---ROCS
-            ROCS = talib.ROC(df['close'], timeperiod=SMAP[2])
+            ROCS = talib.ROCP(df['close'], timeperiod=SMAP[2])
             # Add the ROC values to the DataFrame
             df['ROCS'] = ROCS
             df.insert(close_idx + 5, 'ROCS', df.pop('ROCS'))            
             #---ROCM
-            ROCM = talib.ROC(df['close'], timeperiod=SMAP[1])
+            ROCM = talib.ROCP(df['close'], timeperiod=SMAP[1])
             # Add the ROC values to the DataFrame
             df['ROCM'] = ROCM
             df.insert(close_idx + 6, 'ROCM', df.pop('ROCM'))
             #---ROCG
-            ROCG = talib.ROC(df['close'], timeperiod=SMAP[0])
+            ROCG = talib.ROCP(df['close'], timeperiod=SMAP[0])
             # Add the ROC values to the DataFrame
             df['ROCG'] = ROCG
             df.insert(close_idx + 7, 'ROCG', df.pop('ROCG'))
