@@ -569,9 +569,9 @@ class ekoptim():
             # x4 = np.tile(past_oil.loc[:, 'dayofweek':].fillna(0),(2,2))
             
             x1 = pst_dt_tiled
-            x2 = past_data.loc[:, 'dayofweek':].fillna(0)
-            x3 = past_gld.loc[:, 'dayofweek':].fillna(0)
-            x4 = past_oil.loc[:, 'dayofweek':].fillna(0)
+            x2 = past_data.loc[:, 'ROCS':].fillna(0)
+            x3 = past_gld.loc[:, 'ROCS':].fillna(0)
+            x4 = past_oil.loc[:, 'ROCS':].fillna(0)
             
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled, fdmn, fdmx = self.normalize(future_data, psdt_LL, psdt_HH, xrnd)
@@ -912,9 +912,9 @@ class ekoptim():
             # self.X3 = np.tile(past_oil.loc[:, 'dayofweek':].fillna(0),(2,2))
 
             self.X0 = pst_dt_tiled
-            self.X1 = (rate.tail(self.Dyp)).loc[:, 'dayofweek':].fillna(0)
-            self.X2 = past_gld.loc[:, 'dayofweek':].fillna(0)
-            self.X3 = past_oil.loc[:, 'dayofweek':].fillna(0)
+            self.X1 = (rate.tail(self.Dyp)).loc[:, 'ROCS':].fillna(0)
+            self.X2 = past_gld.loc[:, 'ROCS':].fillna(0)
+            self.X3 = past_oil.loc[:, 'ROCS':].fillna(0)
 
             X0 = np.expand_dims(self.X0, axis=(0, -1))
             X1 = np.expand_dims(self.X1, axis=(0, -1))
