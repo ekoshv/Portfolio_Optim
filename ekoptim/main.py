@@ -512,8 +512,7 @@ class ekoptim():
         
         return state, sigs
     
-    def more_data(self, df):
-        dfp = df.copy()
+    def more_data(self, dfp):
         dfp['dayofweek'] = dfp.index.dayofweek/7
         dfp['dayofmonth'] = dfp.index.day/31
         dfp['monthofyear'] = dfp.index.month/12
@@ -548,18 +547,25 @@ class ekoptim():
             smb_col = df.columns[smb]
         else:
             raise ValueError("smb should be either a string or an integer.")
-
+        gencol = self.colsel.copy()
+        gencol.append('open')
+        gencol.append('high')
+        gencol.append('low')
+        gencol.append('close')
         for i in range(self.Dyp+self.SMAP[0]+1, len(df)-self.Dyf+1, self.Thi):
-            past_data = df.iloc[i-self.Dyp:i]
+            past_data = df[gencol].iloc[i-self.Dyp:i]
             # Extract data from df2 using index of df1 and fill missing rows with NaN
             past_gld = gld.reindex(past_data.index)
             past_oil = oil.reindex(past_data.index)
             psdt_HH = past_data[['open','high','low','close']].max(axis=0)['high']
             psdt_LL = past_data[['open','high','low','close']].min(axis=0)['low']
+            
             past_data_normalized, mindf, maxdf = self.normalize(past_data[['open',
-                                                                           'high','low',
+                                                                           'high',
+                                                                           'low',
                                                                            'close']],
                                                                 psdt_LL, psdt_HH,xrnd)
+            
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,
                                                                      'db1')
             pst_dt_tiled = np.tile(past_data_normalized, tile_size)
@@ -896,6 +902,11 @@ class ekoptim():
         rate = idf[0]
         gld = idf[1]
         oil = idf[2]
+        gencol = self.colsel.copy()
+        gencol.append('open')
+        gencol.append('high')
+        gencol.append('low')
+        gencol.append('close')
         try:
             if isinstance(smb, str):
                 smb_col = smb
@@ -904,7 +915,7 @@ class ekoptim():
             else:
                 raise ValueError("smb should be either a string or an integer.")
             # Get the last Dyp rows of full_rates for the given symbol
-            past_data = rate.tail(self.Dyp)
+            past_data = rate[gencol].tail(self.Dyp)
             past_gld = gld.reindex(past_data.index)
             past_oil = oil.reindex(past_data.index)
             
