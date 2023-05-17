@@ -479,6 +479,13 @@ class ekoptim():
             data = data.to_numpy()        
         return (((data - dmn) / (dmx - dmn))+
                 np.random.uniform(-xrnd, xrnd, data.shape), data.min(), data.max())
+
+    def normalize_cl(self, df):
+        for feature_name in df.columns:
+            max_value = df[feature_name].max()
+            min_value = df[feature_name].min()
+            df[feature_name] = (df[feature_name] - min_value) / (max_value - min_value)
+        return df
     
     def calculate_signal(self, fd):
         # Thresholding
@@ -577,9 +584,9 @@ class ekoptim():
             # x4 = np.tile(past_oil.loc[:, 'dayofweek':].fillna(0),(2,2))
             
             x1 = pst_dt_tiled
-            x2 = past_data.loc[:, 'ROCS':].fillna(0)
-            x3 = past_gld.loc[:, 'ROCS':].fillna(0)
-            x4 = past_oil.loc[:, 'ROCS':].fillna(0)
+            x2 = self.normalize_cl(past_data.loc[:, 'ROCS':].fillna(0))
+            x3 = self.normalize_cl(past_gld.loc[:, 'ROCS':].fillna(0))
+            x4 = self.normalize_cl(past_oil.loc[:, 'ROCS':].fillna(0))
             
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled, fdmn, fdmx = self.normalize(future_data,
@@ -919,16 +926,22 @@ class ekoptim():
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
             pst_dt_w_tiled = np.tile(past_data_normalized_w, (2,2))
             pst_dt_tiled = np.tile(past_data_normalized_w, self.tile_size)
+            
             # Reshape the past data for input to the neural network       
+            
+            past_data = self.more_data(past_data)
+            past_gld = self.more_data(past_gld)
+            past_oil = self.more_data(past_oil)
+            
             # self.X0 = pst_dt_tiled
             # self.X1 = np.tile((rate.tail(self.Dyp)).loc[:, 'dayofweek':].fillna(0),(2,2))
             # self.X2 = np.tile(past_gld.loc[:, 'dayofweek':].fillna(0),(2,2))
             # self.X3 = np.tile(past_oil.loc[:, 'dayofweek':].fillna(0),(2,2))
 
             self.X0 = pst_dt_tiled
-            self.X1 = (rate.tail(self.Dyp)).loc[:, 'ROCS':].fillna(0)
-            self.X2 = past_gld.loc[:, 'ROCS':].fillna(0)
-            self.X3 = past_oil.loc[:, 'ROCS':].fillna(0)
+            self.X1 = self.normalize_cl(past_data.loc[:, 'ROCS':].fillna(0))
+            self.X2 = self.normalize_cl(past_gld.loc[:, 'ROCS':].fillna(0))
+            self.X3 = self.normalize_cl(past_oil.loc[:, 'ROCS':].fillna(0))
 
             X0 = np.expand_dims(self.X0, axis=(0, -1))
             X1 = np.expand_dims(self.X1, axis=(0, -1))
