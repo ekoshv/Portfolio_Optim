@@ -519,10 +519,6 @@ class ekoptim():
         return state, sigs
     
     def more_data(self, dfp):
-        dfp['dayofweek'] = dfp.index.dayofweek/7
-        dfp['dayofmonth'] = dfp.index.day/31
-        dfp['monthofyear'] = dfp.index.month/12
-        
         # Calculate the difference for each column
         msma_gsma = dfp['MSMA'] - dfp['GSMA']
         ssma_gsma = dfp['SSMA'] - dfp['GSMA']
@@ -534,6 +530,12 @@ class ekoptim():
                 diff = dfp[price] - dfp[ma]
                 dfp[f'{price}_{ma}'] = diff / dfp[ma]
         
+        return dfp
+
+    def norm_date(self, dfp):
+        dfp['dayofweek'] = dfp.index.dayofweek/7
+        dfp['dayofmonth'] = dfp.index.day/31
+        dfp['monthofyear'] = dfp.index.month/12
         return dfp
     
     def apply_moving_horizon_norm(self,dfs,smb,spn, tile_size, xrnd=0):
@@ -583,10 +585,13 @@ class ekoptim():
             # x3 = np.tile(past_gld.loc[:, 'dayofweek':].fillna(0),(2,2))
             # x4 = np.tile(past_oil.loc[:, 'dayofweek':].fillna(0),(2,2))
             
-            x1 = pst_dt_tiled
-            x2 = self.normalize_cl(past_data.loc[:, 'ROCS':].fillna(0))
-            x3 = self.normalize_cl(past_gld.loc[:, 'ROCS':].fillna(0))
-            x4 = self.normalize_cl(past_oil.loc[:, 'ROCS':].fillna(0))
+            x0 = pst_dt_tiled
+            x1 = self.normalize_cl(past_data.loc[:, 'ROCS':].fillna(0))
+            x1 = self.norm_date(x1)
+            x2 = self.normalize_cl(past_gld.loc[:, 'ROCS':].fillna(0))
+            x2 = self.norm_date(x2)
+            x3 = self.normalize_cl(past_oil.loc[:, 'ROCS':].fillna(0))
+            x3 = self.norm_date(x3)
             
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled, fdmn, fdmx = self.normalize(future_data,
@@ -595,7 +600,7 @@ class ekoptim():
             df.at[df.index[i-1], 'state'] = state
             new_row = {
                 'name': df.name,
-                'past_data': [x1, x2, x3, x4],
+                'past_data': [x0, x1, x2, x3],
                 'future_data': future_data_rescaled,
                 'state': state,
                 'signal': signal,
@@ -940,8 +945,11 @@ class ekoptim():
 
             self.X0 = pst_dt_tiled
             self.X1 = self.normalize_cl(past_data.loc[:, 'ROCS':].fillna(0))
+            self.X1 = self.norm_date(self.X1)
             self.X2 = self.normalize_cl(past_gld.loc[:, 'ROCS':].fillna(0))
+            self.X2 = self.norm_date(self.X2)
             self.X3 = self.normalize_cl(past_oil.loc[:, 'ROCS':].fillna(0))
+            self.X3 = self.norm_date(self.X3)
 
             X0 = np.expand_dims(self.X0, axis=(0, -1))
             X1 = np.expand_dims(self.X1, axis=(0, -1))
