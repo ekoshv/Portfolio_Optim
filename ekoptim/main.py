@@ -552,15 +552,19 @@ class ekoptim():
             past_oil = oil[['open','high','low','close',
                             'GSMA','MSMA','SSMA',
                             'ROCS', 'ROCM', 'ROCG']].reindex(past_data.index)
+            
             psdt_HH = past_data[['open','high','low','close']].max(axis=0)['high']
             psdt_LL = past_data[['open','high','low','close']].min(axis=0)['low']
+            
             past_data_normalized, mindf, maxdf = self.normalize(past_data[['open',
-                                                                           'high','low',
+                                                                           'high',
+                                                                           'low',
                                                                            'close']],
                                                                 psdt_LL, psdt_HH,xrnd)
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,
                                                                      'db1')
-            pst_dt_tiled = np.tile(past_data_normalized_w, tile_size)
+            pst_dt_w_tiled = np.tile(past_data_normalized_w, (2,2))
+            pst_dt_tiled = np.tile(past_data_normalized, tile_size)
             pst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, pst_dt_tiled.shape)
             
             past_data = self.more_data(past_data)
@@ -578,7 +582,8 @@ class ekoptim():
             x4 = past_oil.loc[:, 'ROCS':].fillna(0)
             
             future_data = df[smb_col].iloc[i:i+self.Dyf]
-            future_data_rescaled, fdmn, fdmx = self.normalize(future_data, psdt_LL, psdt_HH, xrnd)
+            future_data_rescaled, fdmn, fdmx = self.normalize(future_data,
+                                                              psdt_LL, psdt_HH, xrnd)
             state, signal = self.calculate_signal(future_data_rescaled)
             df.at[df.index[i-1], 'state'] = state
             new_row = {
@@ -901,13 +906,18 @@ class ekoptim():
             past_data = rate[['open','high','low','close',
                               'GSMA','MSMA','SSMA', 
                               'ROCS', 'ROCM', 'ROCG']].tail(self.Dyp)
-            past_gld = gld.reindex(past_data.index)
-            past_oil = oil.reindex(past_data.index)
+            past_gld = gld[['open','high','low','close',
+                              'GSMA','MSMA','SSMA', 
+                              'ROCS', 'ROCM', 'ROCG']].reindex(past_data.index)
+            past_oil = oil[['open','high','low','close',
+                              'GSMA','MSMA','SSMA', 
+                              'ROCS', 'ROCM', 'ROCG']].reindex(past_data.index)
             
             psdt_HH = past_data.max(axis=0)['high']
             psdt_LL = past_data.min(axis=0)['low']
             past_data_normalized, mindf, maxdf = self.normalize(past_data[['open','high','low','close']], psdt_LL, psdt_HH)
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
+            pst_dt_w_tiled = np.tile(past_data_normalized_w, (2,2))
             pst_dt_tiled = np.tile(past_data_normalized_w, self.tile_size)
             # Reshape the past data for input to the neural network       
             # self.X0 = pst_dt_tiled
