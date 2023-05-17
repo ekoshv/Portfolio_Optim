@@ -52,6 +52,7 @@ class ekoptim():
             # Calculate risk-free rate adjusted for duration
             self.risk_free_rate = risk_free_rate * self.durc
             self.toler = toler  # Set tolerance
+            self.colsel = []
     
             # Define constraints
             self.bounds = [(0, 1) for i in range(self.n)]  # Set bounds for weights
@@ -515,17 +516,23 @@ class ekoptim():
         dfp['dayofweek'] = dfp.index.dayofweek/7
         dfp['dayofmonth'] = dfp.index.day/31
         dfp['monthofyear'] = dfp.index.month/12
+        self.colsel.append('dayofweek')
+        self.colsel.append('dayofmonth')
+        self.colsel.append('monthofyear')
         
         # Calculate the difference for each column
         msma_gsma = dfp['MSMA'] - dfp['GSMA']
         ssma_gsma = dfp['SSMA'] - dfp['GSMA']
         dfp['MSMA_GSMA'] = msma_gsma / dfp['GSMA']
         dfp['SSMA_GSMA'] = ssma_gsma / dfp['GSMA']
+        self.colsel.append('MSMA_GSMA')
+        self.colsel.append('SSMA_GSMA')
         
         for ma in ['GSMA', 'MSMA', 'SSMA']:
             for price in ['open', 'high', 'low', 'close']:
                 diff = dfp[price] - dfp[ma]
                 dfp[f'{price}_{ma}'] = diff / dfp[ma]
+                self.colsel.append(f'{price}_{ma}')
         
         return dfp
     
@@ -542,9 +549,7 @@ class ekoptim():
             raise ValueError("smb should be either a string or an integer.")
 
         for i in range(self.Dyp+self.SMAP[0]+1, len(df)-self.Dyf+1, self.Thi):
-            past_data = df[['open','high','low','close',
-                            'GSMA','MSMA','SSMA',
-                            'ROCS', 'ROCM', 'ROCG']].iloc[i-self.Dyp:i]
+            past_data = df.iloc[i-self.Dyp:i]
             # Extract data from df2 using index of df1 and fill missing rows with NaN
             past_gld = gld.reindex(past_data.index)
             past_oil = oil.reindex(past_data.index)
@@ -556,7 +561,8 @@ class ekoptim():
                                                                 psdt_LL, psdt_HH,xrnd)
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,
                                                                      'db1')
-            pst_dt_tiled = np.tile(past_data_normalized_w, tile_size)
+            pst_dt_tiled = np.tile(past_data_normalized, tile_size)
+            pst_dt_w_tiled = np.tile(past_data_normalized_w, (2,2))
             pst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, pst_dt_tiled.shape)
             
             past_data = self.more_data(past_data)
@@ -564,14 +570,14 @@ class ekoptim():
             past_oil = self.more_data(past_oil)
             
             # x1 = pst_dt_tiled
-            # x2 = np.tile(past_data.loc[:, 'dayofweek':].fillna(0),(2,2))
-            # x3 = np.tile(past_gld.loc[:, 'dayofweek':].fillna(0),(2,2))
-            # x4 = np.tile(past_oil.loc[:, 'dayofweek':].fillna(0),(2,2))
+            # x2 = np.tile(past_data.loc[:, self.colsel].fillna(0),(2,2))
+            # x3 = np.tile(past_gld.loc[:, self.colsel].fillna(0),(2,2))
+            # x4 = np.tile(past_oil.loc[:, self.colsel].fillna(0),(2,2))
             
             x1 = pst_dt_tiled
-            x2 = past_data.loc[:, 'ROCS':].fillna(0)
-            x3 = past_gld.loc[:, 'ROCS':].fillna(0)
-            x4 = past_oil.loc[:, 'ROCS':].fillna(0)
+            x2 = past_data.loc[:, self.colsel].fillna(0)
+            x3 = past_gld.loc[:, self.colsel].fillna(0)
+            x4 = past_oil.loc[:, self.colsel].fillna(0)
             
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled, fdmn, fdmx = self.normalize(future_data, psdt_LL, psdt_HH, xrnd)
@@ -639,20 +645,23 @@ class ekoptim():
             df['SSMA'] = ssma
             df.insert(close_idx + 4, 'SSMA', df.pop('SSMA'))
             #---ROCS
-            ROCS = talib.ROC(df['close'], timeperiod=SMAP[2])
-            # Add the ROC values to the DataFrame
+            ROCS = talib.ROCP(df['close'], timeperiod=SMAP[2])
+            # Add the ROCP values to the DataFrame
             df['ROCS'] = ROCS
-            df.insert(close_idx + 5, 'ROCS', df.pop('ROCS'))            
+            df.insert(close_idx + 5, 'ROCS', df.pop('ROCS'))
+            self.colsel.append('ROCS')            
             #---ROCM
-            ROCM = talib.ROC(df['close'], timeperiod=SMAP[1])
-            # Add the ROC values to the DataFrame
+            ROCM = talib.ROCP(df['close'], timeperiod=SMAP[1])
+            # Add the ROCP values to the DataFrame
             df['ROCM'] = ROCM
             df.insert(close_idx + 6, 'ROCM', df.pop('ROCM'))
+            self.colsel.append('ROCM')
             #---ROCG
-            ROCG = talib.ROC(df['close'], timeperiod=SMAP[0])
+            ROCG = talib.ROCP(df['close'], timeperiod=SMAP[0])
             # Add the ROC values to the DataFrame
             df['ROCG'] = ROCG
             df.insert(close_idx + 7, 'ROCG', df.pop('ROCG'))
+            self.colsel.append('ROCG')
             
             df.name = snam
         self.HNrates = self.Hrz_Nrm(srates, symb, spn, tile_size, xrnd)            
@@ -894,27 +903,32 @@ class ekoptim():
             else:
                 raise ValueError("smb should be either a string or an integer.")
             # Get the last Dyp rows of full_rates for the given symbol
-            past_data = rate[['open','high','low','close',
-                              'GSMA','MSMA','SSMA', 
-                              'ROCS', 'ROCM', 'ROCG']].tail(self.Dyp)
+            past_data = rate.tail(self.Dyp)
             past_gld = gld.reindex(past_data.index)
             past_oil = oil.reindex(past_data.index)
             
-            psdt_HH = past_data.max(axis=0)['high']
-            psdt_LL = past_data.min(axis=0)['low']
-            past_data_normalized, mindf, maxdf = self.normalize(past_data[['open','high','low','close']], psdt_LL, psdt_HH)
-            past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
-            pst_dt_tiled = np.tile(past_data_normalized_w, self.tile_size)
+            psdt_HH = past_data['open','high','low','close'].max(axis=0)['high']
+            psdt_LL = past_data['open','high','low','close'].min(axis=0)['low']
+            past_data_normalized, mindf, maxdf = self.normalize(past_data[['open',
+                                                                           'high',
+                                                                           'low',
+                                                                           'close']],
+                                                                psdt_LL, psdt_HH)
+            past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,
+                                                                     'db1')
+            pst_dt_tiled = np.tile(past_data_normalized, self.tile_size)
+            pst_dt_w_tiled = np.tile(past_data_normalized_w, (2,2))
+            
             # Reshape the past data for input to the neural network       
             # self.X0 = pst_dt_tiled
-            # self.X1 = np.tile((rate.tail(self.Dyp)).loc[:, 'dayofweek':].fillna(0),(2,2))
-            # self.X2 = np.tile(past_gld.loc[:, 'dayofweek':].fillna(0),(2,2))
-            # self.X3 = np.tile(past_oil.loc[:, 'dayofweek':].fillna(0),(2,2))
+            # self.X1 = np.tile((rate.tail(self.Dyp)).loc[:, self.colsel].fillna(0),(2,2))
+            # self.X2 = np.tile(past_gld.loc[:, self.colsel].fillna(0),(2,2))
+            # self.X3 = np.tile(past_oil.loc[:, self.colsel].fillna(0),(2,2))
 
             self.X0 = pst_dt_tiled
-            self.X1 = (rate.tail(self.Dyp)).loc[:, 'ROCS':].fillna(0)
-            self.X2 = past_gld.loc[:, 'ROCS':].fillna(0)
-            self.X3 = past_oil.loc[:, 'ROCS':].fillna(0)
+            self.X1 = (rate.tail(self.Dyp)).loc[:, self.colsel].fillna(0)
+            self.X2 = past_gld.loc[:, self.colsel].fillna(0)
+            self.X3 = past_oil.loc[:, self.colsel].fillna(0)
 
             X0 = np.expand_dims(self.X0, axis=(0, -1))
             X1 = np.expand_dims(self.X1, axis=(0, -1))
