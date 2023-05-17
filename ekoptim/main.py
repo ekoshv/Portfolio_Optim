@@ -938,7 +938,7 @@ class ekoptim():
             past_data_normalized, mindf, maxdf = self.normalize(past_data[['open','high','low','close']], psdt_LL, psdt_HH)
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
             pst_dt_w_tiled = np.tile(past_data_normalized_w, (2,2))
-            pst_dt_tiled = np.tile(past_data_normalized_w, self.tile_size)
+            pst_dt_tiled = np.tile(past_data_normalized, self.tile_size)
             
             # Reshape the past data for input to the neural network       
             
