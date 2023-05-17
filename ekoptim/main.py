@@ -512,7 +512,8 @@ class ekoptim():
         
         return state, sigs
     
-    def more_data(self, dfp):
+    def more_data(self, df):
+        dfp = df.copy()
         dfp['dayofweek'] = dfp.index.dayofweek/7
         dfp['dayofmonth'] = dfp.index.day/31
         dfp['monthofyear'] = dfp.index.month/12
