@@ -542,14 +542,20 @@ class ekoptim():
             raise ValueError("smb should be either a string or an integer.")
 
         for i in range(self.Dyp+self.SMAP[0]+1, len(df)-self.Dyf+1, self.Thi):
-            past_data = df[['open','high','low','close','GSMA','MSMA','SSMA']].iloc[i-self.Dyp:i]
+            past_data = df[['open','high','low','close',
+                            'GSMA','MSMA','SSMA',
+                            'ROCS', 'ROCM', 'ROCG']].iloc[i-self.Dyp:i]
             # Extract data from df2 using index of df1 and fill missing rows with NaN
             past_gld = gld.reindex(past_data.index)
             past_oil = oil.reindex(past_data.index)
             psdt_HH = past_data[['open','high','low','close']].max(axis=0)['high']
             psdt_LL = past_data[['open','high','low','close']].min(axis=0)['low']
-            past_data_normalized, mindf, maxdf = self.normalize(past_data[['open','high','low','close']], psdt_LL, psdt_HH,xrnd)
-            past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
+            past_data_normalized, mindf, maxdf = self.normalize(past_data[['open',
+                                                                           'high','low',
+                                                                           'close']],
+                                                                psdt_LL, psdt_HH,xrnd)
+            past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,
+                                                                     'db1')
             pst_dt_tiled = np.tile(past_data_normalized_w, tile_size)
             pst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, pst_dt_tiled.shape)
             
@@ -632,6 +638,22 @@ class ekoptim():
             # Add the SMA values to the DataFrame
             df['SSMA'] = ssma
             df.insert(close_idx + 4, 'SSMA', df.pop('SSMA'))
+            #---ROCS
+            ROCS = talib.ROC(df['close'], timeperiod=SMAP[2])
+            # Add the ROC values to the DataFrame
+            df['ROCS'] = ROCS
+            df.insert(close_idx + 5, 'ROCS', df.pop('ROCS'))            
+            #---ROCM
+            ROCM = talib.ROC(df['close'], timeperiod=SMAP[1])
+            # Add the ROC values to the DataFrame
+            df['ROCM'] = ROCM
+            df.insert(close_idx + 6, 'ROCM', df.pop('ROCM'))
+            #---ROCG
+            ROCG = talib.ROC(df['close'], timeperiod=SMAP[0])
+            # Add the ROC values to the DataFrame
+            df['ROCG'] = ROCG
+            df.insert(close_idx + 7, 'ROCG', df.pop('ROCG'))
+            
             df.name = snam
         self.HNrates = self.Hrz_Nrm(srates, symb, spn, tile_size, xrnd)            
         # self.mz = self.HNrates[0][0]['past_data'][0].shape[0]
@@ -872,7 +894,9 @@ class ekoptim():
             else:
                 raise ValueError("smb should be either a string or an integer.")
             # Get the last Dyp rows of full_rates for the given symbol
-            past_data = rate[['open','high','low','close','GSMA','MSMA','SSMA']].tail(self.Dyp)
+            past_data = rate[['open','high','low','close',
+                              'GSMA','MSMA','SSMA', 
+                              'ROCS', 'ROCM', 'ROCG']].tail(self.Dyp)
             past_gld = gld.reindex(past_data.index)
             past_oil = oil.reindex(past_data.index)
             
@@ -882,10 +906,15 @@ class ekoptim():
             past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
             pst_dt_tiled = np.tile(past_data_normalized_w, self.tile_size)
             # Reshape the past data for input to the neural network       
+            # self.X0 = pst_dt_tiled
+            # self.X1 = np.tile((rate.tail(self.Dyp)).loc[:, 'dayofweek':].fillna(0),(2,2))
+            # self.X2 = np.tile(past_gld.loc[:, 'dayofweek':].fillna(0),(2,2))
+            # self.X3 = np.tile(past_oil.loc[:, 'dayofweek':].fillna(0),(2,2))
+
             self.X0 = pst_dt_tiled
-            self.X1 = np.tile((rate.tail(self.Dyp)).loc[:, 'dayofweek':].fillna(0),(2,2))
-            self.X2 = np.tile(past_gld.loc[:, 'dayofweek':].fillna(0),(2,2))
-            self.X3 = np.tile(past_oil.loc[:, 'dayofweek':].fillna(0),(2,2))
+            self.X1 = (rate.tail(self.Dyp)).loc[:, 'dayofweek':].fillna(0)
+            self.X2 = past_gld.loc[:, 'dayofweek':].fillna(0)
+            self.X3 = past_oil.loc[:, 'dayofweek':].fillna(0)
 
             X0 = np.expand_dims(self.X0, axis=(0, -1))
             X1 = np.expand_dims(self.X1, axis=(0, -1))
