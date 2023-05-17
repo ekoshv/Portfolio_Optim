@@ -586,11 +586,11 @@ class ekoptim():
             # x4 = np.tile(past_oil.loc[:, 'dayofweek':].fillna(0),(2,2))
             
             x0 = pst_dt_tiled
-            x1 = self.normalize_cl(past_data.loc[:, 'ROCS':].fillna(0))
+            x1 = (self.normalize_cl(past_data.loc[:, 'ROCS':].fillna(0))).fillna(0)
             x1 = self.norm_date(x1)
-            x2 = self.normalize_cl(past_gld.loc[:, 'ROCS':].fillna(0))
+            x2 = (self.normalize_cl(past_gld.loc[:, 'ROCS':].fillna(0))).fillna(0)
             x2 = self.norm_date(x2)
-            x3 = self.normalize_cl(past_oil.loc[:, 'ROCS':].fillna(0))
+            x3 = (self.normalize_cl(past_oil.loc[:, 'ROCS':].fillna(0))).fillna(0)
             x3 = self.norm_date(x3)
             
             future_data = df[smb_col].iloc[i:i+self.Dyf]
@@ -944,11 +944,11 @@ class ekoptim():
             # self.X3 = np.tile(past_oil.loc[:, 'dayofweek':].fillna(0),(2,2))
 
             self.X0 = pst_dt_tiled
-            self.X1 = self.normalize_cl(past_data.loc[:, 'ROCS':].fillna(0))
+            self.X1 = (self.normalize_cl(past_data.loc[:, 'ROCS':].fillna(0))).fillna(0)
             self.X1 = self.norm_date(self.X1)
-            self.X2 = self.normalize_cl(past_gld.loc[:, 'ROCS':].fillna(0))
+            self.X2 = (self.normalize_cl(past_gld.loc[:, 'ROCS':].fillna(0))).fillna(0)
             self.X2 = self.norm_date(self.X2)
-            self.X3 = self.normalize_cl(past_oil.loc[:, 'ROCS':].fillna(0))
+            self.X3 = (self.normalize_cl(past_oil.loc[:, 'ROCS':].fillna(0))).fillna(0)
             self.X3 = self.norm_date(self.X3)
 
             X0 = np.expand_dims(self.X0, axis=(0, -1))
