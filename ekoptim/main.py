@@ -342,7 +342,7 @@ class ekoptim():
         f1_score.update_state(y_true, y_pred)
         
         # Compute the final value of the F1 score
-        result = f1_score.result()
+        result = tf.reduce_mean(f1_score.result())
         
         return result
 
