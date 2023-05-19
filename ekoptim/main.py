@@ -334,17 +334,75 @@ class ekoptim():
             avg_mcc = tf.reduce_mean(tf.stack(mcc_per_class))
             return avg_mcc    
     
-    def multiclass_f1(self, y_true, y_pred, num_classes=9):
-        # Instantiate the F1Score metric
-        f1_score = tfa.metrics.F1Score(num_classes, average=self.f1_av_type)  # or 'micro' or 'weighted'
-        
-        # Update the state of the metric
-        f1_score.update_state(y_true, y_pred)
-        
-        # Compute the final value of the F1 score
-        result = tf.reduce_mean(f1_score.result()).numpy()
-        
-        return result
+    def binary_f1_score(self, y_true, y_pred):
+        def recall_m(y_true, y_pred):
+            true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+            possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+            recall = true_positives / (possible_positives + K.epsilon())
+            return recall
+    
+        def precision_m(y_true, y_pred):
+            true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+            predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+            precision = true_positives / (predicted_positives + K.epsilon())
+            return precision
+    
+        precision = precision_m(y_true, y_pred)
+        recall = recall_m(y_true, y_pred)
+        return 2*((precision*recall)/(precision+recall+K.epsilon()))
+    
+    def multiclass_f1(self, y_true, y_pred, method='macro', num_classes=9):
+        # obtain predictions here, we can add in a threshold if we would like to
+        y_pred = tf.argmax(y_pred, axis=-1)
+    
+        # convert one-hot encoded y_true to class indices
+        y_true = tf.argmax(y_true, axis=-1)
+    
+        f1_per_class = []
+        class_weights = []
+    
+        # create a lookup table
+        keys = tf.constant(list(self.class_weight_dict.keys()), dtype=tf.int32)
+        values = list(self.class_weight_dict.values())
+        table = tf.lookup.StaticHashTable(
+            initializer=tf.lookup.KeyValueTensorInitializer(keys, values), 
+            default_value=tf.constant(-1.0),
+            name="class_weight"
+        )
+    
+        for k in range(num_classes):
+            k = tf.cast(k, tf.int64)
+    
+            # treat k as the positive class and all others as the negative class
+            y_true_binary = tf.cast(tf.equal(k, y_true), tf.float32)
+            y_pred_binary = tf.cast(tf.equal(k, y_pred), tf.float32)
+    
+            # compute the f1 for class k
+            f1_k = self.binary_f1_score(y_true_binary, y_pred_binary)
+    
+            f1_per_class.append(f1_k)
+    
+            # get the class weight for class k from lookup table
+            weight_k = table.lookup(tf.cast(k, tf.int32))
+    
+            class_weights.append(weight_k)
+        method = self.f1_method
+        if method == 'micro':
+            # compute the micro average f1
+            micro_avg_f1 = tf.reduce_mean(tf.stack(f1_per_class))
+            return micro_avg_f1
+        elif method == 'macro':
+            if self.f1_w:
+                # compute the weighted average f1
+                weighted_avg_f1 = (tf.reduce_sum(tf.multiply(tf.stack(f1_per_class),
+                                                             tf.stack(class_weights))) /
+                                   tf.reduce_sum(tf.stack(class_weights)))
+                return weighted_avg_f1
+            else:
+                avg_f1 = tf.reduce_mean(tf.stack(f1_per_class))
+                return avg_f1
+        else:
+            raise ValueError("Method must be 'micro' or 'macro'")
 
     def reshape_nm(self, L):
     
@@ -717,9 +775,10 @@ class ekoptim():
     
     def NNmake(self, model=None,
                learning_rate=0.001, epochs=100, batch_size=32, k_n=None,
-               f1_av_type = 'weighted', mcc_w = False, filters = 128,
+               f1_method = 'micro', f1_w = 'False', mcc_w = False, filters = 128,
                load_train=False):
-        self.f1_av_type = f1_av_type
+        self.f1_method = f1_method
+        self.f1_w = f1_w
         self.mcc_w = mcc_w
         self.k_n=5
         if k_n is not None:
