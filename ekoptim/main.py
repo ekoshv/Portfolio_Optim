@@ -751,7 +751,7 @@ class ekoptim():
         self.n_classes = num_classes
         sce_loss = tf.keras.losses.CategoricalCrossentropy(from_logits=False)
         loss = sce_loss(y_true, y_pred)
-        loss = np.exp(loss)-1
+        loss = tf.exp(loss)-1.0
         # Calculate the accuracy
         accuracy = tf.keras.metrics.categorical_accuracy(y_true, y_pred)
         
