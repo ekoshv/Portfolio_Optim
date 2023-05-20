@@ -585,26 +585,15 @@ class ekoptim():
             past_gld = self.more_data(past_gld)
             past_oil = self.more_data(past_oil)
             
-            # x1 = pst_dt_tiled
-            # x2 = np.tile(past_data.loc[:, 'dayofweek':].fillna(0),(2,2))
-            # x3 = np.tile(past_gld.loc[:, 'dayofweek':].fillna(0),(2,2))
-            # x4 = np.tile(past_oil.loc[:, 'dayofweek':].fillna(0),(2,2))
-            
-            # x0 = pst_dt_tiled
-            # x1 = (self.normalize_cl(past_data.loc[:, 'ROCS':].fillna(0))).fillna(0)
-            # x1 = self.norm_date(x1)
-            # x2 = (self.normalize_cl(past_gld.loc[:, 'ROCS':].fillna(0))).fillna(0)
-            # x2 = self.norm_date(x2)
-            # x3 = (self.normalize_cl(past_oil.loc[:, 'ROCS':].fillna(0))).fillna(0)
-            # x3 = self.norm_date(x3)
-
-            x0 = pst_dt_tiled
-            x1 = past_data.loc[:, 'ROCS':].fillna(0)
-            x1 = self.norm_date(x1)
-            x2 = past_gld.loc[:, 'ROCS':].fillna(0)
-            x2 = self.norm_date(x2)
-            x3 = past_oil.loc[:, 'ROCS':].fillna(0)
-            x3 = self.norm_date(x3)
+            x = []
+            x[0] = pst_dt_tiled
+            x[1] = pst_dt_w_tiled
+            x[2] = past_data.loc[:, 'ROCS':].fillna(0)
+            x[2] = self.norm_date(x[1])
+            x[3] = past_gld.loc[:, 'ROCS':].fillna(0)
+            x[3] = self.norm_date(x[2])
+            x[4] = past_oil.loc[:, 'ROCS':].fillna(0)
+            x[4] = self.norm_date(x[3])
             
             future_data = df[smb_col].iloc[i:i+self.Dyf]
             future_data_rescaled, fdmn, fdmx = self.normalize(future_data,
@@ -613,7 +602,7 @@ class ekoptim():
             df.at[df.index[i-1], 'state'] = state
             new_row = {
                 'name': df.name,
-                'past_data': [x0, x1, x2, x3],
+                'past_data': x,
                 'future_data': future_data_rescaled,
                 'state': state,
                 'signal': signal,
