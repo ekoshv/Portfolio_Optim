@@ -552,7 +552,7 @@ class ekoptim():
         dfp['monthofyear'] = dfp.index.month/12
         return dfp
     
-    def apply_moving_horizon_norm(self, dfs, spn, tile_size, smb = 'close', xrnd= 0):
+    def apply_moving_horizon_norm(self, dfs, spn, tile_size, smb, xrnd= 0):
         try:
             df = dfs[0]
             gld = dfs[1]
@@ -639,7 +639,7 @@ class ekoptim():
         return [self.apply_moving_horizon_norm([df,rates[-2],rates[-1]], smb, spn, tile_size,xrnd) for 
                 df in tqdm(rates, desc='Processing DataFrames')]
 
-    def Prepare_Data(self, symb, spn=1, tile_size=(2,2), xrnd=0,
+    def Prepare_Data(self, symb='close', spn=1, tile_size=(2,2), xrnd=0,
                      Selected_symbols=None,
                      Dqp=32, Dyp=2, Dyf=8, Thi=3,
                      SMAP=[144,45,12]):

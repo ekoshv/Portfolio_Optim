@@ -248,7 +248,7 @@ if __name__ == "__main__":
     Dyp = 2 # past days
     Dyf = 16 # future days
     n_t = 2 # tile size    
-    optimizerTV.Prepare_Data('close', spn=10,
+    optimizerTV.Prepare_Data(symb = 'close', spn = 10,
                              tile_size=(n_t,int(n_t*Dyp/4)),xrnd=1e-3,#(n*Dyp->m=n*Dyp/4)
                              Selected_symbols=selected_symb[0],
                              Dqp=Dqp, Dyp=Dyp, Dyf=Dyf, Thi=1) #None
