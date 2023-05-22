@@ -493,9 +493,14 @@ class ekoptim():
         return df
     
     def calculate_signal(self, fd):
-        # Thresholding
-        mx_val = min(fd.max(),10)
-        mn_val = max(fd.min(),-10)
+        if len(fd.columns)<2:
+            # Thresholding
+            mx_val = min(fd.max(),10)
+            mn_val = max(fd.min(),-10)
+        else:
+            mx_val = min(fd.max(axis=0)['high'],10)
+            mn_val = max(fd.minmin(axis=0)['low'],-10)
+        
         sigs=[]
         # Conditioning
         # for mx_val
@@ -559,13 +564,13 @@ class ekoptim():
             past_data = df[['open','high','low','close',
                             'GSMA','MSMA','SSMA',
                             'ROCS', 'ROCM', 'ROCG']].iloc[i-self.Dyp:i]
-            # Extract data from df2 using index of df1 and fill missing rows with NaN
-            past_gld = gld[['open','high','low','close',
-                            'GSMA','MSMA','SSMA',
-                            'ROCS', 'ROCM', 'ROCG']].reindex(past_data.index)
-            past_oil = oil[['open','high','low','close',
-                            'GSMA','MSMA','SSMA',
-                            'ROCS', 'ROCM', 'ROCG']].reindex(past_data.index)
+            # # Extract data from df2 using index of df1 and fill missing rows with NaN
+            # past_gld = gld[['open','high','low','close',
+            #                 'GSMA','MSMA','SSMA',
+            #                 'ROCS', 'ROCM', 'ROCG']].reindex(past_data.index)
+            # past_oil = oil[['open','high','low','close',
+            #                 'GSMA','MSMA','SSMA',
+            #                 'ROCS', 'ROCM', 'ROCG']].reindex(past_data.index)
             
             psdt_HH = past_data[['open','high','low','close']].max(axis=0)['high']
             psdt_LL = past_data[['open','high','low','close']].min(axis=0)['low']
@@ -595,7 +600,7 @@ class ekoptim():
             # x[4] = past_oil.loc[:, 'ROCS':].fillna(0)
             # x[4] = self.norm_date(x[4])
             
-            future_data = df[smb_col].iloc[i:i+self.Dyf]
+            future_data = df[['open','high','low','close']].iloc[i:i+self.Dyf]
             future_data_rescaled, fdmn, fdmx = self.normalize(future_data,
                                                               psdt_LL, psdt_HH, xrnd)
             state, signal = self.calculate_signal(future_data_rescaled)

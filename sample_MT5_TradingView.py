@@ -244,8 +244,8 @@ if __name__ == "__main__":
     optimizerTV.frontPlot(optimized_weights_TV, save=False)
     # shut down connection to the MetaTrader 5 terminal
 #%%
-    Dyp = 4 # past days
-    Dyf = 32 # future days
+    Dyp = 2 # past days
+    Dyf = 4 # future days
     n_t = 2 # tile size    
     optimizerTV.Prepare_Data('close', spn=10,
                              tile_size=(n_t,int(n_t*Dyp/4)),xrnd=1e-3,#(n*Dyp->m=n*Dyp/4)
