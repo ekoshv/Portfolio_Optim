@@ -552,76 +552,87 @@ class ekoptim():
         dfp['monthofyear'] = dfp.index.month/12
         return dfp
     
-    def apply_moving_horizon_norm(self,dfs,smb,spn, tile_size, xrnd=0):
-        df = dfs[0]
-        gld = dfs[1]
-        oil = dfs[2]
-        new_df = []
-        if isinstance(smb, str):
-            smb_col = smb
-        elif isinstance(smb, int):
-            smb_col = df.columns[smb]
-        else:
-            raise ValueError("smb should be either a string or an integer.")
-
-        for i in range(self.Dyp+self.SMAP[0]+1, len(df)-self.Dyf+1, self.Thi):
-            past_data = df[['open','high','low','close',
-                            'GSMA','MSMA','SSMA',
-                            'ROCS', 'ROCM', 'ROCG']].iloc[i-self.Dyp:i]
-            # # Extract data from df2 using index of df1 and fill missing rows with NaN
-            # past_gld = gld[['open','high','low','close',
-            #                 'GSMA','MSMA','SSMA',
-            #                 'ROCS', 'ROCM', 'ROCG']].reindex(past_data.index)
-            # past_oil = oil[['open','high','low','close',
-            #                 'GSMA','MSMA','SSMA',
-            #                 'ROCS', 'ROCM', 'ROCG']].reindex(past_data.index)
-            
-            psdt_HH = past_data[['open','high','low','close']].max(axis=0)['high']
-            psdt_LL = past_data[['open','high','low','close']].min(axis=0)['low']
-            
-            # past_data_normalized, mindf, maxdf = self.normalize(past_data[['open',
-            #                                                                'high',
-            #                                                                'low',
-            #                                                                'close']],
-            #                                                     psdt_LL, psdt_HH,xrnd)
-            # past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,
-            #                                                          'db1')
-            # pst_dt_w_tiled = np.tile(past_data_normalized_w, (2,2))
-            # pst_dt_tiled = np.tile(past_data_normalized, tile_size)
-            # pst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, pst_dt_tiled.shape)
-            
-            # past_data = self.more_data(past_data)
-            # past_gld = self.more_data(past_gld)
-            # past_oil = self.more_data(past_oil)
-            
-            x = []
-            # x[0] = pst_dt_tiled
-            # x[1] = pst_dt_w_tiled
-            # x[2] = past_data.loc[:, 'ROCS':].fillna(0)
-            # x[2] = self.norm_date(x[2])
-            # x[3] = past_gld.loc[:, 'ROCS':].fillna(0)
-            # x[3] = self.norm_date(x[3])
-            # x[4] = past_oil.loc[:, 'ROCS':].fillna(0)
-            # x[4] = self.norm_date(x[4])
-            
-            future_data = df[['open','high','low','close']].iloc[i:i+self.Dyf]
-            future_data_rescaled, fdmn, fdmx = self.normalize(future_data,
-                                                              psdt_LL, psdt_HH, xrnd)
-            state, signal = self.calculate_signal(future_data_rescaled)
-            df.at[df.index[i-1], 'state'] = state
-            new_row = {
-                'name': df.name,
-                'past_data': x,
-                'future_data': future_data_rescaled,
-                'state': state,
-                'signal': signal,
-                'pstraw': past_data,
-                'minmax': [psdt_LL,psdt_HH],
-                'dati': df.index[i-1]
-            }
-            #print(new_row)
-            new_df.append(new_row)
-        return new_df        
+    def apply_moving_horizon_norm(self, dfs, spn, tile_size, smb = 'close', xrnd= 0):
+        try:
+            df = dfs[0]
+            gld = dfs[1]
+            oil = dfs[2]
+            new_df = []
+            if isinstance(smb, str):
+                smb_col = smb
+            elif isinstance(smb, int):
+                smb_col = df.columns[smb]
+            else:
+                raise ValueError("smb should be either a string or an integer.")
+    
+            for i in range(max(self.Dyp, self.Dqp)+self.SMAP[0]+1, len(df)-self.Dyf+1, self.Thi):
+                ypast_data = df[['open','high','low','close',
+                                'GSMA','MSMA','SSMA',
+                                'ROCS', 'ROCM', 'ROCG']].iloc[i-self.Dyp:i]
+    
+                qpast_data = df[['open','high','low','close',
+                                'GSMA','MSMA','SSMA',
+                                'ROCS', 'ROCM', 'ROCG']].iloc[i-self.Dqp:i]
+                # Extract data from gold and oil using index of qpast_data and fill missing rows with NaN
+                past_gld = gld[['open','high','low','close',
+                                'GSMA','MSMA','SSMA',
+                                'ROCS', 'ROCM', 'ROCG']].reindex(qpast_data.index)
+                past_oil = oil[['open','high','low','close',
+                                'GSMA','MSMA','SSMA',
+                                'ROCS', 'ROCM', 'ROCG']].reindex(qpast_data.index)
+                
+                ypsdt_HH = ypast_data[['open','high','low','close']].max(axis=0)['high']
+                ypsdt_LL = ypast_data[['open','high','low','close']].min(axis=0)['low']
+                future_data = df[['open','high','low','close']].iloc[i:i+self.Dyf]
+                future_data_rescaled, fdmn, fdmx = self.normalize(future_data,
+                                                                  ypsdt_LL, ypsdt_HH, xrnd)
+                state, signal = self.calculate_signal(future_data_rescaled)            
+                
+                qpsdt_HH = qpast_data[['open','high','low','close']].max(axis=0)['high']
+                qpsdt_LL = qpast_data[['open','high','low','close']].min(axis=0)['low']
+                qpast_data_normalized, mindf, maxdf = self.normalize(qpast_data[['open',
+                                                                                'high',
+                                                                                'low',
+                                                                                'close']],
+                                                                    qpsdt_LL, qpsdt_HH,xrnd)
+                qpast_data_normalized_w, lng = self.decompose_and_flatten(qpast_data_normalized,
+                                                                          'db1')
+                qpst_dt_w_tiled = np.tile(qpast_data_normalized_w, (2,2))
+                qpst_dt_tiled = np.tile(qpast_data_normalized, tile_size)
+                qpst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, qpst_dt_tiled.shape)
+                
+                qpast_data = self.more_data(qpast_data)
+                past_gld = self.more_data(past_gld)
+                past_oil = self.more_data(past_oil)
+                
+                x = []
+                x[0] = qpst_dt_tiled
+                x[1] = qpst_dt_w_tiled
+                x[2] = qpast_data.loc[:, 'ROCS':].fillna(0)
+                x[2] = self.norm_date(x[2])
+                x[3] = past_gld.loc[:, 'ROCS':].fillna(0)
+                x[3] = self.norm_date(x[3])
+                x[4] = past_oil.loc[:, 'ROCS':].fillna(0)
+                x[4] = self.norm_date(x[4])
+                
+                df.at[df.index[i-1], 'state'] = state
+                new_row = {
+                    'name': df.name,
+                    'past_data': x,
+                    'future_data': future_data_rescaled,
+                    'state': state,
+                    'signal': signal,
+                    'qpstraw': qpast_data,
+                    'minmax': [qpsdt_LL,qpsdt_HH],
+                    'dati': df.index[i-1]
+                }
+                #print(new_row)
+                new_df.append(new_row)
+            return new_df 
+        except Exception as e:
+            print(f"An error occurred in Normalization Process: {e}")
+            traceback.print_exc()
+            return None
 
     def Hrz_Nrm(self, rates, smb, spn, tile_size, xrnd=0):
         # Apply the moving horizon to each dataframe in rates_lists
@@ -630,10 +641,11 @@ class ekoptim():
 
     def Prepare_Data(self, symb, spn=1, tile_size=(2,2), xrnd=0,
                      Selected_symbols=None,
-                     Dyp=8, Dyf=32, Thi=3,
+                     Dqp=32, Dyp=2, Dyf=8, Thi=3,
                      SMAP=[144,45,12]):
         print("Preparing Data...")
         self.spn = spn
+        self.Dqp = Dqp   # Number of past days in Deep Learning
         self.Dyp = Dyp   # Number of past days to consider in the moving horizon
         self.Dyf = Dyf   # Number of future days to predict in the moving horizon
         self.Thi = Thi   # Time horizon interval (in days)
