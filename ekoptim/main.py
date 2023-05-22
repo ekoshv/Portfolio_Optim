@@ -646,8 +646,8 @@ class ekoptim():
         print("Preparing Data...")
         self.spn = spn
         self.Dqp = Dqp   # Number of past days in Deep Learning
-        self.Dyp = Dyp   # Number of past days to consider in the moving horizon
-        self.Dyf = Dyf   # Number of future days to predict in the moving horizon
+        self.Dyp = Dyp   # Number of past days to consider in the moving horizon (Signal/State calculation)
+        self.Dyf = Dyf   # Number of future days to predict in the moving horizon (Signal/State calculation)
         self.Thi = Thi   # Time horizon interval (in days)
         self.tile_size = tile_size
         self.SMAP = SMAP
