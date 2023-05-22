@@ -563,7 +563,7 @@ class ekoptim():
             elif isinstance(smb, int):
                 smb_col = df.columns[smb]
             else:
-                raise ValueError("smb should be either a string or an integer.")
+                print("smb should be either a string or an integer.")
     
             for i in range(max(self.Dyp, self.Dqp)+self.SMAP[0]+1, len(df)-self.Dyf+1, self.Thi):
                 ypast_data = df[['open','high','low','close',
@@ -636,7 +636,11 @@ class ekoptim():
 
     def Hrz_Nrm(self, rates, smb, spn, tile_size, xrnd=0):
         # Apply the moving horizon to each dataframe in rates_lists
-        return [self.apply_moving_horizon_norm([df,rates[-2],rates[-1]], smb, spn, tile_size,xrnd) for 
+        #dfs, spn, tile_size, smb, xrnd= 0
+        return [self.apply_moving_horizon_norm(dfs=[df,rates[-2],rates[-1]],
+                                               smb=smb, spn=spn,
+                                               tile_size=tile_size,
+                                               xrnd=xrnd) for 
                 df in tqdm(rates, desc='Processing DataFrames')]
 
     def Prepare_Data(self, symb='close', spn=1, tile_size=(2,2), xrnd=0,
@@ -699,7 +703,11 @@ class ekoptim():
             df.insert(close_idx + 7, 'ROCG', df.pop('ROCG'))
             
             df.name = snam
-        self.HNrates = self.Hrz_Nrm(srates, symb, spn, tile_size, xrnd)            
+        #rates, smb, spn, tile_size, xrnd=0
+        self.HNrates = self.Hrz_Nrm(rates=srates,
+                                    smb=symb, spn=spn,
+                                    tile_size=tile_size,
+                                    xrnd=xrnd)            
         # self.mz = self.HNrates[0][0]['past_data'][0].shape[0]
         # self.nz = self.HNrates[0][0]['past_data'][0].shape[1]
 
