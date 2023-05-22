@@ -606,13 +606,13 @@ class ekoptim():
                 past_oil = self.more_data(past_oil)
                 
                 x = []
-                x[0] = qpst_dt_tiled
-                x[1] = qpst_dt_w_tiled
-                x[2] = qpast_data.loc[:, 'ROCS':].fillna(0)
+                x.append(qpst_dt_tiled)#0
+                x.append(qpst_dt_w_tiled)#1
+                x.append(qpast_data.loc[:, 'ROCS':].fillna(0))#2
                 x[2] = self.norm_date(x[2])
-                x[3] = past_gld.loc[:, 'ROCS':].fillna(0)
+                x.append(past_gld.loc[:, 'ROCS':].fillna(0))#3
                 x[3] = self.norm_date(x[3])
-                x[4] = past_oil.loc[:, 'ROCS':].fillna(0)
+                x.append(past_oil.loc[:, 'ROCS':].fillna(0))#4
                 x[4] = self.norm_date(x[4])
                 
                 df.at[df.index[i-1], 'state'] = state
