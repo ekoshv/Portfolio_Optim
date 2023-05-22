@@ -493,13 +493,17 @@ class ekoptim():
         return df
     
     def calculate_signal(self, fd):
-        if len(fd.columns)<2:
-            # Thresholding
-            mx_val = min(fd.max(),10)
-            mn_val = max(fd.min(),-10)
-        else:
-            mx_val = min(fd.max(axis=0)['high'],10)
-            mn_val = max(fd.minmin(axis=0)['low'],-10)
+        # if len(fd.columns)<2:
+        #     # Thresholding
+        #     mx_val = min(fd.max(),10)
+        #     mn_val = max(fd.min(),-10)
+        # else:
+        #     mx_val = min(fd.max(axis=0)['high'],10)
+        #     mn_val = max(fd.minmin(axis=0)['low'],-10)
+        mx_vals = np.amax(fd, axis=0)
+        mn_vals = np.amin(fd, axis=0)
+        mx_val=np.max(mx_vals)
+        mn_val=np.min(mn_vals)
         
         sigs=[]
         # Conditioning
