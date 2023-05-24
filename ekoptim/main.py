@@ -1016,7 +1016,9 @@ class ekoptim():
             pio.renderers.default = "browser"
             # Filter the DataFrame to get the dates where state == 2 or state == 6
             blue_flash_dates = df[df['state'] == 2].index
-            red_flash_dates = df[df['state'] == 6].index
+            green_flash_dates = df[df['state'] == 1].index
+            purple_flash_dates = df[df['state'] == 6].index
+            orange_flash_dates = df[df['state'] == 3].index
             st_na = df.columns[-1]
             
             # Create a candlestick chart
@@ -1040,13 +1042,23 @@ class ekoptim():
                                      mode='markers',
                                      marker=dict(color='blue', size=15, symbol='triangle-up'),
                                      name='Blue Flash Up'))
+            fig.add_trace(go.Scatter(x=green_flash_dates,
+                                     y=df[df['state'] == 1]['high'],
+                                     mode='markers',
+                                     marker=dict(color='green', size=10, symbol='triangle-up'),
+                                     name='Green Flash Up'))
             
             # Add purple flash down markers
-            fig.add_trace(go.Scatter(x=red_flash_dates,
+            fig.add_trace(go.Scatter(x=purple_flash_dates,
                                      y=df[df['state'] == 6]['low'],
                                      mode='markers',
                                      marker=dict(color='purple', size=15, symbol='triangle-down'),
                                      name='Purple Flash Down'))
+            fig.add_trace(go.Scatter(x=orange_flash_dates,
+                                     y=df[df['state'] == 3]['low'],
+                                     mode='markers',
+                                     marker=dict(color='orange', size=10, symbol='triangle-down'),
+                                     name='Orange Flash Down'))
             
             # Customize chart layout
             fig.update_layout(title=f'{st_na} Stock Price with Blue and Purple Flashes',

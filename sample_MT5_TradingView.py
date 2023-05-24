@@ -245,12 +245,12 @@ if __name__ == "__main__":
     # shut down connection to the MetaTrader 5 terminal
 #%%
     Dqp = 16 # past days for deep learning    
-    Dyp = 3 # past days
-    Dyf = 8 # future days
+    Dyp = 1 # past days
+    Dyf = 4 # future days
     n_t = 2 # tile size    
     optimizerTV.Prepare_Data(symb = 'close', spn = 10,
                              tile_size=(n_t,int(n_t*Dqp/4)),xrnd=1e-3,#(n*Dqp->m=n*Dqp/4)
-                             Selected_symbols=selected_symb,
+                             Selected_symbols=selected_symb[0],
                              Dqp=Dqp, Dyp=Dyp, Dyf=Dyf, Thi=1) #None
     alphax = optimizerTV.HNrates[1]
     cetax = optimizerTV.selected_rates
