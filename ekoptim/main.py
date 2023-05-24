@@ -572,40 +572,40 @@ class ekoptim():
                 qpast_data = df[['open','high','low','close',
                                 'GSMA','MSMA','SSMA',
                                 'ROCS', 'ROCM', 'ROCG']].iloc[i-self.Dqp:i]
-                # # Extract data from gold and oil using index of qpast_data and fill missing rows with NaN
-                # past_gld = gld[['open','high','low','close',
-                #                 'GSMA','MSMA','SSMA',
-                #                 'ROCS', 'ROCM', 'ROCG']].reindex(qpast_data.index)
-                # past_oil = oil[['open','high','low','close',
-                #                 'GSMA','MSMA','SSMA',
-                #                 'ROCS', 'ROCM', 'ROCG']].reindex(qpast_data.index)
+                # Extract data from gold and oil using index of qpast_data and fill missing rows with NaN
+                past_gld = gld[['open','high','low','close',
+                                'GSMA','MSMA','SSMA',
+                                'ROCS', 'ROCM', 'ROCG']].reindex(qpast_data.index)
+                past_oil = oil[['open','high','low','close',
+                                'GSMA','MSMA','SSMA',
+                                'ROCS', 'ROCM', 'ROCG']].reindex(qpast_data.index)
                 
                 qpsdt_HH = qpast_data[['open','high','low','close']].max(axis=0)['high']
                 qpsdt_LL = qpast_data[['open','high','low','close']].min(axis=0)['low']
-                # qpast_data_normalized, mindf, maxdf = self.normalize(qpast_data[['open',
-                #                                                                 'high',
-                #                                                                 'low',
-                #                                                                 'close']],
-                #                                                     qpsdt_LL, qpsdt_HH,xrnd)
+                qpast_data_normalized, mindf, maxdf = self.normalize(qpast_data[['open',
+                                                                                'high',
+                                                                                'low',
+                                                                                'close']],
+                                                                    qpsdt_LL, qpsdt_HH,xrnd)
+                qpst_dt_tiled = np.tile(qpast_data_normalized, tile_size)
+                qpst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, qpst_dt_tiled.shape)
                 # qpast_data_normalized_w, lng = self.decompose_and_flatten(qpast_data_normalized,
                 #                                                           'db1')
                 # qpst_dt_w_tiled = np.tile(qpast_data_normalized_w, (2,2))
-                # qpst_dt_tiled = np.tile(qpast_data_normalized, tile_size)
-                # qpst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, qpst_dt_tiled.shape)
                 
-                # qpast_data = self.more_data(qpast_data)
-                # past_gld = self.more_data(past_gld)
-                # past_oil = self.more_data(past_oil)
+                qpast_data = self.more_data(qpast_data)
+                past_gld = self.more_data(past_gld)
+                past_oil = self.more_data(past_oil)
                 
                 x = []
-                # x.append(qpst_dt_tiled)#0
+                x.append(qpst_dt_tiled)#0
                 # x.append(qpst_dt_w_tiled)#1
-                # x.append(qpast_data.loc[:, 'ROCS':].fillna(0))#2
-                # x[2] = self.norm_date(x[2])
+                x.append(qpast_data.loc[:, 'ROCS':].fillna(0))#2
+                x[-1] = self.norm_date(x[-1])
                 # x.append(past_gld.loc[:, 'ROCS':].fillna(0))#3
-                # x[3] = self.norm_date(x[3])
+                # x[-1] = self.norm_date(x[-1])
                 # x.append(past_oil.loc[:, 'ROCS':].fillna(0))#4
-                # x[4] = self.norm_date(x[4])
+                # x[-1] = self.norm_date(x[-1])
                 
                 df.at[df.index[i-1], 'state'] = state
                 new_row = {
@@ -736,10 +736,10 @@ class ekoptim():
     def create_modelX(self, filters=128):
         input0, output0 = self.create_model(self.mz0, self.nz0, filters = filters)
         input1, output1 = self.create_model(self.mz1, self.nz1, filters = filters)
-        input2, output2 = self.create_model(self.mz2, self.nz2, filters = filters)
-        input3, output3 = self.create_model(self.mz3, self.nz3, filters = filters)
-        input4, output4 = self.create_model(self.mz4, self.nz4, filters = filters)
-        combined_output = Concatenate()([output0, output1, output2, output3, output4])
+        # input2, output2 = self.create_model(self.mz2, self.nz2, filters = filters)
+        # input3, output3 = self.create_model(self.mz3, self.nz3, filters = filters)
+        # input4, output4 = self.create_model(self.mz4, self.nz4, filters = filters)
+        combined_output = Concatenate()([output0, output1])#, output2, output3, output4
 
         x = tf.keras.layers.Dense(1024, activation="relu")(combined_output)
         x = tf.keras.layers.BatchNormalization()(x)
@@ -754,8 +754,8 @@ class ekoptim():
         x = tf.keras.layers.Dropout(0.3)(x)
         
         final_output = tf.keras.layers.Dense(9, activation='softmax')(x)
-        model = Model(inputs=[input0, input1, input2, input3, input4], outputs=final_output)
-        return model
+        model = Model(inputs=[input0, input1], outputs=final_output)
+        return model#, input2, input3, input4
 
     def custom_loss(self, y_true, y_pred, num_classes=9, average='macro', name="custom_loss"):
         # Calculate the CategoricalCrossentropy loss
@@ -801,14 +801,14 @@ class ekoptim():
         self.mz1 = self.HNrates[0][0]['past_data'][1].shape[0]
         self.nz1 = self.HNrates[0][0]['past_data'][1].shape[1]
 
-        self.mz2 = self.HNrates[0][0]['past_data'][2].shape[0]
-        self.nz2 = self.HNrates[0][0]['past_data'][2].shape[1]
+        # self.mz2 = self.HNrates[0][0]['past_data'][2].shape[0]
+        # self.nz2 = self.HNrates[0][0]['past_data'][2].shape[1]
 
-        self.mz3 = self.HNrates[0][0]['past_data'][3].shape[0]
-        self.nz3 = self.HNrates[0][0]['past_data'][3].shape[1]        
+        # self.mz3 = self.HNrates[0][0]['past_data'][3].shape[0]
+        # self.nz3 = self.HNrates[0][0]['past_data'][3].shape[1]        
 
-        self.mz4 = self.HNrates[0][0]['past_data'][4].shape[0]
-        self.nz4 = self.HNrates[0][0]['past_data'][4].shape[1]  
+        # self.mz4 = self.HNrates[0][0]['past_data'][4].shape[0]
+        # self.nz4 = self.HNrates[0][0]['past_data'][4].shape[1]  
 
         model = self.create_modelX(filters = filters)
         
@@ -833,24 +833,24 @@ class ekoptim():
         # Train the model on the data in new_rates_lists
         X0 = np.array([d['past_data'][0] for lst in self.HNrates for d in lst])
         X1 = np.array([d['past_data'][1] for lst in self.HNrates for d in lst])
-        X2 = np.array([d['past_data'][2] for lst in self.HNrates for d in lst])
-        X3 = np.array([d['past_data'][3] for lst in self.HNrates for d in lst])
-        X4 = np.array([d['past_data'][4] for lst in self.HNrates for d in lst])
+        # X2 = np.array([d['past_data'][2] for lst in self.HNrates for d in lst])
+        # X3 = np.array([d['past_data'][3] for lst in self.HNrates for d in lst])
+        # X4 = np.array([d['past_data'][4] for lst in self.HNrates for d in lst])
         
         X0 = np.expand_dims(X0, axis=-1)
         X1 = np.expand_dims(X1, axis=-1)
-        X2 = np.expand_dims(X2, axis=-1)
-        X3 = np.expand_dims(X3, axis=-1)
-        X4 = np.expand_dims(X4, axis=-1)
+        # X2 = np.expand_dims(X2, axis=-1)
+        # X3 = np.expand_dims(X3, axis=-1)
+        # X4 = np.expand_dims(X4, axis=-1)
         
         y = np.array([d['state'] for lst in self.HNrates for d in lst])
 
         train_indices, test_indices = next(iter(ShuffleSplit(n_splits=1, test_size=0.33).split(X0)))
         X_train0, X_test0 = X0[train_indices], X0[test_indices]
         X_train1, X_test1 = X1[train_indices], X1[test_indices]
-        X_train2, X_test2 = X2[train_indices], X2[test_indices]
-        X_train3, X_test3 = X3[train_indices], X3[test_indices]
-        X_train4, X_test4 = X4[train_indices], X4[test_indices]
+        # X_train2, X_test2 = X2[train_indices], X2[test_indices]
+        # X_train3, X_test3 = X3[train_indices], X3[test_indices]
+        # X_train4, X_test4 = X4[train_indices], X4[test_indices]
         y_train, y_test = y[train_indices], y[test_indices]
  
         self.k_n=5
@@ -863,17 +863,17 @@ class ekoptim():
             # Fit and resample the training data for each dataset
             X_train0_resampled, y_train_resampled = smote.fit_resample(X_train0.reshape(X_train0.shape[0], -1), y_train)
             X_train1_resampled, _ = smote.fit_resample(X_train1.reshape(X_train1.shape[0], -1), y_train)
-            X_train2_resampled, _ = smote.fit_resample(X_train2.reshape(X_train2.shape[0], -1), y_train)
-            X_train3_resampled, _ = smote.fit_resample(X_train3.reshape(X_train3.shape[0], -1), y_train)
-            X_train4_resampled, _ = smote.fit_resample(X_train4.reshape(X_train4.shape[0], -1), y_train)
+            # X_train2_resampled, _ = smote.fit_resample(X_train2.reshape(X_train2.shape[0], -1), y_train)
+            # X_train3_resampled, _ = smote.fit_resample(X_train3.reshape(X_train3.shape[0], -1), y_train)
+            # X_train4_resampled, _ = smote.fit_resample(X_train4.reshape(X_train4.shape[0], -1), y_train)
             
             # Reshape the resampled data back to its original shape
             y_train = y_train_resampled.reshape((-1,) + y_train.shape[1:])
             X_train0 = X_train0_resampled.reshape((-1,) + X_train0.shape[1:])
             X_train1 = X_train1_resampled.reshape((-1,) + X_train1.shape[1:])
-            X_train2 = X_train2_resampled.reshape((-1,) + X_train2.shape[1:])
-            X_train3 = X_train3_resampled.reshape((-1,) + X_train3.shape[1:])
-            X_train4 = X_train4_resampled.reshape((-1,) + X_train4.shape[1:])
+            # X_train2 = X_train2_resampled.reshape((-1,) + X_train2.shape[1:])
+            # X_train3 = X_train3_resampled.reshape((-1,) + X_train3.shape[1:])
+            # X_train4 = X_train4_resampled.reshape((-1,) + X_train4.shape[1:])
         
         # Create a label encoder for mapping the class labels
         label_encoder = LabelEncoder()
@@ -902,8 +902,8 @@ class ekoptim():
         print("Training Model...")
         if(load_train):
             model.load_weights(filepath)
-        
-        model.fit([X_train0, X_train1, X_train2, X_train3, X_train4],
+        #, X_train2, X_train3, X_train4
+        model.fit([X_train0, X_train1],
                   y_train_one_hot, epochs=epochs, batch_size=batch_size,
                   validation_split=0.33, shuffle=True,
                   callbacks=[tensorboard_callback, checkpoint_callback],
@@ -913,7 +913,8 @@ class ekoptim():
         model.load_weights(filepath)
         
         # Evaluate the model on the test set
-        score = model.evaluate([X_test0, X_test1, X_test2, X_test3, X_test4], y_test_one_hot)
+        score = model.evaluate([X_test0, X_test1], y_test_one_hot)
+        #, X_test2, X_test3, X_test4
         print(score)
         self.nnmodel = model
 
@@ -977,18 +978,18 @@ class ekoptim():
             self.X0 = pst_dt_tiled
             self.X1 = past_data.loc[:, 'ROCS':].fillna(0)
             self.X1 = self.norm_date(self.X1)
-            self.X2 = past_gld.loc[:, 'ROCS':].fillna(0)
-            self.X2 = self.norm_date(self.X2)
-            self.X3 = past_oil.loc[:, 'ROCS':].fillna(0)
-            self.X3 = self.norm_date(self.X3)
+            # self.X2 = past_gld.loc[:, 'ROCS':].fillna(0)
+            # self.X2 = self.norm_date(self.X2)
+            # self.X3 = past_oil.loc[:, 'ROCS':].fillna(0)
+            # self.X3 = self.norm_date(self.X3)
 
             X0 = np.expand_dims(self.X0, axis=(0, -1))
             X1 = np.expand_dims(self.X1, axis=(0, -1))
-            X2 = np.expand_dims(self.X2, axis=(0, -1))
-            X3 = np.expand_dims(self.X3, axis=(0, -1))
+            # X2 = np.expand_dims(self.X2, axis=(0, -1))
+            # X3 = np.expand_dims(self.X3, axis=(0, -1))
             
-            # Use the trained neural network model to predict the future data
-            y_pred = np.array(self.nnmodel.predict([X0, X1, X2, X3]))
+            # Use the trained neural network model to predict the future data, X2, X3
+            y_pred = np.array(self.nnmodel.predict([X0, X1]))
             y_pred = y_pred.squeeze()
             y_pred = [0 if x<1e-3 else round(100*x)/100 for x in y_pred] 
             return {i: value for i, value in enumerate(y_pred)}
