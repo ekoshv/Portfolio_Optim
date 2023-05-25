@@ -767,7 +767,7 @@ class ekoptim():
         accuracy = tf.keras.metrics.categorical_accuracy(y_true, y_pred)
         
         # Calculate the inverse of the accuracy
-        inv_accuracy = 1.0 - tf.reduce_mean(accuracy)
+        inv_accuracy = 1.0/(tf.reduce_mean(accuracy)+0.0001)
         
         multi_f1_score = self.multiclass_f1(y_true,y_pred, num_classes=self.n_classes)
         
