@@ -816,7 +816,7 @@ class ekoptim():
         opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         model.compile(optimizer=opt,
                loss=self.custom_loss,
-               metrics=['accuracy',self.multiclass_f1,
+               metrics=['accuracy',self.multiclass_f1,'categorical_accuracy',
                         tf.keras.losses.CategoricalCrossentropy(from_logits=False),
                         self.multiclass_mcc])
         #tfa.metrics.F1Score(num_classes=9, average='macro')
@@ -905,11 +905,12 @@ class ekoptim():
         #, X_train2, X_train3, X_train4
         model.fit([X_train0, X_train1],
                   y_train_one_hot, epochs=epochs, batch_size=batch_size,
-                  validation_split=0.33, shuffle=True,
+                  shuffle=True,
+                  validation_data=([X_test0, X_test1], y_test),
                   callbacks=[tensorboard_callback, checkpoint_callback],
                   class_weight=class_weight_dict)
-        
-        # Load the best model weights
+        #validation_split=0.33,
+        # Load the best model weights  
         model.load_weights(filepath)
         
         # Evaluate the model on the test set
