@@ -244,7 +244,7 @@ if __name__ == "__main__":
     optimizerTV.frontPlot(optimized_weights_TV, save=False)
     # shut down connection to the MetaTrader 5 terminal
 #%%
-    Dqp = 16 # past days for deep learning    
+    Dqp = 32 # past days for deep learning    
     Dyp = 3 # past days
     Dyf = 16 # future days
     n_t = 2 # tile size    
