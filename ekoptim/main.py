@@ -906,7 +906,7 @@ class ekoptim():
         model.fit([X_train0, X_train1],
                   y_train_one_hot, epochs=epochs, batch_size=batch_size,
                   shuffle=True,
-                  validation_data=([X_test0, X_test1], y_test),
+                  validation_data=([X_test0, X_test1], y_test_one_hot),
                   callbacks=[tensorboard_callback, checkpoint_callback],
                   class_weight=class_weight_dict)
         #validation_split=0.33,
