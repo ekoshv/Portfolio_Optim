@@ -791,6 +791,7 @@ class ekoptim():
         self.f1_method = f1_method
         self.f1_w = f1_w
         self.mcc_w = mcc_w
+        self.num_filters = filters
         self.k_n=5
         if k_n is not None:
             self.k_n = k_n
@@ -920,7 +921,7 @@ class ekoptim():
         self.nnmodel = model
 
     def load_model_fit(self):
-        model = self.create_modelX()
+        model = self.create_modelX(filters=self.num_filters)
         checkpoint_dir = './checkpoints'
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
