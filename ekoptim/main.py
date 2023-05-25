@@ -585,7 +585,10 @@ class ekoptim():
                 qpast_data_normalized, mindf, maxdf = self.normalize(qpast_data[['open',
                                                                                 'high',
                                                                                 'low',
-                                                                                'close']],
+                                                                                'close',
+                                                                                'GSMA',
+                                                                                'MSMA',
+                                                                                'SSMA']],
                                                                     qpsdt_LL, qpsdt_HH,xrnd)
                 qpst_dt_tiled = np.tile(qpast_data_normalized, tile_size)
                 qpst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, qpst_dt_tiled.shape)
@@ -953,7 +956,13 @@ class ekoptim():
             
             psdt_HH = past_data.max(axis=0)['high']
             psdt_LL = past_data.min(axis=0)['low']
-            past_data_normalized, mindf, maxdf = self.normalize(past_data[['open','high','low','close']], psdt_LL, psdt_HH)
+            past_data_normalized, mindf, maxdf = self.normalize(past_data[['open',
+                                                                           'high',
+                                                                           'low',
+                                                                           'close',
+                                                                           'GSMA',
+                                                                           'MSMA',
+                                                                           'SSMA']], psdt_LL, psdt_HH)
             pst_dt_tiled = np.tile(past_data_normalized, self.tile_size)
             # past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
             # pst_dt_w_tiled = np.tile(past_data_normalized_w, (2,2))
