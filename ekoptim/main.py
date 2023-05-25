@@ -943,7 +943,7 @@ class ekoptim():
             # Get the last Dyp rows of full_rates for the given symbol
             past_data = rate[['open','high','low','close',
                               'GSMA','MSMA','SSMA', 
-                              'ROCS', 'ROCM', 'ROCG']].tail(self.Dyp)
+                              'ROCS', 'ROCM', 'ROCG']].tail(self.Dqp)
             past_gld = gld[['open','high','low','close',
                               'GSMA','MSMA','SSMA', 
                               'ROCS', 'ROCM', 'ROCG']].reindex(past_data.index)
@@ -954,9 +954,9 @@ class ekoptim():
             psdt_HH = past_data.max(axis=0)['high']
             psdt_LL = past_data.min(axis=0)['low']
             past_data_normalized, mindf, maxdf = self.normalize(past_data[['open','high','low','close']], psdt_LL, psdt_HH)
-            past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
-            pst_dt_w_tiled = np.tile(past_data_normalized_w, (2,2))
             pst_dt_tiled = np.tile(past_data_normalized, self.tile_size)
+            # past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
+            # pst_dt_w_tiled = np.tile(past_data_normalized_w, (2,2))
             
             # Reshape the past data for input to the neural network       
             
