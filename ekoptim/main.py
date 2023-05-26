@@ -597,6 +597,7 @@ class ekoptim():
                                                                                 'low',
                                                                                 'close']],
                                                                     past_gld_LL, past_gld_HH,xrnd)
+                past_gld_normalized = np.nan_to_num(past_gld_normalized)
                 past_gld_tiled = np.tile(past_gld_normalized, tile_size)
                 past_gld_tiled += np.random.uniform(-xrnd/5, xrnd/5, past_gld_tiled.shape)
                 #--- Oil ---
@@ -610,6 +611,7 @@ class ekoptim():
                                                                                 'low',
                                                                                 'close']],
                                                                     past_oil_LL, past_oil_HH,xrnd)
+                past_oil_normalized = np.nan_to_num(past_oil_normalized)
                 past_oil_tiled = np.tile(past_oil_normalized, tile_size)
                 past_oil_tiled += np.random.uniform(-xrnd/5, xrnd/5, past_oil_tiled.shape)                
                 
