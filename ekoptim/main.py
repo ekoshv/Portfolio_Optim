@@ -767,7 +767,7 @@ class ekoptim():
         input3, output3 = self.create_model(self.mz3, self.nz3, filters = filters)
         input4, output4 = self.create_model(self.mz4, self.nz4, filters = filters)
         input5, output5 = self.create_model(self.mz5, self.nz5, filters = filters)
-        combined_output = Concatenate()([output0, output1, output2
+        combined_output = Concatenate()([output0, output1, output2,
                                          output3, output4, output5])#
 
         x = tf.keras.layers.Dense(1024, activation="relu")(combined_output)
