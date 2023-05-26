@@ -851,7 +851,7 @@ class ekoptim():
 
         model = self.create_modelX(filters = filters)
         #***************************** 7.0 at least :-( *****
-        tf.keras.mixed_precision.set_global_policy('mixed_float16')
+        #tf.keras.mixed_precision.set_global_policy('mixed_float16')
         #*****************************
         # Compile the model with mean squared error loss
         opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
