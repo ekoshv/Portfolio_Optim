@@ -256,8 +256,8 @@ if __name__ == "__main__":
     cetax = optimizerTV.selected_rates
     optimizerTV.draw_states(cetax[-2])
 #%%
-    optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32,
-                       k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=256,
+    optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=64,
+                       k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=32,
                        load_train=False)
 #%%
     optimizerTV.load_model_fit()

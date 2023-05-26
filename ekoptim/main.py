@@ -733,8 +733,13 @@ class ekoptim():
     def create_model(self, image_height, image_width, filters = 128):
         input_layer = tf.keras.layers.Input(shape=(image_height, image_width, 1))
     
-        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=7, strides=1,
+        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=9, strides=1,
                                     padding="same", activation="relu")(input_layer)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.2)(x)
+    
+        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=7, strides=1,
+                                    padding="same", activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
     
@@ -742,7 +747,7 @@ class ekoptim():
                                     padding="same", activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
-    
+
         x = tf.keras.layers.Conv2D(filters=filters, kernel_size=3, strides=1,
                                     padding="same", activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
@@ -845,12 +850,15 @@ class ekoptim():
         self.nz5 = self.HNrates[0][0]['past_data'][5].shape[1]  
 
         model = self.create_modelX(filters = filters)
-        
+        #*****************************
+        tf.keras.mixed_precision.set_global_policy('mixed_float16')
+        #*****************************
         # Compile the model with mean squared error loss
         opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         model.compile(optimizer=opt,
                loss=self.custom_loss,
                metrics=['accuracy',self.multiclass_f1,'categorical_accuracy',
+                        tfa.metrics.F1Score(num_classes=9, average='macro'),
                         tf.keras.losses.CategoricalCrossentropy(from_logits=False),
                         self.multiclass_mcc])
         #tfa.metrics.F1Score(num_classes=9, average='macro')
