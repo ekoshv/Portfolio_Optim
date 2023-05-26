@@ -850,7 +850,7 @@ class ekoptim():
         self.nz5 = self.HNrates[0][0]['past_data'][5].shape[1]  
 
         model = self.create_modelX(filters = filters)
-        #*****************************
+        #***************************** 7.0 at least :-( *****
         tf.keras.mixed_precision.set_global_policy('mixed_float16')
         #*****************************
         # Compile the model with mean squared error loss
