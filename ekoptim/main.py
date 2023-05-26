@@ -767,7 +767,8 @@ class ekoptim():
         input3, output3 = self.create_model(self.mz3, self.nz3, filters = filters)
         input4, output4 = self.create_model(self.mz4, self.nz4, filters = filters)
         input5, output5 = self.create_model(self.mz5, self.nz5, filters = filters)
-        combined_output = Concatenate()([output0, output1, output2, output3, output4, output5])#
+        combined_output = Concatenate()([output0, output1, output2
+                                         output3, output4, output5])#
 
         x = tf.keras.layers.Dense(1024, activation="relu")(combined_output)
         x = tf.keras.layers.BatchNormalization()(x)
@@ -782,8 +783,9 @@ class ekoptim():
         x = tf.keras.layers.Dropout(0.3)(x)
         
         final_output = tf.keras.layers.Dense(9, activation='softmax')(x)
-        model = Model(inputs=[input0, input1], outputs=final_output)
-        return model#, input2, input3, input4
+        model = Model(inputs=[input0, input1, input2,
+                              input3, input4, input5], outputs=final_output)
+        return model#
 
     def custom_loss(self, y_true, y_pred, num_classes=9, average='macro', name="custom_loss"):
         # Calculate the CategoricalCrossentropy loss
