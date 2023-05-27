@@ -1005,45 +1005,60 @@ class ekoptim():
             
             psdt_HH = past_data.max(axis=0)['high']
             psdt_LL = past_data.min(axis=0)['low']
-            past_data_normalized, mindf, maxdf = self.normalize(past_data[['open','high','low','close']], psdt_LL, psdt_HH)
+            past_data_normalized, mindf, maxdf = self.normalize(past_data[['open',
+                                                                           'high',
+                                                                           'low',
+                                                                           'close']],
+                                                                psdt_LL, psdt_HH)
             pst_dt_tiled = np.tile(past_data_normalized, self.tile_size)
             # past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
             # pst_dt_w_tiled = np.tile(past_data_normalized_w, (2,2))
-            
+            #--- Gold ---
+            past_gld_HH = past_gld[['open','high','low','close']].max(axis=0)['high']
+            past_gld_LL = past_gld[['open','high','low','close']].min(axis=0)['low']
+            past_gld_normalized, mindf, maxdf = self.normalize(past_gld[['open',
+                                                                            'high',
+                                                                            'low',
+                                                                            'close']],
+                                                                past_gld_LL, past_gld_HH,
+                                                                xrnd=0)
+            past_gld_normalized = np.nan_to_num(past_gld_normalized)
+            past_gld_tiled = np.tile(past_gld_normalized, self.tile_size)
+            #--- Oil ---
+            past_oil_HH = past_oil[['open','high','low','close']].max(axis=0)['high']
+            past_oil_LL = past_oil[['open','high','low','close']].min(axis=0)['low']
+            past_oil_normalized, mindf, maxdf = self.normalize(past_oil[['open',
+                                                                            'high',
+                                                                            'low',
+                                                                            'close']],
+                                                                past_oil_LL, past_oil_HH,
+                                                                xrnd=0)
+            past_oil_normalized = np.nan_to_num(past_oil_normalized)
+            past_oil_tiled = np.tile(past_oil_normalized, self.tile_size)
             # Reshape the past data for input to the neural network       
             
             past_data = self.more_data(past_data)
             past_gld = self.more_data(past_gld)
             past_oil = self.more_data(past_oil)
             
-            # self.X0 = pst_dt_tiled
-            # self.X1 = np.tile((rate.tail(self.Dyp)).loc[:, 'dayofweek':].fillna(0),(2,2))
-            # self.X2 = np.tile(past_gld.loc[:, 'dayofweek':].fillna(0),(2,2))
-            # self.X3 = np.tile(past_oil.loc[:, 'dayofweek':].fillna(0),(2,2))
 
-            # self.X0 = pst_dt_tiled
-            # self.X1 = (self.normalize_cl(past_data.loc[:, 'ROCS':].fillna(0))).fillna(0)
-            # self.X1 = self.norm_date(self.X1)
-            # self.X2 = (self.normalize_cl(past_gld.loc[:, 'ROCS':].fillna(0))).fillna(0)
-            # self.X2 = self.norm_date(self.X2)
-            # self.X3 = (self.normalize_cl(past_oil.loc[:, 'ROCS':].fillna(0))).fillna(0)
-            # self.X3 = self.norm_date(self.X3)
+            #--- Gathering input Data ---
+            x = []
+            x.append(pst_dt_tiled)#0
+            x.append(past_gld_tiled)#1
+            x.append(past_oil_tiled)#2
+            # x.append(qpst_dt_w_tiled)
+            x.append(past_data.loc[:, 'ROCS':].fillna(0))#3
+            x[-1] = self.norm_date(x[-1])
+            x.append(past_gld.loc[:, 'ROCS':].fillna(0))#4
+            x[-1] = self.norm_date(x[-1])
+            x.append(past_oil.loc[:, 'ROCS':].fillna(0))#5
+            x[-1] = self.norm_date(x[-1])
 
-            self.X0 = pst_dt_tiled
-            self.X1 = past_data.loc[:, 'ROCS':].fillna(0)
-            self.X1 = self.norm_date(self.X1)
-            # self.X2 = past_gld.loc[:, 'ROCS':].fillna(0)
-            # self.X2 = self.norm_date(self.X2)
-            # self.X3 = past_oil.loc[:, 'ROCS':].fillna(0)
-            # self.X3 = self.norm_date(self.X3)
-
-            X0 = np.expand_dims(self.X0, axis=(0, -1))
-            X1 = np.expand_dims(self.X1, axis=(0, -1))
-            # X2 = np.expand_dims(self.X2, axis=(0, -1))
-            # X3 = np.expand_dims(self.X3, axis=(0, -1))
+            xin = [np.expand_dims(xi, axis=(0, -1)) for xi in x]
             
             # Use the trained neural network model to predict the future data, X2, X3
-            y_pred = np.array(self.nnmodel.predict([X0, X1]))
+            y_pred = np.array(self.nnmodel.predict(xin))
             y_pred = y_pred.squeeze()
             y_pred = [0 if x<1e-3 else round(100*x)/100 for x in y_pred] 
             return {i: value for i, value in enumerate(y_pred)}
