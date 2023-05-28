@@ -253,18 +253,6 @@ if __name__ == "__main__":
     # use Monte Carlo simulation to generate multiple sets of random weights
     optimizerTV.frontPlot(optimized_weights_TV, save=False)
     # shut down connection to the MetaTrader 5 terminal
-#%%    
-    # Put the data you need in a dictionary
-    data = {
-        'optimizerTV': optimizerTV,
-        'rates_TV': rates_TV,
-        'rates_MT5': rates_MT5,
-        'selected_symb': selected_symb,
-        # Add all the variables you need
-    }
-    # Save the data to a file
-    with open('data.pkl', 'wb') as f:
-        dill.dump(data, f)
 #%%
     Dqp = 32 # past days for deep learning    
     Dyp = 3 # past days
@@ -277,6 +265,18 @@ if __name__ == "__main__":
     alphax = optimizerTV.HNrates[1][100]
     cetax = optimizerTV.selected_rates
     optimizerTV.draw_states(cetax[-2])
+#%%    
+    # Put the data you need in a dictionary
+    data = {
+        'optimizerTV': optimizerTV,
+        'rates_TV': rates_TV,
+        'rates_MT5': rates_MT5,
+        'selected_symb': selected_symb,
+        # Add all the variables you need
+    }
+    # Save the data to a file
+    with open('data.pkl', 'wb') as f:
+        dill.dump(data, f)
 #%%
     optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32,
                        k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=64,

@@ -52,6 +52,8 @@ class ekoptim():
             # Calculate risk-free rate adjusted for duration
             self.risk_free_rate = risk_free_rate * self.durc
             self.toler = toler  # Set tolerance
+            self.mz = []
+            self.nz = []
     
             # Define constraints
             self.bounds = [(0, 1) for i in range(self.n)]  # Set bounds for weights
@@ -621,14 +623,17 @@ class ekoptim():
                 
                 #--- Gathering input Data ---
                 x = []
-                x.append(qpst_dt_tiled)#0
-                x.append(past_gld_tiled)#1
-                x.append(past_oil_tiled)#2
+                #--- past_data
+                x.append(qpst_dt_tiled)
+                x.append(qpast_data.loc[:, 'ROCS':].fillna(0))
+                x[-1] = self.norm_date(x[-1])
                 # x.append(qpst_dt_w_tiled)
-                x.append(qpast_data.loc[:, 'ROCS':].fillna(0))#3
+                #--- Gold
+                x.append(past_gld_tiled)
+                x.append(past_gld.loc[:, 'ROCS':].fillna(0))
                 x[-1] = self.norm_date(x[-1])
-                x.append(past_gld.loc[:, 'ROCS':].fillna(0))#4
-                x[-1] = self.norm_date(x[-1])
+                #--- Oil
+                x.append(past_oil_tiled)
                 x.append(past_oil.loc[:, 'ROCS':].fillna(0))#5
                 x[-1] = self.norm_date(x[-1])
                 
@@ -766,14 +771,16 @@ class ekoptim():
         return input_layer, output_layer
 
     def create_modelX(self, filters=128):
-        input0, output0 = self.create_model(self.mz0, self.nz0, filters = filters)
-        input1, output1 = self.create_model(self.mz1, self.nz1, filters = filters)
-        input2, output2 = self.create_model(self.mz2, self.nz2, filters = filters)
-        input3, output3 = self.create_model(self.mz3, self.nz3, filters = filters)
-        input4, output4 = self.create_model(self.mz4, self.nz4, filters = filters)
-        input5, output5 = self.create_model(self.mz5, self.nz5, filters = filters)
-        combined_output = Concatenate()([output0, output1, output2,
-                                         output3, output4, output5])#
+        inputs = []
+        outputs = []
+        for i in range(0,self.num_inps):
+            inpu , outp = self.create_model(self.mz[i], self.nz[i], filters = filters)
+            inputs.append(inpu)
+            outputs.append(outp)
+        # input0, output0 = self.create_model(self.mz0, self.nz0, filters = filters)
+        # input1, output1 = self.create_model(self.mz1, self.nz1, filters = filters)
+
+        combined_output = Concatenate()(outputs)#
 
         x = tf.keras.layers.Dense(1024, activation="relu")(combined_output)
         x = tf.keras.layers.BatchNormalization()(x)
@@ -788,8 +795,7 @@ class ekoptim():
         x = tf.keras.layers.Dropout(0.3)(x)
         
         final_output = tf.keras.layers.Dense(9, activation='softmax')(x)
-        model = Model(inputs=[input0, input1, input2,
-                              input3, input4, input5], outputs=final_output)
+        model = Model(inputs = inputs, outputs=final_output)
         return model#
 
     def custom_loss(self, y_true, y_pred, num_classes=9, average='macro', name="custom_loss"):
@@ -819,10 +825,11 @@ class ekoptim():
         
         return combined_loss
     
-    def NNmake(self, model=None,
+    def NNmake(self, model=None, num_inps = 1,
                learning_rate=0.001, epochs=100, batch_size=32, k_n=None,
                f1_method = 'micro', f1_w = 'False', mcc_w = False, filters = 128,
                load_train=False):
+        self.num_inps = num_inps
         self.f1_method = f1_method
         self.f1_w = f1_w
         self.mcc_w = mcc_w
@@ -831,23 +838,13 @@ class ekoptim():
         if k_n is not None:
             self.k_n = k_n
         # Define the neural network
-        self.mz0 = self.HNrates[0][0]['past_data'][0].shape[0]
-        self.nz0 = self.HNrates[0][0]['past_data'][0].shape[1]
-
-        self.mz1 = self.HNrates[0][0]['past_data'][1].shape[0]
-        self.nz1 = self.HNrates[0][0]['past_data'][1].shape[1]
-
-        self.mz2 = self.HNrates[0][0]['past_data'][2].shape[0]
-        self.nz2 = self.HNrates[0][0]['past_data'][2].shape[1]
-
-        self.mz3 = self.HNrates[0][0]['past_data'][3].shape[0]
-        self.nz3 = self.HNrates[0][0]['past_data'][3].shape[1]        
-
-        self.mz4 = self.HNrates[0][0]['past_data'][4].shape[0]
-        self.nz4 = self.HNrates[0][0]['past_data'][4].shape[1]
         
-        self.mz5 = self.HNrates[0][0]['past_data'][5].shape[0]
-        self.nz5 = self.HNrates[0][0]['past_data'][5].shape[1]  
+        for i in range(0,self.num_inps):
+            self.mz.append(self.HNrates[0][0]['past_data'][i].shape[0])
+            self.nz.append(self.HNrates[0][0]['past_data'][i].shape[1])
+            
+        # self.mz0 = self.HNrates[0][0]['past_data'][0].shape[0]
+        # self.nz0 = self.HNrates[0][0]['past_data'][0].shape[1] 
 
         model = self.create_modelX(filters = filters)
         #***************************** 7.0 at least :-( *****
