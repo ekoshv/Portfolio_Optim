@@ -10,6 +10,15 @@ import datetime
 from tqdm import tqdm
 import traceback
 from sklearn.covariance import LedoitWolf
+import dill
+import types
+
+def can_be_pickled(obj):
+    try:
+        dill.dumps(obj)
+        return True
+    except:
+        return False
 
 def connect_to_metatrader(path, username, password, server):
     # initialize connection to the MetaTrader 5 terminal
@@ -243,6 +252,16 @@ if __name__ == "__main__":
     # use Monte Carlo simulation to generate multiple sets of random weights
     optimizerTV.frontPlot(optimized_weights_TV, save=False)
     # shut down connection to the MetaTrader 5 terminal
+#%%    
+    # Get a dictionary of global variables
+    globs = globals().copy()
+    
+    # Filter out the ones that can't be pickled
+    globs = {k: v for k, v in globs.items() if can_be_pickled(v)}
+    
+    # Save workspace
+    with open('workspace.pkl', 'wb') as f:
+        dill.dump(globs, f)
 #%%
     Dqp = 32 # past days for deep learning    
     Dyp = 3 # past days
