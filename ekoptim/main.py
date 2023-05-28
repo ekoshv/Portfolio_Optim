@@ -803,21 +803,21 @@ class ekoptim():
         self.n_classes = num_classes
         sce_loss = tf.keras.losses.CategoricalCrossentropy(from_logits=False)
         loss = sce_loss(y_true, y_pred)
-        loss = tf.exp(loss)-1.0
+        
         # Calculate the accuracy
         accuracy = tf.keras.metrics.categorical_accuracy(y_true, y_pred)
         
         # Calculate the inverse of the accuracy
-        inv_accuracy = 1.0/(tf.reduce_mean(accuracy)+0.0001)
+        inv_accuracy = 1.0 - tf.reduce_mean(accuracy)
         
         multi_f1_score = self.multiclass_f1(y_true,y_pred, num_classes=self.n_classes)
         
         # Calculate the inverse of the mean F1-score
-        inv_f1_score = 1.0/(multi_f1_score+0.0001)
+        inv_f1_score = 1.0 - multi_f1_score
         
         # Calculate Matthews Correlation Coefficient (MCC)
         rmcc = 0.5*(1.0 + self.multiclass_mcc(y_true, y_pred))
-        rmcc = 1.0/(rmcc+0.0001)
+        rmcc = 1.0 - rmcc
         
         # Combine the loss and inverse of the accuracy and F1
         combined_loss = (loss + 2*inv_accuracy + 4*inv_f1_score + 8*rmcc)/15
