@@ -786,7 +786,7 @@ class ekoptim():
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.3)(x)
 
-        x = tf.keras.layers.Dense(512, activation="relu")(x)
+        x = tf.keras.layers.Dense(1024, activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.3)(x)
 
@@ -870,29 +870,23 @@ class ekoptim():
                                               verbose=1, save_best_only=True, mode='min')
    
         # Train the model on the data in new_rates_lists
-        X0 = np.array([d['past_data'][0] for lst in self.HNrates for d in lst])
-        X1 = np.array([d['past_data'][1] for lst in self.HNrates for d in lst])
-        X2 = np.array([d['past_data'][2] for lst in self.HNrates for d in lst])
-        X3 = np.array([d['past_data'][3] for lst in self.HNrates for d in lst])
-        X4 = np.array([d['past_data'][4] for lst in self.HNrates for d in lst])
-        X5 = np.array([d['past_data'][5] for lst in self.HNrates for d in lst])
+        X = []
+        for i in range(0,self.num_inps):
+            X.append(np.array([d['past_data'][i] for lst in self.HNrates for d in lst]))
+            X[i] = np.expand_dims(X[i], axis=-1)
+        # X0 = np.array([d['past_data'][0] for lst in self.HNrates for d in lst])
         
-        X0 = np.expand_dims(X0, axis=-1)
-        X1 = np.expand_dims(X1, axis=-1)
-        X2 = np.expand_dims(X2, axis=-1)
-        X3 = np.expand_dims(X3, axis=-1)
-        X4 = np.expand_dims(X4, axis=-1)
-        X5 = np.expand_dims(X5, axis=-1)
+        # X0 = np.expand_dims(X0, axis=-1)
         
         y = np.array([d['state'] for lst in self.HNrates for d in lst])
 
-        train_indices, test_indices = next(iter(ShuffleSplit(n_splits=1, test_size=0.33).split(X0)))
-        X_train0, X_test0 = X0[train_indices], X0[test_indices]
-        X_train1, X_test1 = X1[train_indices], X1[test_indices]
-        X_train2, X_test2 = X2[train_indices], X2[test_indices]
-        X_train3, X_test3 = X3[train_indices], X3[test_indices]
-        X_train4, X_test4 = X4[train_indices], X4[test_indices]
-        X_train5, X_test5 = X5[train_indices], X5[test_indices]
+        train_indices, test_indices = next(iter(ShuffleSplit(n_splits=1, test_size=0.33).split(X[0])))
+        X_train = []
+        X_test = []
+        for i in range(0,self.num_inps):
+            X_tr, X_ts = X[i][train_indices], X[i][test_indices]
+            X_train.append(X_tr)
+            X_test.append(X_ts)
         y_train, y_test = y[train_indices], y[test_indices]
  
         self.k_n=5
@@ -903,22 +897,17 @@ class ekoptim():
             smote = SMOTE(sampling_strategy='auto', k_neighbors=self.k_n, random_state=42)
             
             # Fit and resample the training data for each dataset
-            X_train0_resampled, y_train_resampled = smote.fit_resample(X_train0.reshape(X_train0.shape[0], -1), y_train)
-            X_train1_resampled, _ = smote.fit_resample(X_train1.reshape(X_train1.shape[0], -1), y_train)
-            X_train2_resampled, _ = smote.fit_resample(X_train2.reshape(X_train2.shape[0], -1), y_train)
-            X_train3_resampled, _ = smote.fit_resample(X_train3.reshape(X_train3.shape[0], -1), y_train)
-            X_train4_resampled, _ = smote.fit_resample(X_train4.reshape(X_train4.shape[0], -1), y_train)
-            X_train5_resampled, _ = smote.fit_resample(X_train5.reshape(X_train5.shape[0], -1), y_train)
-            
-            # Reshape the resampled data back to its original shape
+            X_train_resampled = []
+            X_trsmpl, y_train_resampled = smote.fit_resample(X_train[0].reshape(X_train[0].shape[0], -1), y_train)
+            X_train_resampled.append(X_trsmpl)
+            X_train[0] = X_train_resampled[0].reshape((-1,) + X_train[0].shape[1:])
+            for i in range(1,self.num_inps):
+                X_trsmpl, _ = smote.fit_resample(X_train[i].reshape(X_train[i].shape[0], -1), y_train)
+                X_train_resampled.append(X_trsmpl)
+                # Reshape the resampled data back to its original shape
+                X_train[i] = X_train_resampled[i].reshape((-1,) + X_train[i].shape[1:])
             y_train = y_train_resampled.reshape((-1,) + y_train.shape[1:])
-            X_train0 = X_train0_resampled.reshape((-1,) + X_train0.shape[1:])
-            X_train1 = X_train1_resampled.reshape((-1,) + X_train1.shape[1:])
-            X_train2 = X_train2_resampled.reshape((-1,) + X_train2.shape[1:])
-            X_train3 = X_train3_resampled.reshape((-1,) + X_train3.shape[1:])
-            X_train4 = X_train4_resampled.reshape((-1,) + X_train4.shape[1:])
-            X_train5 = X_train5_resampled.reshape((-1,) + X_train5.shape[1:])
-        
+
         # Create a label encoder for mapping the class labels
         label_encoder = LabelEncoder()
         unique_labels = np.unique(y_train)
@@ -947,12 +936,10 @@ class ekoptim():
         if(load_train):
             model.load_weights(filepath)
         #
-        model.fit([X_train0, X_train1, X_train2,
-                   X_train3, X_train4, X_train5],
+        model.fit(X_train,
                   y_train_one_hot, epochs=epochs, batch_size=batch_size,
                   shuffle=True,
-                  validation_data=([X_test0, X_test1, X_test2,
-                                    X_test3, X_test4, X_test5],
+                  validation_data=(X_test,
                                    y_test_one_hot),
                   callbacks=[tensorboard_callback, checkpoint_callback],
                   class_weight=class_weight_dict)
@@ -961,8 +948,7 @@ class ekoptim():
         model.load_weights(filepath)
         
         # Evaluate the model on the test set
-        score = model.evaluate([X_test0, X_test1, X_test2, 
-                                X_test3, X_test4, X_test5],
+        score = model.evaluate(X_test,
                                y_test_one_hot)
         #---
         print(score)
@@ -1041,21 +1027,24 @@ class ekoptim():
 
             #--- Gathering input Data ---
             x = []
-            x.append(pst_dt_tiled)#0
-            x.append(past_gld_tiled)#1
-            x.append(past_oil_tiled)#2
+            #--- past_data
+            x.append(pst_dt_tiled)
+            x.append(past_data.loc[:, 'ROCS':].fillna(0))
+            x[-1] = self.norm_date(x[-1])
             # x.append(qpst_dt_w_tiled)
-            x.append(past_data.loc[:, 'ROCS':].fillna(0))#3
+            #--- Gold
+            x.append(past_gld_tiled)
+            x.append(past_gld.loc[:, 'ROCS':].fillna(0))
             x[-1] = self.norm_date(x[-1])
-            x.append(past_gld.loc[:, 'ROCS':].fillna(0))#4
-            x[-1] = self.norm_date(x[-1])
+            #--- Oil
+            x.append(past_oil_tiled)
             x.append(past_oil.loc[:, 'ROCS':].fillna(0))#5
             x[-1] = self.norm_date(x[-1])
 
             xin = [np.expand_dims(xi, axis=(0, -1)) for xi in x]
             
             # Use the trained neural network model to predict the future data, X2, X3
-            y_pred = np.array(self.nnmodel.predict(xin))
+            y_pred = np.array(self.nnmodel.predict(xin[0:self.num_inps]))
             y_pred = y_pred.squeeze()
             y_pred = [0 if x<1e-3 else round(100*x)/100 for x in y_pred] 
             return {i: value for i, value in enumerate(y_pred)}

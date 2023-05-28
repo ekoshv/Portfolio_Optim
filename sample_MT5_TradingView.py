@@ -254,7 +254,7 @@ if __name__ == "__main__":
     optimizerTV.frontPlot(optimized_weights_TV, save=False)
     # shut down connection to the MetaTrader 5 terminal
 #%%
-    Dqp = 32 # past days for deep learning    
+    Dqp = 16 # past days for deep learning    
     Dyp = 3 # past days
     Dyf = 16 # future days
     n_t = 2 # tile size    
@@ -274,11 +274,18 @@ if __name__ == "__main__":
         'selected_symb': selected_symb,
         # Add all the variables you need
     }
+    
+    # Get the current date and time
+    now = datetime.datetime.now()
+    
+    # Format the date and time as a string
+    date_time = now.strftime("%Y%m%d_%H%M%S")
+    
     # Save the data to a file
-    with open('data.pkl', 'wb') as f:
+    with open(f'data_{date_time}.pkl', 'wb') as f:
         dill.dump(data, f)
 #%%
-    optimizerTV.NNmake(learning_rate=0.001, epochs=1000, batch_size=32,
+    optimizerTV.NNmake(num_inps = 1, learning_rate=0.001, epochs=1000, batch_size=32,
                        k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=64,
                        load_train=False)
 #%%
