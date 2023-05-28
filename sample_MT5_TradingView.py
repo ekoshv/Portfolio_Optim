@@ -12,6 +12,7 @@ import traceback
 from sklearn.covariance import LedoitWolf
 import dill
 import types
+from pathlib import Path
 
 def can_be_pickled(obj):
     try:
@@ -253,15 +254,17 @@ if __name__ == "__main__":
     optimizerTV.frontPlot(optimized_weights_TV, save=False)
     # shut down connection to the MetaTrader 5 terminal
 #%%    
-    # Get a dictionary of global variables
-    globs = globals().copy()
-    
-    # Filter out the ones that can't be pickled
-    globs = {k: v for k, v in globs.items() if can_be_pickled(v)}
-    
-    # Save workspace
-    with open('workspace.pkl', 'wb') as f:
-        dill.dump(globs, f)
+    # Put the data you need in a dictionary
+    data = {
+        'optimizerTV': optimizerTV,
+        'rates_TV': rates_TV,
+        'rates_MT5': rates_MT5,
+        'selected_symb': selected_symb,
+        # Add all the variables you need
+    }
+    # Save the data to a file
+    with open('data.pkl', 'wb') as f:
+        dill.dump(data, f)
 #%%
     Dqp = 32 # past days for deep learning    
     Dyp = 3 # past days
