@@ -644,10 +644,10 @@ class ekoptim():
                     'future_data': future_data_rescaled,
                     'state': state,
                     'signal': signal,
-                    'qpstraw': [qpast_data, past_gld, past_oil],
-                    'minmax': [[qpsdt_LL, qpsdt_HH],
-                               [past_gld_LL, past_gld_HH],
-                               [past_oil_LL, past_oil_HH]],
+                    # 'qpstraw': [qpast_data, past_gld, past_oil],
+                    # 'minmax': [[qpsdt_LL, qpsdt_HH],
+                    #            [past_gld_LL, past_gld_HH],
+                    #            [past_oil_LL, past_oil_HH]],
                     'dati': df.index[i-1]
                 }
                 #print(new_row)

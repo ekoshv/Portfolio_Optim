@@ -260,7 +260,7 @@ if __name__ == "__main__":
     n_t = 2 # tile size    
     optimizerTV.Prepare_Data(symb = 'close', spn = 10,
                              tile_size=(n_t,int(n_t*Dqp/4)),xrnd=1e-3,#(n*Dqp->m=n*Dqp/4)
-                             Selected_symbols=selected_symb,
+                             Selected_symbols=selected_symb[-1],
                              Dqp=Dqp, Dyp=Dyp, Dyf=Dyf, Thi=1) #None
     alphax = optimizerTV.HNrates[1][100]
     cetax = optimizerTV.selected_rates
