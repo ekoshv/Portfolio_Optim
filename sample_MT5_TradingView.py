@@ -255,14 +255,14 @@ if __name__ == "__main__":
     # shut down connection to the MetaTrader 5 terminal
 #%%
     Dqp = 64 # past days for deep learning    
-    Dyp = 3 # past days
-    Dyf = 8 # future days
+    Dyp = 2 # past days
+    Dyf = 14 # future days
     n_t = 2 # tile size    
     optimizerTV.Prepare_Data(symb = 'close', spn = 10,
                              tile_size=(n_t,int(n_t*Dqp/4)),xrnd=1e-3,#(n*Dqp->m=n*Dqp/4)
                              Selected_symbols=selected_symb[-1],
                              Dqp=Dqp, Dyp=Dyp, Dyf=Dyf, Thi=1) #None
-    alphax = optimizerTV.HNrates[1][100]
+    alphax = optimizerTV.HNrates[-2]
     cetax = optimizerTV.selected_rates
     optimizerTV.draw_states(cetax[-2])
 #%%    
