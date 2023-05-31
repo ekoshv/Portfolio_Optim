@@ -606,7 +606,11 @@ class ekoptim():
                 # future_data_rescaled, fdmn, fdmx = self.normalize(future_data,
                 #                                                   ypsdt_LL, ypsdt_HH, xrnd)
                 state, signal, vec = self.calculate_signal_difrat(future_data,
-                                                             ypast_data[['high','low']].iloc[-1])
+                                                             ypast_data[['high','low']].iloc[-1],
+                                                             hh=self.fhh,#0.01
+                                                             hl=self.fhl,#0.005
+                                                             lh=self.flh,#-0.005
+                                                             ll=self.fll)#-0.01
                 
                 # #---Data for Deep learning Preparation---
                 # qpast_data = df[['open','high','low','close',
@@ -708,7 +712,11 @@ class ekoptim():
     def Prepare_Data(self, symb='close', spn=1, tile_size=(2,2), xrnd=0,
                      Selected_symbols=None,
                      Dqp=32, Dyp=2, Dyf=8, Thi=3,
-                     SMAP=[144,45,12]):
+                     SMAP=[144,45,12],
+                     hh=0.01,#
+                     hl=0.005,#
+                     lh=-0.005,#
+                     ll=-0.01):#
         print("Preparing Data...")
         self.spn = spn   # Wavelet Normalization
         self.Dqp = Dqp   # Number of past days in Deep Learning
@@ -717,6 +725,11 @@ class ekoptim():
         self.Thi = Thi   # Time horizon interval (in days)
         self.tile_size = tile_size
         self.SMAP = SMAP
+        self.fhh=hh
+        self.fhl=hl
+        self.flh=lh
+        self.fll=ll
+        
         srates = []
         if Selected_symbols is None:
             srates = self.full_rates
