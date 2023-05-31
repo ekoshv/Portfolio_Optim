@@ -494,6 +494,11 @@ class ekoptim():
             df[feature_name] = (df[feature_name] - min_value) / (max_value - min_value)
         return df
     
+    def normal_ar(self, df):
+        mx = np.max(df)
+        mn = np.min(df)
+        return (df-mn)/(mx-mn)
+    
     def calculate_signal(self, fd):
         mx_vals = np.amax(fd, axis=0)
         mn_vals = np.amin(fd, axis=0)
@@ -536,7 +541,8 @@ class ekoptim():
                 P.append((df[columndf] - X0[idx]) / X0[idx])
         vec = np.concatenate([series.to_numpy() for series in P])
         mx_val = np.max(vec)
-        mn_val = np.min(vec)       
+        mn_val = np.min(vec)
+        mean_val = np.mean(self.normal_ar(vec))
         sigs=[]
         # Conditioning
         # for mx_val
@@ -562,7 +568,7 @@ class ekoptim():
                      (0, -2): 6, (0, -1): 7, (0, 0): 8}
         state = state_map[tuple(sigs)]
         
-        return state, sigs, vec
+        return state, sigs, vec, mean_val
     
     def more_data(self, dfp):
         # Calculate the difference for each column
@@ -609,7 +615,7 @@ class ekoptim():
                 
                 alp = 1.0/np.log(np.log(np.sqrt((X0['high']+
                                                  X0['low'])/2)+1)+1)
-                state, signal, vec = self.calculate_signal_difrat(future_data,
+                state, signal, vec, mean_val = self.calculate_signal_difrat(future_data,
                                                              ypast_data[['high','low']].iloc[-1],
                                                              hh=self.fhh*alp,#0.01
                                                              hl=self.fhl*alp,#0.005
@@ -687,7 +693,7 @@ class ekoptim():
                 new_row = {
                     'name': df.name,
                     'past_data': x,
-                    'future_data': [future_data, vec],
+                    'future_data': [future_data, vec, mean_val],
                     'state': state,
                     'signal': signal,
                     # 'qpstraw': [qpast_data, past_gld, past_oil],
