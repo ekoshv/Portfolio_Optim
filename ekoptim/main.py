@@ -526,6 +526,47 @@ class ekoptim():
         state = state_map[tuple(sigs)]
         
         return state, sigs
+
+    def calculate_difrat(self, df, X0):
+        P = []
+        for columnx0 in X0.columns:
+            for columndf in df.columns:
+                P.append((df[columndf] - X0[columnx0]) / X0[columnx0])
+        vec = np.concatenate([series.to_numpy() for series in P])
+        vec_max = np.max(vec)
+        vec_min = np.min(vec)
+        return vec, vec_min, vec_max
+
+    def calculate_signal_difrat(self, df, X0,
+                                hh=0.01, hl=0.005, lh=-0.005, ll=-0.01):
+        
+        _, mn_val, mx_val = self.calculate_difrat(df, X0)        
+        sigs=[]
+        # Conditioning
+        # for mx_val
+        if mx_val>=hh:
+            sigs.append(2)
+        elif hl<=mx_val<hh:
+            sigs.append(1)
+        elif mx_val<hl:
+            sigs.append(0)
+        else:
+            sigs.append(0)
+        # for mn_val
+        if mn_val<=ll:
+            sigs.append(-2)
+        elif ll<mn_val<=lh:
+            sigs.append(-1)
+        elif lh<mn_val:
+            sigs.append(0)
+        else:
+            sigs.append(0)
+        
+        state_map = {(2, -2): 0, (2, -1): 1, (2, 0): 2, (1, -2): 3, (1, -1): 4, (1, 0): 5, 
+                     (0, -2): 6, (0, -1): 7, (0, 0): 8}
+        state = state_map[tuple(sigs)]
+        
+        return state, sigs
     
     def more_data(self, dfp):
         # Calculate the difference for each column
@@ -562,13 +603,14 @@ class ekoptim():
     
             for i in range(max(self.Dyp, self.Dqp)+self.SMAP[0]+1, len(df)-self.Dyf+1, self.Thi):
                 #---Signal/State---
-                ypast_data = df[['open','high','low','close']].iloc[i-self.Dyp:i]                
-                ypsdt_HH = ypast_data.max(axis=0)['high']
-                ypsdt_LL = ypast_data.min(axis=0)['low']
-                future_data = df[['open','high','low','close']].iloc[i:i+self.Dyf]
-                future_data_rescaled, fdmn, fdmx = self.normalize(future_data,
-                                                                  ypsdt_LL, ypsdt_HH, xrnd)
-                state, signal = self.calculate_signal(future_data_rescaled)            
+                # ypast_data = df[['open','high','low','close']].iloc[i-self.Dyp:i]                
+                # ypsdt_HH = ypast_data.max(axis=0)['high']
+                # ypsdt_LL = ypast_data.min(axis=0)['low']
+                future_data = df[['high','low']].iloc[i:i+self.Dyf]
+                # future_data_rescaled, fdmn, fdmx = self.normalize(future_data,
+                #                                                   ypsdt_LL, ypsdt_HH, xrnd)
+                state, signal = self.calculate_signal_difrat(future_data,
+                                                             df[['high','low']].iloc[i-1])
                 
                 # #---Data for Deep learning Preparation---
                 # qpast_data = df[['open','high','low','close',
@@ -641,7 +683,7 @@ class ekoptim():
                 new_row = {
                     'name': df.name,
                     'past_data': x,
-                    'future_data': future_data_rescaled,
+                    'future_data': future_data,
                     'state': state,
                     'signal': signal,
                     # 'qpstraw': [qpast_data, past_gld, past_oil],
