@@ -256,7 +256,7 @@ if __name__ == "__main__":
 #%%
     Dqp = 64 # past days for deep learning    
     Dyp = 16 # past days
-    Dyf = 4 # future days
+    Dyf = 32 # future days
     n_t = 2 # tile size    
     optimizerTV.Prepare_Data(symb = 'close', spn = 10,
                              tile_size=(n_t,int(n_t*Dqp/4)),xrnd=1e-3,#(n*Dqp->m=n*Dqp/4)

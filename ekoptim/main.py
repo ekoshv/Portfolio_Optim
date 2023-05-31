@@ -527,20 +527,16 @@ class ekoptim():
         
         return state, sigs
 
-    def calculate_difrat(self, df, X0):
-        P = []
-        for columnx0 in X0.columns:
-            for columndf in df.columns:
-                P.append((df[columndf] - X0[columnx0]) / X0[columnx0])
-        vec = np.concatenate([series.to_numpy() for series in P])
-        vec_max = np.max(vec)
-        vec_min = np.min(vec)
-        return vec, vec_min, vec_max
-
     def calculate_signal_difrat(self, df, X0,
                                 hh=0.01, hl=0.005, lh=-0.005, ll=-0.01):
         
-        vec , mn_val, mx_val = self.calculate_difrat(df, X0)        
+        P = []
+        for idx in X0.index:
+            for columndf in df.columns:
+                P.append((df[columndf] - X0[idx]) / X0[idx])
+        vec = np.concatenate([series.to_numpy() for series in P])
+        mx_val = np.max(vec)
+        mn_val = np.min(vec)       
         sigs=[]
         # Conditioning
         # for mx_val
@@ -610,7 +606,7 @@ class ekoptim():
                 # future_data_rescaled, fdmn, fdmx = self.normalize(future_data,
                 #                                                   ypsdt_LL, ypsdt_HH, xrnd)
                 state, signal, vec = self.calculate_signal_difrat(future_data,
-                                                             ypast_data[['high','low']].tail(1))
+                                                             ypast_data[['high','low']].iloc[-1])
                 
                 # #---Data for Deep learning Preparation---
                 # qpast_data = df[['open','high','low','close',
