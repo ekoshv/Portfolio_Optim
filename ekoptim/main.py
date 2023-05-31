@@ -605,12 +605,16 @@ class ekoptim():
                 future_data = df[['high','low']].iloc[i:i+self.Dyf]
                 # future_data_rescaled, fdmn, fdmx = self.normalize(future_data,
                 #                                                   ypsdt_LL, ypsdt_HH, xrnd)
+                X0 = ypast_data[['high','low']].iloc[-1]
+                
+                alp = 1.0/np.log(np.log(np.sqrt((X0['high']+
+                                                 X0['low'])/2)+1)+1)
                 state, signal, vec = self.calculate_signal_difrat(future_data,
                                                              ypast_data[['high','low']].iloc[-1],
-                                                             hh=self.fhh,#0.01
-                                                             hl=self.fhl,#0.005
-                                                             lh=self.flh,#-0.005
-                                                             ll=self.fll)#-0.01
+                                                             hh=self.fhh*alp,#0.01
+                                                             hl=self.fhl*alp,#0.005
+                                                             lh=self.flh*alp,#-0.005
+                                                             ll=self.fll*alp)#-0.01
                 
                 # #---Data for Deep learning Preparation---
                 # qpast_data = df[['open','high','low','close',
