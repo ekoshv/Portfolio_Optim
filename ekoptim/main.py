@@ -1135,10 +1135,11 @@ class ekoptim():
             xin = [np.expand_dims(xi, axis=(0, -1)) for xi in x]
             
             # Use the trained neural network model to predict the future data, X2, X3
-            y_pred = np.array(self.nnmodel.predict(xin[0:self.num_inps]))
+            y_pred = np.array(self.nnmodel.predict([xin[i] for i in self.inps_select]))
             y_pred = y_pred.squeeze()
-            y_pred = [0 if x<1e-3 else round(100*x)/100 for x in y_pred] 
-            return {i: value for i, value in enumerate(y_pred)}
+            # y_pred = [0 if x<1e-3 else round(100*x)/100 for x in y_pred] 
+            # return {i: value for i, value in enumerate(y_pred)}
+            return y_pred
         
         except Exception as e:
             print(f"An error occurred in Prediction Process: {e}")
