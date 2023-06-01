@@ -838,7 +838,7 @@ class ekoptim():
     def create_modelX(self, filters=128):
         inputs = []
         outputs = []
-        for i in range(0,self.num_inps):
+        for i in range(0,len(self.mz)):
             inpu , outp = self.create_model(self.mz[i], self.nz[i], filters = filters)
             inputs.append(inpu)
             outputs.append(outp)
