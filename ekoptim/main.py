@@ -543,7 +543,7 @@ class ekoptim():
         vec = np.concatenate([series.to_numpy() for series in P])
         mx_val = np.max(vec)
         mn_val = np.min(vec)
-        mean_val = np.mean(self.normal_ar(vec))
+        mean_val = 2*np.mean(self.normal_ar(vec))-1
         sigs=[]
         # Conditioning
         # for mx_val
