@@ -256,9 +256,9 @@ if __name__ == "__main__":
 #%%
     Dqp = 64 # past days for deep learning    
     Dyp = 16 # past days
-    Dyf = 8 # future days
+    Dyf = 32 # future days
     n_t = 2 # tile size
-    xhh = 0.1
+    xhh = 0.07
     xhl = 0.4*xhh    
     xlh = -xhl
     xll = -xhh
@@ -269,9 +269,9 @@ if __name__ == "__main__":
                              hl=xhl,#
                              lh=xlh,#
                              ll=xll) #None
-    alphax = optimizerTV.HNrates[-2]
+    alphax = optimizerTV.HNrates[0]
     cetax = optimizerTV.selected_rates
-    optimizerTV.draw_states(cetax[-2])
+    optimizerTV.draw_states(cetax[0])
 #%%    
     # Put the data you need in a dictionary
     data = {
