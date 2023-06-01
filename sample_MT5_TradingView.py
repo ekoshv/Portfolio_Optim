@@ -258,20 +258,20 @@ if __name__ == "__main__":
     Dyp = 16 # past days
     Dyf = 4 # future days
     n_t = 2 # tile size
-    xhh = 0.02
+    xhh = 0.1
     xhl = 0.4*xhh    
     xlh = -xhl
     xll = -xhh
     optimizerTV.Prepare_Data(tile_size=(n_t,int(n_t*Dqp/4)),xrnd=1e-3,#(n*Dqp->m=n*Dqp/4)
-                             Selected_symbols=selected_symb[-1],
+                             Selected_symbols=selected_symb[0],
                              Dqp=Dqp, Dyp=Dyp, Dyf=Dyf, Thi=1,
                              hh=xhh,#
                              hl=xhl,#
                              lh=xlh,#
                              ll=xll) #None
-    alphax = optimizerTV.HNrates[2]
+    alphax = optimizerTV.HNrates[-2]
     cetax = optimizerTV.selected_rates
-    optimizerTV.draw_states(cetax[2])
+    optimizerTV.draw_states(cetax[-2])
 #%%    
     # Put the data you need in a dictionary
     data = {
