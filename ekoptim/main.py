@@ -838,7 +838,7 @@ class ekoptim():
     def create_modelX(self, filters=128):
         inputs = []
         outputs = []
-        for i in range(0,len(self.mz)):
+        for i in range(0,len(self.inps_select)):
             inpu , outp = self.create_model(self.mz[i], self.nz[i], filters = filters)
             inputs.append(inpu)
             outputs.append(outp)
@@ -903,7 +903,8 @@ class ekoptim():
         if k_n is not None:
             self.k_n = k_n
         # Define the neural network
-        
+        self.mz = []
+        self.nz = []
         for i in self.inps_select:
             self.mz.append(self.HNrates[0][0]['past_data'][i].shape[0])
             self.nz.append(self.HNrates[0][0]['past_data'][i].shape[1])
