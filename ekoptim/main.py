@@ -565,7 +565,8 @@ class ekoptim():
         else:
             sigs.append(0)
         
-        state_map = {(2, -2): 0, (2, -1): 1, (2, 0): 2, (1, -2): 3, (1, -1): 4, (1, 0): 5, 
+        state_map = {(2, -2): 0, (2, -1): 1, (2, 0): 2,
+                     (1, -2): 3, (1, -1): 4, (1, 0): 5, 
                      (0, -2): 6, (0, -1): 7, (0, 0): 8}
         state = state_map[tuple(sigs)]
         
@@ -853,14 +854,29 @@ class ekoptim():
 
         x = tf.keras.layers.Dense(1024, activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.Dropout(0.3)(x)
+        xe = tf.keras.layers.Dropout(0.3)(x)
 
-        x = tf.keras.layers.Dense(5*self.Dyf, activation="relu")(x)
-        x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.Dropout(0.3)(x)
-        
-        final_output = tf.keras.layers.Dense(9, activation='softmax')(x)
-        model = Model(inputs = inputs, outputs=final_output)
+        x1 = tf.keras.layers.Dense(5*self.Dyf, activation="relu")(xe)
+        x1 = tf.keras.layers.BatchNormalization()(x1)
+        x1 = tf.keras.layers.Dropout(0.3)(x1)
+        # -- Output 1
+        state_output = tf.keras.layers.Dense(9,
+                                             name='state_output',
+                                             activation="softmax")(x1)
+        # -- Output 2
+        x2 = tf.keras.layers.Dense(1024, activation="relu")(xe)
+        x2 = tf.keras.layers.BatchNormalization()(x2)
+        x2 = tf.keras.layers.Dropout(0.3)(x2)
+
+        x2 = tf.keras.layers.Dense(5*self.Dyf, activation="relu")(x2)
+        x2 = tf.keras.layers.BatchNormalization()(x2)
+        x2 = tf.keras.layers.Dropout(0.3)(x2)
+
+        trend_output = tf.keras.layers.Dense(1,
+                                             name='trend_output',
+                                             activation="tanh")(x2)
+        # -- Model
+        model = Model(inputs = inputs, outputs=[state_output, trend_output])
         return model#
 
     def custom_loss(self, y_true, y_pred, num_classes=9, average='macro', name="custom_loss"):
@@ -919,11 +935,12 @@ class ekoptim():
         # Compile the model with mean squared error loss
         opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         model.compile(optimizer=opt,
-               loss=self.custom_loss,
-               metrics=['accuracy',self.multiclass_f1,'categorical_accuracy',
+               loss={'state_output':self.custom_loss, 'trend_output':'mse'},
+               metrics={'state_output':['accuracy',self.multiclass_f1,'categorical_accuracy',
                         tfa.metrics.F1Score(num_classes=9, average='macro'),
                         tf.keras.losses.CategoricalCrossentropy(from_logits=False),
-                        self.multiclass_mcc])
+                        self.multiclass_mcc],
+                        'trend_output':tf.keras.metrics.RootMeanSquaredError()})
         #tfa.metrics.F1Score(num_classes=9, average='macro')
         #model.compile(optimizer=opt, loss='mape')
    
@@ -944,7 +961,9 @@ class ekoptim():
         
         # X0 = np.expand_dims(X0, axis=-1)
         
-        y = np.array([d['state'] for lst in self.HNrates for d in lst])
+        y_state = np.array([d['state'] for lst in self.HNrates for d in lst])
+        y_trend = np.array([d['trend'] for lst in self.HNrates for d in lst])
+        #y = y_state, y_trend
 
         train_indices, test_indices = next(iter(ShuffleSplit(n_splits=1, test_size=0.33).split(X[0])))
         X_train = []
@@ -953,7 +972,8 @@ class ekoptim():
             X_tr, X_ts = xi[train_indices], xi[test_indices]
             X_train.append(X_tr)
             X_test.append(X_ts)
-        y_train, y_test = y[train_indices], y[test_indices]
+        y_state_train, y_state_test = y_state[train_indices], y_state[test_indices]
+        y_trend_train, y_trend_test = y_trend[train_indices], y_trend[test_indices]
  
         self.k_n=5
         if k_n is not None:
@@ -964,34 +984,36 @@ class ekoptim():
             
             # Fit and resample the training data for each dataset
             X_train_resampled = []
-            X_trsmpl, y_train_resampled = smote.fit_resample(X_train[0].reshape(X_train[0].shape[0], -1), y_train)
+            X_trsmpl, y_state_train_resampled = smote.fit_resample(X_train[0].reshape(X_train[0].shape[0], -1), y_state_train)
+            _,        y_trend_train_resampled = smote.fit_resample(X_train[0].reshape(X_train[0].shape[0], -1), y_trend_train)
             X_train_resampled.append(X_trsmpl)
             X_train[0] = X_train_resampled[0].reshape((-1,) + X_train[0].shape[1:])
             for xitr in X_train:
-                X_trsmpl, _ = smote.fit_resample(xitr.reshape(xitr.shape[0], -1), y_train)
+                X_trsmpl, _ = smote.fit_resample(xitr.reshape(xitr.shape[0], -1), y_state_train)
                 X_train_resampled.append(X_trsmpl)
                 # Reshape the resampled data back to its original shape
                 xitr = X_train_resampled[-1].reshape((-1,) + xitr.shape[1:])
-            y_train = y_train_resampled.reshape((-1,) + y_train.shape[1:])
+            y_state_train = y_state_train_resampled.reshape((-1,) + y_state_train.shape[1:])
+            y_trend_train = y_trend_train_resampled.reshape((-1,) + y_trend_train.shape[1:])
 
         # Create a label encoder for mapping the class labels
         label_encoder = LabelEncoder()
-        unique_labels = np.unique(y_train)
+        unique_labels = np.unique(y_state_train)
         encoded_labels = label_encoder.fit_transform(unique_labels).astype(np.int32)
         
         # Fit the label encoder on the training labels and transform both train and test labels
-        y_train_encoded = label_encoder.transform(y_train)
-        y_test_encoded = label_encoder.transform(y_test)
+        y_state_train_encoded = label_encoder.transform(y_state_train)
+        y_state_test_encoded  = label_encoder.transform(y_state_test)
         
         # Get the number of unique classes
         num_classes = len(unique_labels)
         
         # Convert the encoded class labels to one-hot encoding
-        y_train_one_hot = tf.keras.utils.to_categorical(y_train_encoded, num_classes=num_classes)
-        y_test_one_hot = tf.keras.utils.to_categorical(y_test_encoded, num_classes=num_classes)
+        y_state_train_one_hot = tf.keras.utils.to_categorical(y_state_train_encoded, num_classes=num_classes)
+        y_state_test_one_hot = tf.keras.utils.to_categorical(y_state_test_encoded, num_classes=num_classes)
         
         # Compute the class weights
-        class_weights = class_weight.compute_class_weight('balanced', classes=unique_labels, y=y_train)
+        class_weights = class_weight.compute_class_weight('balanced', classes=unique_labels, y=y_state_train)
         class_weight_dict = dict(zip(encoded_labels, class_weights))
         self.class_weight_dict = class_weight_dict
         print(f"The class weights: {class_weight_dict}")
@@ -1003,10 +1025,10 @@ class ekoptim():
             model.load_weights(filepath)
         #
         model.fit(X_train,
-                  y_train_one_hot, epochs=epochs, batch_size=batch_size,
+                  (y_state_train_one_hot, y_trend_train), epochs=epochs, batch_size=batch_size,
                   shuffle=True,
                   validation_data=(X_test,
-                                   y_test_one_hot),
+                                   (y_state_test_one_hot, y_trend_test)),
                   callbacks=[tensorboard_callback, checkpoint_callback],
                   class_weight=class_weight_dict)
         #validation_split=0.33,
@@ -1015,7 +1037,7 @@ class ekoptim():
         
         # Evaluate the model on the test set
         score = model.evaluate(X_test,
-                               y_test_one_hot)
+                               (y_state_test_one_hot, y_trend_test))
         #---
         print(score)
         
