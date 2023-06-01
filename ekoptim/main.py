@@ -1024,12 +1024,15 @@ class ekoptim():
         if(load_train):
             model.load_weights(filepath)
         #
+        # Calculate sample weights based on class weights
+        sample_weights = np.array([class_weight_dict[label] for label in y_state_train_encoded])
         model.fit(X_train,
                   (y_state_train_one_hot, y_trend_train), epochs=epochs, batch_size=batch_size,
                   shuffle=True,
                   validation_data=(X_test,
                                    (y_state_test_one_hot, y_trend_test)),
-                  callbacks=[tensorboard_callback, checkpoint_callback])
+                  callbacks=[tensorboard_callback, checkpoint_callback],
+                  sample_weight=sample_weights)
         #class_weight=class_weight_dict
         #validation_split=0.33,
         # Load the best model weights  
