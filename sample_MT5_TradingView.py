@@ -254,7 +254,7 @@ if __name__ == "__main__":
     optimizerTV.frontPlot(optimized_weights_TV, save=False)
     # shut down connection to the MetaTrader 5 terminal
 #%%
-    Dqp = 64 # past days for deep learning    
+    Dqp = 32 # past days for deep learning    
     Dyp = 16 # past days
     Dyf = 32 # future days
     n_t = 2 # tile size
@@ -263,13 +263,13 @@ if __name__ == "__main__":
     xlh = -xhl
     xll = -xhh
     optimizerTV.Prepare_Data(tile_size=(n_t,int(n_t*Dqp/4)),xrnd=1e-3,#(n*Dqp->m=n*Dqp/4)
-                             Selected_symbols=selected_symb[0],
+                             Selected_symbols=selected_symb,
                              Dqp=Dqp, Dyp=Dyp, Dyf=Dyf, Thi=1,
                              hh=xhh,#
                              hl=xhl,#
                              lh=xlh,#
                              ll=xll) #None
-    alphax = optimizerTV.HNrates[0]
+    alphax = optimizerTV.HNrates[0][10]
     cetax = optimizerTV.selected_rates
     optimizerTV.draw_states(cetax[0])
 #%%    

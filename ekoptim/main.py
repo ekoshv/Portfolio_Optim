@@ -890,11 +890,11 @@ class ekoptim():
         
         return combined_loss
     
-    def NNmake(self, model=None, num_inps = 1,
+    def NNmake(self, model=None, inps_select = [0,1],
                learning_rate=0.001, epochs=100, batch_size=32, k_n=None,
                f1_method = 'micro', f1_w = 'False', mcc_w = False, filters = 128,
                load_train=False):
-        self.num_inps = num_inps
+        self.inps_select = inps_select
         self.f1_method = f1_method
         self.f1_w = f1_w
         self.mcc_w = mcc_w
@@ -904,7 +904,7 @@ class ekoptim():
             self.k_n = k_n
         # Define the neural network
         
-        for i in range(0,self.num_inps):
+        for i in self.inps_select:
             self.mz.append(self.HNrates[0][0]['past_data'][i].shape[0])
             self.nz.append(self.HNrates[0][0]['past_data'][i].shape[1])
             
@@ -936,9 +936,9 @@ class ekoptim():
    
         # Train the model on the data in new_rates_lists
         X = []
-        for i in range(0,self.num_inps):
+        for i in self.inps_select:
             X.append(np.array([d['past_data'][i] for lst in self.HNrates for d in lst]))
-            X[i] = np.expand_dims(X[i], axis=-1)
+            X[-1] = np.expand_dims(X[-1], axis=-1)
         # X0 = np.array([d['past_data'][0] for lst in self.HNrates for d in lst])
         
         # X0 = np.expand_dims(X0, axis=-1)
@@ -948,8 +948,8 @@ class ekoptim():
         train_indices, test_indices = next(iter(ShuffleSplit(n_splits=1, test_size=0.33).split(X[0])))
         X_train = []
         X_test = []
-        for i in range(0,self.num_inps):
-            X_tr, X_ts = X[i][train_indices], X[i][test_indices]
+        for xi in X:
+            X_tr, X_ts = xi[train_indices], xi[test_indices]
             X_train.append(X_tr)
             X_test.append(X_ts)
         y_train, y_test = y[train_indices], y[test_indices]
@@ -966,11 +966,11 @@ class ekoptim():
             X_trsmpl, y_train_resampled = smote.fit_resample(X_train[0].reshape(X_train[0].shape[0], -1), y_train)
             X_train_resampled.append(X_trsmpl)
             X_train[0] = X_train_resampled[0].reshape((-1,) + X_train[0].shape[1:])
-            for i in range(1,self.num_inps):
-                X_trsmpl, _ = smote.fit_resample(X_train[i].reshape(X_train[i].shape[0], -1), y_train)
+            for xitr in X_train:
+                X_trsmpl, _ = smote.fit_resample(xitr.reshape(xitr.shape[0], -1), y_train)
                 X_train_resampled.append(X_trsmpl)
                 # Reshape the resampled data back to its original shape
-                X_train[i] = X_train_resampled[i].reshape((-1,) + X_train[i].shape[1:])
+                xitr = X_train_resampled[-1].reshape((-1,) + xitr.shape[1:])
             y_train = y_train_resampled.reshape((-1,) + y_train.shape[1:])
 
         # Create a label encoder for mapping the class labels
