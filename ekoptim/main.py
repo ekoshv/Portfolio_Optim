@@ -1029,8 +1029,8 @@ class ekoptim():
                   shuffle=True,
                   validation_data=(X_test,
                                    (y_state_test_one_hot, y_trend_test)),
-                  callbacks=[tensorboard_callback, checkpoint_callback],
-                  class_weight=class_weight_dict)
+                  callbacks=[tensorboard_callback, checkpoint_callback])
+        #class_weight=class_weight_dict
         #validation_split=0.33,
         # Load the best model weights  
         model.load_weights(filepath)
