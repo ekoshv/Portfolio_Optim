@@ -30,6 +30,7 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import talib
 #from numba import jit
+from multiprocessing import Pool
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
@@ -710,14 +711,29 @@ class ekoptim():
             traceback.print_exc()
             return None
 
+    # def Hrz_Nrm(self, rates, smb, spn, tile_size, xrnd=0):
+    #     # Apply the moving horizon to each dataframe in rates_lists
+    #     #dfs, spn, tile_size, smb, xrnd= 0
+    #     return [self.apply_moving_horizon_norm(dfs=[df,rates[-2],rates[-1]],
+    #                                            smb=smb, spn=spn,
+    #                                            tile_size=tile_size,
+    #                                            xrnd=xrnd) for 
+    #             df in tqdm(rates, desc='Processing DataFrames')]
+
     def Hrz_Nrm(self, rates, smb, spn, tile_size, xrnd=0):
-        # Apply the moving horizon to each dataframe in rates_lists
-        #dfs, spn, tile_size, smb, xrnd= 0
-        return [self.apply_moving_horizon_norm(dfs=[df,rates[-2],rates[-1]],
-                                               smb=smb, spn=spn,
-                                               tile_size=tile_size,
-                                               xrnd=xrnd) for 
-                df in tqdm(rates, desc='Processing DataFrames')]
+        # Define a helper function that will be mapped to each dataframe
+        def helper(df):
+            return self.apply_moving_horizon_norm(dfs=[df,rates[-2],rates[-1]],
+                                                  smb=smb, spn=spn,
+                                                  tile_size=tile_size,
+                                                  xrnd=xrnd)
+        
+        # Create a multiprocessing Pool
+        with Pool() as p:
+            # Use the Pool's map method to apply the helper function to each dataframe
+            results = list(tqdm(p.imap(helper, rates), total=len(rates), desc='Processing DataFrames'))
+        
+        return results
 
     def Prepare_Data(self, symb='close', spn=1, tile_size=(2,2), xrnd=0,
                      Selected_symbols=None,

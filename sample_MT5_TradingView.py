@@ -256,7 +256,7 @@ if __name__ == "__main__":
 #%%
     Dqp = 64 # past days for deep learning    
     Dyp = 16 # past days
-    Dyf = 4 # future days
+    Dyf = 8 # future days
     n_t = 2 # tile size
     xhh = 0.1
     xhl = 0.4*xhh    
