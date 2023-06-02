@@ -30,7 +30,7 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import talib
 #from numba import jit
-from pathos.multiprocessing import ProcessingPool as Pool
+#from pathos.multiprocessing import ProcessingPool as Pool
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
