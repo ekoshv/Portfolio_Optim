@@ -592,18 +592,18 @@ class ekoptim():
         dfp['monthofyear'] = dfp.index.month/12
         return dfp
     
-    def apply_moving_horizon_norm(self, dfs, spn, tile_size, smb, xrnd= 0):
+    def apply_moving_horizon_norm(self, dfs, spn, tile_size, xrnd= 0):
         try:
             df = dfs[0]
             gld = dfs[1]
             oil = dfs[2]
             new_df = []
-            if isinstance(smb, str):
-                smb_col = smb
-            elif isinstance(smb, int):
-                smb_col = df.columns[smb]
-            else:
-                print("smb should be either a string or an integer.")
+            # if isinstance(smb, str):
+            #     smb_col = smb
+            # elif isinstance(smb, int):
+            #     smb_col = df.columns[smb]
+            # else:
+            #     print("smb should be either a string or an integer.")
     
             for i in range(max(self.Dyp, self.Dqp)+self.SMAP[0]+1, len(df)-self.Dyf+1, self.Thi):
                 #---Signal/State---
@@ -1055,17 +1055,17 @@ class ekoptim():
         model.load_weights(filepath)
         self.nnmodel = model
 
-    def predict_next(self, idf, smb):
+    def predict_next(self, idf):
         rate = idf[0]
         gld = idf[1]
         oil = idf[2]
         try:
-            if isinstance(smb, str):
-                smb_col = smb
-            elif isinstance(smb, int):
-                smb_col = rate.columns[smb]
-            else:
-                raise ValueError("smb should be either a string or an integer.")
+            # if isinstance(smb, str):
+            #     smb_col = smb
+            # elif isinstance(smb, int):
+            #     smb_col = rate.columns[smb]
+            # else:
+            #     raise ValueError("smb should be either a string or an integer.")
             # Get the last Dyp rows of full_rates for the given symbol
             past_data = rate[['open','high','low','close',
                               'GSMA','MSMA','SSMA', 
@@ -1146,8 +1146,16 @@ class ekoptim():
             traceback.print_exc()
             return None
     
-    def predict_all(self, smb):
+    def predict_all(self, inps_select = [0,1], filters=128):
         # Loop through all dataframes in full_rates
+        self.inps_select=inps_select
+        self.num_filters=filters
+        # Define the neural network
+        self.mz = []
+        self.nz = []
+        for i in self.inps_select:
+            self.mz.append(self.HNrates[0][0]['past_data'][i].shape[0])
+            self.nz.append(self.HNrates[0][0]['past_data'][i].shape[1])
         self.Predicted_Rates = []
         for df in self.selected_rates:
             df = self.more_data(df)
@@ -1155,7 +1163,7 @@ class ekoptim():
             oil = self.more_data(self.full_rates[-1])
             # Predict the next values for the given symbol using the predict_next method
             idf = [df, gol, oil]
-            y_pred = self.predict_next(idf, smb)
+            y_pred = self.predict_next(idf)
             self.Predicted_Rates.append(y_pred)
             #print(self.Predicted_Rates)
     

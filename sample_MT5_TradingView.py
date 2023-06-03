@@ -296,6 +296,8 @@ if __name__ == "__main__":
                        k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=32,
                        load_train=False)
 #%%
+    optimizerTV.inps_select=[0,1]
+    optimizerTV.num_filters=128    
     optimizerTV.load_model_fit()
     optimizerTV.predict_all('close')
     betax = optimizerTV.Predicted_Rates
