@@ -714,11 +714,10 @@ class ekoptim():
             traceback.print_exc()
             return None
 
-    def Hrz_Nrm(self, rates, smb, spn, tile_size, xrnd=0):
+    def Hrz_Nrm(self, rates, spn, tile_size, xrnd=0):
         # Apply the moving horizon to each dataframe in rates_lists
         #dfs, spn, tile_size, smb, xrnd= 0
-        return [self.apply_moving_horizon_norm(dfs=[df,rates[-2],rates[-1]],
-                                                smb=smb, spn=spn,
+        return [self.apply_moving_horizon_norm(dfs=[df,rates[-2],rates[-1]], spn=spn,
                                                 tile_size=tile_size,
                                                 xrnd=xrnd) for 
                 df in tqdm(rates, desc='Processing DataFrames')]
