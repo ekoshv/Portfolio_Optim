@@ -274,7 +274,7 @@ if __name__ == "__main__":
         dill.dump(data, f)
 #%%
     Dqp = 32 # past days for deep learning    
-    Dyp = 16 # past days
+    Dyp = 16 # past days (not used)
     Dyf = 32 # future days
     n_t = 2 # tile size
     xhh = 0.07
@@ -295,11 +295,9 @@ if __name__ == "__main__":
     optimizerTV.NNmake(inps_select = [0,1], learning_rate=0.001, epochs=3, batch_size=32,
                        k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=32,
                        load_train=False)
-#%%
-    optimizerTV.inps_select=[0,1]
-    optimizerTV.num_filters=128    
+#%%  
     optimizerTV.load_model_fit()
-    optimizerTV.predict_all('close')
+    optimizerTV.predict_all(inps_select = [0,1], filters=32)
     betax = optimizerTV.Predicted_Rates
 #%%
     mt5.shutdown()
