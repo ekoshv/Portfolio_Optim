@@ -792,9 +792,8 @@ class ekoptim():
             df.insert(close_idx + 7, 'ROCG', df.pop('ROCG'))
             
             df.name = snam
-        #rates, smb, spn, tile_size, xrnd=0
-        self.HNrates = self.Hrz_Nrm(rates=srates,
-                                    smb=symb, spn=spn,
+        #rates, spn, tile_size, xrnd=0
+        self.HNrates = self.Hrz_Nrm(rates=srates, spn=spn,
                                     tile_size=tile_size,
                                     xrnd=xrnd)            
         # self.mz = self.HNrates[0][0]['past_data'][0].shape[0]
