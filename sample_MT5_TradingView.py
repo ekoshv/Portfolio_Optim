@@ -293,7 +293,7 @@ if __name__ == "__main__":
     optimizerTV.draw_states(cetax[0])
 #%%
     optimizerTV.NNmake(inps_select = [0], learning_rate=0.001, epochs=300, batch_size=32,
-                       k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=32,
+                       k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=128,
                        load_train=False)
 #%%  
     optimizerTV.load_model_fit()

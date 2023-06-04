@@ -55,6 +55,7 @@ class ekoptim():
             self.toler = toler  # Set tolerance
             self.mz = []
             self.nz = []
+            self.test_predata_signal = False
     
             # Define constraints
             self.bounds = [(0, 1) for i in range(self.n)]  # Set bounds for weights
@@ -626,86 +627,100 @@ class ekoptim():
                                                              ll=self.fll*alp)#-0.01
                 
                 #---Data for Deep learning Preparation---
-                qpast_data = df[['open','high','low','close',
-                                'GSMA','MSMA','SSMA',
-                                'ROCS', 'ROCM', 'ROCG']].iloc[i-self.Dqp:i]
-                qpsdt_HH = qpast_data[['open','high','low','close']].max(axis=0)['high']
-                qpsdt_LL = qpast_data[['open','high','low','close']].min(axis=0)['low']
-                qpast_data_normalized, mindf, maxdf = self.normalize(qpast_data[['open',
-                                                                                'high',
-                                                                                'low',
-                                                                                'close']],
-                                                                    qpsdt_LL, qpsdt_HH,xrnd)
-                qpst_dt_tiled = np.tile(qpast_data_normalized, tile_size)
-                qpst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, qpst_dt_tiled.shape)
-                # qpast_data_normalized_w, lng = self.decompose_and_flatten(qpast_data_normalized,
-                #                                                           'db1')
-                # qpst_dt_w_tiled = np.tile(qpast_data_normalized_w, (2,2))
-                
-                # Extract data from gold and oil using index of qpast_data and fill missing rows with NaN
-                #--- Gold ---
-                past_gld = gld[['open','high','low','close',
-                                'GSMA','MSMA','SSMA',
-                                'ROCS', 'ROCM', 'ROCG']].reindex(qpast_data.index)
-                past_gld_HH = past_gld[['open','high','low','close']].max(axis=0)['high']
-                past_gld_LL = past_gld[['open','high','low','close']].min(axis=0)['low']
-                past_gld_normalized, mindf, maxdf = self.normalize(past_gld[['open',
-                                                                                'high',
-                                                                                'low',
-                                                                                'close']],
-                                                                    past_gld_LL, past_gld_HH,xrnd)
-                past_gld_normalized = np.nan_to_num(past_gld_normalized)
-                past_gld_tiled = np.tile(past_gld_normalized, tile_size)
-                past_gld_tiled += np.random.uniform(-xrnd/5, xrnd/5, past_gld_tiled.shape)
-                #--- Oil ---
-                past_oil = oil[['open','high','low','close',
-                                'GSMA','MSMA','SSMA',
-                                'ROCS', 'ROCM', 'ROCG']].reindex(qpast_data.index)
-                past_oil_HH = past_oil[['open','high','low','close']].max(axis=0)['high']
-                past_oil_LL = past_oil[['open','high','low','close']].min(axis=0)['low']
-                past_oil_normalized, mindf, maxdf = self.normalize(past_oil[['open',
-                                                                                'high',
-                                                                                'low',
-                                                                                'close']],
-                                                                    past_oil_LL, past_oil_HH,xrnd)
-                past_oil_normalized = np.nan_to_num(past_oil_normalized)
-                past_oil_tiled = np.tile(past_oil_normalized, tile_size)
-                past_oil_tiled += np.random.uniform(-xrnd/5, xrnd/5, past_oil_tiled.shape)                
-                
-                qpast_data = self.more_data(qpast_data)
-                past_gld = self.more_data(past_gld)
-                past_oil = self.more_data(past_oil)
-                
-                #--- Gathering input Data ---
                 x = []
-                #--- past_data
-                x.append(qpst_dt_tiled)
-                x.append(qpast_data.loc[:, 'ROCS':].fillna(0))
-                x[-1] = self.norm_date(x[-1])
-                # x.append(qpst_dt_w_tiled)
-                #--- Gold
-                x.append(past_gld_tiled)
-                x.append(past_gld.loc[:, 'ROCS':].fillna(0))
-                x[-1] = self.norm_date(x[-1])
-                #--- Oil
-                x.append(past_oil_tiled)
-                x.append(past_oil.loc[:, 'ROCS':].fillna(0))#5
-                x[-1] = self.norm_date(x[-1])
+                if(not self.test_predata_signal):
+                    qpast_data = df[['open','high','low','close',
+                                    'GSMA','MSMA','SSMA',
+                                    'ROCS', 'ROCM', 'ROCG']].iloc[i-self.Dqp:i]
+                    qpsdt_HH = qpast_data[['open','high','low','close']].max(axis=0)['high']
+                    qpsdt_LL = qpast_data[['open','high','low','close']].min(axis=0)['low']
+                    qpast_data_normalized, mindf, maxdf = self.normalize(qpast_data[['open',
+                                                                                    'high',
+                                                                                    'low',
+                                                                                    'close']],
+                                                                        qpsdt_LL, qpsdt_HH,xrnd)
+                    qpst_dt_tiled = np.tile(qpast_data_normalized, tile_size)
+                    qpst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, qpst_dt_tiled.shape)
+                    # qpast_data_normalized_w, lng = self.decompose_and_flatten(qpast_data_normalized,
+                    #                                                           'db1')
+                    # qpst_dt_w_tiled = np.tile(qpast_data_normalized_w, (2,2))
+                    
+                    # Extract data from gold and oil using index of qpast_data and fill missing rows with NaN
+                    #--- Gold ---
+                    past_gld = gld[['open','high','low','close',
+                                    'GSMA','MSMA','SSMA',
+                                    'ROCS', 'ROCM', 'ROCG']].reindex(qpast_data.index)
+                    past_gld_HH = past_gld[['open','high','low','close']].max(axis=0)['high']
+                    past_gld_LL = past_gld[['open','high','low','close']].min(axis=0)['low']
+                    past_gld_normalized, mindf, maxdf = self.normalize(past_gld[['open',
+                                                                                    'high',
+                                                                                    'low',
+                                                                                    'close']],
+                                                                        past_gld_LL, past_gld_HH,xrnd)
+                    past_gld_normalized = np.nan_to_num(past_gld_normalized)
+                    past_gld_tiled = np.tile(past_gld_normalized, tile_size)
+                    past_gld_tiled += np.random.uniform(-xrnd/5, xrnd/5, past_gld_tiled.shape)
+                    #--- Oil ---
+                    past_oil = oil[['open','high','low','close',
+                                    'GSMA','MSMA','SSMA',
+                                    'ROCS', 'ROCM', 'ROCG']].reindex(qpast_data.index)
+                    past_oil_HH = past_oil[['open','high','low','close']].max(axis=0)['high']
+                    past_oil_LL = past_oil[['open','high','low','close']].min(axis=0)['low']
+                    past_oil_normalized, mindf, maxdf = self.normalize(past_oil[['open',
+                                                                                    'high',
+                                                                                    'low',
+                                                                                    'close']],
+                                                                        past_oil_LL, past_oil_HH,xrnd)
+                    past_oil_normalized = np.nan_to_num(past_oil_normalized)
+                    past_oil_tiled = np.tile(past_oil_normalized, tile_size)
+                    past_oil_tiled += np.random.uniform(-xrnd/5, xrnd/5, past_oil_tiled.shape)                
+                    
+                    qpast_data = self.more_data(qpast_data)
+                    past_gld = self.more_data(past_gld)
+                    past_oil = self.more_data(past_oil)
+                
+                    #--- Gathering input Data ---
+                    #--- past_data
+                    x.append(qpst_dt_tiled)
+                    x.append(qpast_data.loc[:, 'ROCS':].fillna(0))
+                    x[-1] = self.norm_date(x[-1])
+                    # x.append(qpst_dt_w_tiled)
+                    #--- Gold
+                    x.append(past_gld_tiled)
+                    x.append(past_gld.loc[:, 'ROCS':].fillna(0))
+                    x[-1] = self.norm_date(x[-1])
+                    #--- Oil
+                    x.append(past_oil_tiled)
+                    x.append(past_oil.loc[:, 'ROCS':].fillna(0))#5
+                    x[-1] = self.norm_date(x[-1])
                 
                 df.at[df.index[i-1], 'state'] = state
-                new_row = {
-                    'name': df.name,
-                    'past_data': x,
-                    'future_data': [future_data, vec],
-                    'state': state,
-                    'signal': signal,
-                    'trend': mean_val,
-                    'qpstraw': [qpast_data, past_gld, past_oil],
-                    'minmax': [[qpsdt_LL, qpsdt_HH],
-                                [past_gld_LL, past_gld_HH],
-                                [past_oil_LL, past_oil_HH]],
-                    'dati': df.index[i-1]
-                }
+                if(self.test_predata_signal):
+                    new_row = {
+                        'name': df.name,
+                        'past_data': x,
+                        'future_data': [future_data, vec],
+                        'state': state,
+                        'signal': signal,
+                        'trend': mean_val,
+                        'qpstraw': [],
+                        'minmax': [],
+                        'dati': df.index[i-1]
+                    }
+                else:
+                    new_row = {
+                        'name': df.name,
+                        'past_data': x,
+                        'future_data': [future_data, vec],
+                        'state': state,
+                        'signal': signal,
+                        'trend': mean_val,
+                        'qpstraw': [qpast_data, past_gld, past_oil],
+                        'minmax': [[qpsdt_LL, qpsdt_HH],
+                                    [past_gld_LL, past_gld_HH],
+                                    [past_oil_LL, past_oil_HH]],
+                        'dati': df.index[i-1]
+                    }
                 #print(new_row)
                 new_df.append(new_row)
             return new_df 
@@ -730,7 +745,8 @@ class ekoptim():
                      hh=0.01,#
                      hl=0.005,#
                      lh=-0.005,#
-                     ll=-0.01):#
+                     ll=-0.01,
+                     test=False):#
         print("Preparing Data...")
         self.spn = spn   # Wavelet Normalization
         self.Dqp = Dqp   # Number of past days in Deep Learning
@@ -743,6 +759,7 @@ class ekoptim():
         self.fhl=hl
         self.flh=lh
         self.fll=ll
+        self.test_predata_signal = test
         
         srates = []
         if Selected_symbols is None:
