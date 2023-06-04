@@ -275,10 +275,10 @@ if __name__ == "__main__":
 #%%
     Dqp = 8 # past days for deep learning    
     Dyp = 16 # past days (not used)
-    Dyf = 32 # future days
+    Dyf = 8 # future days
     n_t = 2 # tile size
-    xhh = 0.07 # Percentage Threshold
-    xhl = 0.4*xhh    
+    xhh = 0.1 # Percentage Threshold
+    xhl = 0.5*xhh    
     xlh = -xhl
     xll = -xhh
     optimizerTV.Prepare_Data(tile_size=(n_t,int(n_t*Dqp/4)),xrnd=1e-3,#(n*Dqp->m=n*Dqp/4)
@@ -292,7 +292,7 @@ if __name__ == "__main__":
     cetax = optimizerTV.selected_rates
     optimizerTV.draw_states(cetax[0])
 #%%
-    optimizerTV.NNmake(inps_select = [0,1], learning_rate=0.001, epochs=3, batch_size=32,
+    optimizerTV.NNmake(inps_select = [0], learning_rate=0.001, epochs=300, batch_size=32,
                        k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=32,
                        load_train=False)
 #%%  
