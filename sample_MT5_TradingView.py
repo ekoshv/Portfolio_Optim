@@ -275,10 +275,10 @@ if __name__ == "__main__":
 #%%
     Dqp = 8 # past days for deep learning    
     Dyp = 16 # past days (not used)
-    Dyf = 8 # future days
+    Dyf = 14 # future days
     n_t = 2 # tile size
-    xhh = 0.25 # Percentage Threshold
-    xhl = 0.5*xhh    
+    xhh = 0.15 # Percentage Threshold
+    xhl = 0.4*xhh    
     xlh = -xhl
     xll = -xhh
     optimizerTV.Prepare_Data(tile_size=(n_t,int(n_t*Dqp/4)),xrnd=1e-3,#(n*Dqp->m=n*Dqp/4)
