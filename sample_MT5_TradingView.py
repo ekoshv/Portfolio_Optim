@@ -277,17 +277,17 @@ if __name__ == "__main__":
     Dyp = 16 # past days (not used)
     Dyf = 8 # future days
     n_t = 2 # tile size
-    xhh = 0.1 # Percentage Threshold
+    xhh = 0.25 # Percentage Threshold
     xhl = 0.5*xhh    
     xlh = -xhl
     xll = -xhh
     optimizerTV.Prepare_Data(tile_size=(n_t,int(n_t*Dqp/4)),xrnd=1e-3,#(n*Dqp->m=n*Dqp/4)
-                             Selected_symbols=selected_symb,
+                             Selected_symbols=selected_symb[0:4],
                              Dqp=Dqp, Dyp=Dyp, Dyf=Dyf, Thi=1,
                              hh=xhh,#
                              hl=xhl,#
                              lh=xlh,#
-                             ll=xll) #None
+                             ll=xll, test=True) #None
     alphax = optimizerTV.HNrates[0][10]
     cetax = optimizerTV.selected_rates
     optimizerTV.draw_states(cetax[0])
