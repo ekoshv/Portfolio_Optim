@@ -641,9 +641,9 @@ class ekoptim():
                                                                         qpsdt_LL, qpsdt_HH,xrnd)
                     qpst_dt_tiled = np.tile(qpast_data_normalized, tile_size)
                     qpst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, qpst_dt_tiled.shape)
-                    # qpast_data_normalized_w, lng = self.decompose_and_flatten(qpast_data_normalized,
-                    #                                                           'db1')
-                    # qpst_dt_w_tiled = np.tile(qpast_data_normalized_w, (2,2))
+                    qpast_data_normalized_w, lng = self.decompose_and_flatten(qpast_data_normalized,
+                                                                              'db1')
+                    qpst_dt_w_tiled = np.tile(qpast_data_normalized_w, (2,2))
                     
                     # Extract data from gold and oil using index of qpast_data and fill missing rows with NaN
                     #--- Gold ---
@@ -681,10 +681,10 @@ class ekoptim():
                 
                     #--- Gathering input Data ---
                     #--- past_data
-                    x.append(qpst_dt_tiled)
-                    x.append(qpast_data.loc[:, 'ROCS':].fillna(0))
+                    x.append(qpst_dt_tiled)#0
+                    x.append(qpast_data.loc[:, 'ROCS':].fillna(0))#1
                     x[-1] = self.norm_date(x[-1])
-                    # x.append(qpst_dt_w_tiled)
+                    x.append(qpst_dt_w_tiled)#2
                     #--- Gold
                     x.append(past_gld_tiled)
                     x.append(past_gld.loc[:, 'ROCS':].fillna(0))
