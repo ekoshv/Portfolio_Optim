@@ -273,7 +273,7 @@ if __name__ == "__main__":
     with open(f'data_{date_time}.pkl', 'wb') as f:
         dill.dump(data, f)
 #%%
-    Dqp = 8 # past days for deep learning    
+    Dqp = 32 # past days for deep learning    
     Dyp = 16 # past days (not used)
     Dyf = 14 # future days
     n_t = 2 # tile size
