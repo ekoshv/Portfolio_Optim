@@ -1100,8 +1100,8 @@ class ekoptim():
                                                                            'close']],
                                                                 psdt_LL, psdt_HH)
             pst_dt_tiled = np.tile(past_data_normalized, self.tile_size)
-            # past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
-            # pst_dt_w_tiled = np.tile(past_data_normalized_w, (2,2))
+            past_data_normalized_w, lng = self.decompose_and_flatten(past_data_normalized,'db1')
+            pst_dt_w_tiled = np.tile(past_data_normalized_w, (2,2))
             #--- Gold ---
             past_gld_HH = past_gld[['open','high','low','close']].max(axis=0)['high']
             past_gld_LL = past_gld[['open','high','low','close']].min(axis=0)['low']
@@ -1137,7 +1137,7 @@ class ekoptim():
             x.append(pst_dt_tiled)
             x.append(past_data.loc[:, 'ROCS':].fillna(0))
             x[-1] = self.norm_date(x[-1])
-            # x.append(qpst_dt_w_tiled)
+            x.append(pst_dt_w_tiled)
             #--- Gold
             x.append(past_gld_tiled)
             x.append(past_gld.loc[:, 'ROCS':].fillna(0))
