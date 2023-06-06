@@ -56,6 +56,15 @@ class ekoptim():
             self.mz = []
             self.nz = []
             self.test_predata_signal = False
+            self.count_states = {0: 0,
+                                 1: 0,
+                                 2: 0,
+                                 3: 0,
+                                 4: 0,
+                                 5: 0,
+                                 6: 0,
+                                 7: 0,
+                                 8: 0}
     
             # Define constraints
             self.bounds = [(0, 1) for i in range(self.n)]  # Set bounds for weights
@@ -626,6 +635,7 @@ class ekoptim():
                                                              lh=self.flh*alp,#-0.005
                                                              ll=self.fll*alp)#-0.01
                 
+                self.count_states[state] +=1
                 #---Data for Deep learning Preparation---
                 x = []
                 if(not self.test_predata_signal):
