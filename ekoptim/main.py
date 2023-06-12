@@ -1224,7 +1224,7 @@ class ekoptim():
                                      marker=dict(color='blue', size=15, symbol='triangle-up'),
                                      name='Blue Flash Up'))
             fig.add_trace(go.Scatter(x=green_flash_dates,
-                                     y=df[df['state'] == 1]['high'],
+                                     y=df[(df['state'] == 1) | (df['state'] == 5)]['high'],
                                      mode='markers',
                                      marker=dict(color='green', size=10, symbol='triangle-up'),
                                      name='Green Flash Up'))
@@ -1236,7 +1236,7 @@ class ekoptim():
                                      marker=dict(color='purple', size=15, symbol='triangle-down'),
                                      name='Purple Flash Down'))
             fig.add_trace(go.Scatter(x=orange_flash_dates,
-                                     y=df[df['state'] == 3]['low'],
+                                     y=df[(df['state'] == 3) | (df['state'] == 7)]['low'],
                                      mode='markers',
                                      marker=dict(color='orange', size=10, symbol='triangle-down'),
                                      name='Orange Flash Down'))
