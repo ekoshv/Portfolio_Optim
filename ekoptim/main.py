@@ -625,9 +625,9 @@ class ekoptim():
                 #                                                   ypsdt_LL, ypsdt_HH, xrnd)
                 X0 = ypast_data[['high','low']].iloc[-1]
                 
-                # alp = 1.0/np.log(np.log(np.sqrt((X0['high']+
-                #                                  X0['low'])/2)+1)+1)
-                alp = 1.0
+                alp = 1.0/np.log(np.log(np.sqrt((X0['high']+
+                                                  X0['low']+1)/2)+1)+1)
+                # alp = 1.0
                 state, signal, vec, mean_val = self.calculate_signal_difrat(future_data,
                                                              X0,
                                                              hh=self.fhh*alp,#0.01

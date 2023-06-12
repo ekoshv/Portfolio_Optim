@@ -287,10 +287,10 @@ if __name__ == "__main__":
                              hh=xhh,#
                              hl=xhl,#
                              lh=xlh,#
-                             ll=xll, test=False) #None
-    alphax = optimizerTV.HNrates[5]
+                             ll=xll, test=True) #None
+    alphax = optimizerTV.HNrates[-2]
     cetax = optimizerTV.selected_rates
-    optimizerTV.draw_states(cetax[5])
+    optimizerTV.draw_states(cetax[-2])
 #%%
     optimizerTV.NNmake(inps_select = [0], learning_rate=0.001, epochs=300, batch_size=32,
                        k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=128,
