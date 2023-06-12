@@ -1197,9 +1197,9 @@ class ekoptim():
             pio.renderers.default = "browser"
             # Filter the DataFrame to get the dates where state == 2 or state == 6
             blue_flash_dates = df[df['state'] == 2].index
-            green_flash_dates = df[(df['state'] == 1 | df['state'] == 5)].index
+            green_flash_dates = df[(df['state'] == 1) | (df['state'] == 5)].index
             purple_flash_dates = df[df['state'] == 6].index
-            orange_flash_dates = df[(df['state'] == 3 | df['state'] == 7)].index
+            orange_flash_dates = df[(df['state'] == 3) | (df['state'] == 7)].index
             st_na = df.columns[-1]
             
             # Create a candlestick chart
