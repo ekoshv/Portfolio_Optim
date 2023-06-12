@@ -288,9 +288,12 @@ if __name__ == "__main__":
                              hl=xhl,#
                              lh=xlh,#
                              ll=xll, test=True) #None
-    alphax = optimizerTV.HNrates[-2]
+#%%
+    kappa = 5
+    alphax = optimizerTV.HNrates[kappa]
     cetax = optimizerTV.selected_rates
-    optimizerTV.draw_states(cetax[-2])
+    optimizerTV.draw_states(cetax[kappa])
+    bex = [x for x in alphax if x['dati'].date() == datetime.date(2020,7,21)]
 #%%
     optimizerTV.NNmake(inps_select = [0], learning_rate=0.001, epochs=300, batch_size=32,
                        k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=128,
