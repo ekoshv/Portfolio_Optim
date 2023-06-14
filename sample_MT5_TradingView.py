@@ -277,7 +277,7 @@ if __name__ == "__main__":
     Dyp = 16 # past days (not used)
     Dyf = 14 # future days
     n_t = 2 # tile size
-    xhh = 0.1 # Percentage Threshold
+    xhh = 0.15 # Percentage Threshold
     xhl = 0.53*xhh    
     xlh = -xhl
     xll = -xhh
@@ -289,11 +289,11 @@ if __name__ == "__main__":
                              lh=xlh,#
                              ll=xll, test=True) #None
 #%%
-    kappa = 5
+    kappa = -1
     alphax = optimizerTV.HNrates[kappa]
     cetax = optimizerTV.selected_rates
     optimizerTV.draw_states(cetax[kappa])
-    bex = [x for x in alphax if x['dati'].date() == datetime.date(2020,7,21)]
+    bex = [x for x in alphax if x['dati'].date() == datetime.date(2022,5,5)]
 #%%
     optimizerTV.NNmake(inps_select = [0], learning_rate=0.001, epochs=300, batch_size=32,
                        k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=128,
