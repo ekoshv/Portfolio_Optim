@@ -287,7 +287,7 @@ if __name__ == "__main__":
                              hh=xhh,#
                              hl=xhl,#
                              lh=xlh,#
-                             ll=xll, test=True) #None
+                             ll=xll, test=False) #None
 #%%
     kappa = -1
     alphax = optimizerTV.HNrates[kappa]
