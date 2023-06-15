@@ -295,7 +295,7 @@ if __name__ == "__main__":
     optimizerTV.draw_states(cetax[kappa])
     bex = [x for x in alphax if x['dati'].date() == datetime.date(2022,5,5)]
 #%%
-    optimizerTV.NNmake(inps_select = [0], learning_rate=0.001, epochs=300, batch_size=32,
+    optimizerTV.NNmake(inps_select = [0,1,2], learning_rate=0.001, epochs=300, batch_size=32,
                        model_simple=True,
                        k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=128,
                        load_train=False)

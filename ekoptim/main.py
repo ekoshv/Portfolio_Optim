@@ -934,7 +934,7 @@ class ekoptim():
             # input1, output1 = self.create_model(self.mz1, self.nz1, filters = filters)
 
             combined_output = Concatenate()(outputs)#
-            x = tf.keras.layers.Dense(128, activation="relu")(x)
+            x = tf.keras.layers.Dense(128, activation="relu")(combined_output)
             x = tf.keras.layers.BatchNormalization()(x)
             xe = tf.keras.layers.Dropout(0.3)(x)
     
