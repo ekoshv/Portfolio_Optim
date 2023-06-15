@@ -861,48 +861,105 @@ class ekoptim():
     
         return input_layer, output_layer
 
+    def create_simple_model(self, image_height, image_width, filters = 128):
+        input_layer = tf.keras.layers.Input(shape=(image_height, image_width, 1))
+    
+        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=9, strides=1,
+                                    padding="same", activation="relu")(input_layer)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.2)(x)
+        
+        x = tf.keras.layers.GlobalAveragePooling2D()(x)
+    
+        x = tf.keras.layers.Dense(128, activation="relu")(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.5)(x)
+
+        x = tf.keras.layers.Dense(128, activation="relu")(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        output_layer = tf.keras.layers.Dropout(0.5)(x)
+    
+        return input_layer, output_layer
+
     def create_modelX(self, filters=128):
         inputs = []
         outputs = []
-        for i in range(0,len(self.inps_select)):
-            inpu , outp = self.create_model(self.mz[i], self.nz[i], filters = filters)
-            inputs.append(inpu)
-            outputs.append(outp)
-        # input0, output0 = self.create_model(self.mz0, self.nz0, filters = filters)
-        # input1, output1 = self.create_model(self.mz1, self.nz1, filters = filters)
 
-        combined_output = Concatenate()(outputs)#
+        if(not self.simple_model):
+            for i in range(0,len(self.inps_select)):
+                inpu , outp = self.create_model(self.mz[i], self.nz[i], filters = filters)
+                inputs.append(inpu)
+                outputs.append(outp)
+            # input0, output0 = self.create_model(self.mz0, self.nz0, filters = filters)
+            # input1, output1 = self.create_model(self.mz1, self.nz1, filters = filters)
 
-        x = tf.keras.layers.Dense(1024, activation="relu")(combined_output)
-        x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.Dropout(0.3)(x)
+            combined_output = Concatenate()(outputs)#
+            
+            x = tf.keras.layers.Dense(1024, activation="relu")(combined_output)
+            x = tf.keras.layers.BatchNormalization()(x)
+            x = tf.keras.layers.Dropout(0.3)(x)
+    
+            x = tf.keras.layers.Dense(1024, activation="relu")(x)
+            x = tf.keras.layers.BatchNormalization()(x)
+            xe = tf.keras.layers.Dropout(0.3)(x)
+    
+            x1 = tf.keras.layers.Dense(5*self.Dyf, activation="relu")(xe)
+            x1 = tf.keras.layers.BatchNormalization()(x1)
+            x1 = tf.keras.layers.Dropout(0.3)(x1)
+            # -- Output 1
+            state_output = tf.keras.layers.Dense(9,
+                                                 name='state_output',
+                                                 activation="softmax")(x1)
+            # -- Output 2
+            x2 = tf.keras.layers.Dense(1024, activation="relu")(xe)
+            x2 = tf.keras.layers.BatchNormalization()(x2)
+            x2 = tf.keras.layers.Dropout(0.3)(x2)
+    
+            x2 = tf.keras.layers.Dense(10*self.Dyf, activation="linear")(x2)
+            x2 = tf.keras.layers.BatchNormalization()(x2)
+            x2 = tf.keras.layers.Dropout(0.3)(x2)
+    
+            trend_output = tf.keras.layers.Dense(1,
+                                                 name='trend_output',
+                                                 activation="tanh")(x2)
+            # -- Model
+            model = Model(inputs = inputs, outputs=[state_output, trend_output])
+            return model#
+        else:
+            for i in range(0,len(self.inps_select)):
+                inpu , outp = self.create_simple_model(self.mz[i], self.nz[i], filters = filters)
+                inputs.append(inpu)
+                outputs.append(outp)
+            # input0, output0 = self.create_model(self.mz0, self.nz0, filters = filters)
+            # input1, output1 = self.create_model(self.mz1, self.nz1, filters = filters)
 
-        x = tf.keras.layers.Dense(1024, activation="relu")(x)
-        x = tf.keras.layers.BatchNormalization()(x)
-        xe = tf.keras.layers.Dropout(0.3)(x)
-
-        x1 = tf.keras.layers.Dense(5*self.Dyf, activation="relu")(xe)
-        x1 = tf.keras.layers.BatchNormalization()(x1)
-        x1 = tf.keras.layers.Dropout(0.3)(x1)
-        # -- Output 1
-        state_output = tf.keras.layers.Dense(9,
-                                             name='state_output',
-                                             activation="softmax")(x1)
-        # -- Output 2
-        x2 = tf.keras.layers.Dense(1024, activation="relu")(xe)
-        x2 = tf.keras.layers.BatchNormalization()(x2)
-        x2 = tf.keras.layers.Dropout(0.3)(x2)
-
-        x2 = tf.keras.layers.Dense(10*self.Dyf, activation="linear")(x2)
-        x2 = tf.keras.layers.BatchNormalization()(x2)
-        x2 = tf.keras.layers.Dropout(0.3)(x2)
-
-        trend_output = tf.keras.layers.Dense(1,
-                                             name='trend_output',
-                                             activation="tanh")(x2)
-        # -- Model
-        model = Model(inputs = inputs, outputs=[state_output, trend_output])
-        return model#
+            combined_output = Concatenate()(outputs)#
+            x = tf.keras.layers.Dense(128, activation="relu")(x)
+            x = tf.keras.layers.BatchNormalization()(x)
+            xe = tf.keras.layers.Dropout(0.3)(x)
+    
+            x1 = tf.keras.layers.Dense(5*self.Dyf, activation="relu")(xe)
+            x1 = tf.keras.layers.BatchNormalization()(x1)
+            x1 = tf.keras.layers.Dropout(0.3)(x1)
+            # -- Output 1
+            state_output = tf.keras.layers.Dense(9,
+                                                 name='state_output',
+                                                 activation="softmax")(x1)
+            # -- Output 2
+            x2 = tf.keras.layers.Dense(128, activation="relu")(xe)
+            x2 = tf.keras.layers.BatchNormalization()(x2)
+            x2 = tf.keras.layers.Dropout(0.3)(x2)
+    
+            x2 = tf.keras.layers.Dense(10*self.Dyf, activation="linear")(x2)
+            x2 = tf.keras.layers.BatchNormalization()(x2)
+            x2 = tf.keras.layers.Dropout(0.3)(x2)
+    
+            trend_output = tf.keras.layers.Dense(1,
+                                                 name='trend_output',
+                                                 activation="tanh")(x2)
+            # -- Model
+            model = Model(inputs = inputs, outputs=[state_output, trend_output])
+            return model#
 
     def custom_loss(self, y_true, y_pred, num_classes=9, average='macro', name="custom_loss"):
         # Calculate the CategoricalCrossentropy loss
@@ -931,11 +988,12 @@ class ekoptim():
         
         return combined_loss
     
-    def NNmake(self, model=None, inps_select = [0,1],
+    def NNmake(self, model=None, inps_select = [0,1], model_simple=False,
                learning_rate=0.001, epochs=100, batch_size=32, k_n=None,
                f1_method = 'micro', f1_w = 'False', mcc_w = False, filters = 128,
                load_train=False):
         self.inps_select = inps_select
+        self.simple_model = model_simple
         self.f1_method = f1_method
         self.f1_w = f1_w
         self.mcc_w = mcc_w
