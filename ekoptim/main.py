@@ -868,6 +868,16 @@ class ekoptim():
                                     padding="same", activation="relu")(input_layer)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
+
+        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=9, strides=1,
+                                    padding="same", activation="relu")(input_layer)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.2)(x)
+
+        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=9, strides=1,
+                                    padding="same", activation="relu")(input_layer)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.2)(x)
         
         x = tf.keras.layers.GlobalAveragePooling2D()(x)
     
