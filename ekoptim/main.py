@@ -592,7 +592,8 @@ class ekoptim():
         for ma in ['GSMA', 'MSMA', 'SSMA']:
             for price in ['open', 'high', 'low', 'close']:
                 diff = dfp[price] - dfp[ma]
-                dfp[f'{price}_{ma}'] = diff / dfp[ma]
+                #dfp[f'{price}_{ma}'] = diff / dfp[ma]
+                dfp.loc[:, f'{price}_{ma}'] = diff / dfp[ma]
         
         return dfp
 
