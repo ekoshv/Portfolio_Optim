@@ -30,7 +30,7 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import talib
 #from numba import jit
-from pathos.multiprocessing import ProcessingPool as Pool
+#from pathos.multiprocessing import ProcessingPool as Pool
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
@@ -615,8 +615,8 @@ class ekoptim():
             #     smb_col = df.columns[smb]
             # else:
             #     print("smb should be either a string or an integer.")
-
-            def parallel_function(i, df, gld, oil, Dyp, Dqp, SMAP, Dyf, Thi, xrnd, tile_size):
+    
+            for i in range(max(self.Dyp, self.Dqp)+self.SMAP[0]+1, len(df)-self.Dyf+1, self.Thi):
                 #---Signal/State---
                 ypast_data = df[['open','high','low','close']].iloc[i-self.Dyp:i]                
                 # ypsdt_HH = ypast_data.max(axis=0)['high']
@@ -733,11 +733,7 @@ class ekoptim():
                         'dati': df.index[i-1]
                     }
                 #print(new_row)
-                return new_row
-
-            with Pool() as p:
-                args = [(i, df, gld, oil, self.Dyp, self.Dqp, self.SMAP, self.Dyf, self.Thi, xrnd, tile_size) for i in range(max(self.Dyp, self.Dqp)+self.SMAP[0]+1, len(df)-self.Dyf+1, self.Thi)]
-                new_df = p.map(lambda args: parallel_function(*args), args)
+                new_df.append(new_row)
             return new_df 
         except Exception as e:
             print(f"An error occurred in Normalization Process: {e}")
