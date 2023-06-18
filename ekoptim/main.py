@@ -992,9 +992,15 @@ class ekoptim():
         # Calculate Matthews Correlation Coefficient (MCC)
         rmcc = 0.5*(1.0 + self.multiclass_mcc(y_true, y_pred))
         rmcc = 1.0 - rmcc
+    
+        # Calculate AUC
+        auc = tf.keras.metrics.AUC()
+        auc.update_state(y_true, y_pred)
+        auc_result = auc.result().numpy()
+        inv_auc = 1.0 - auc_result
         
         # Combine the loss and inverse of the accuracy and F1
-        combined_loss = (loss + 2*inv_accuracy + 4*inv_f1_score + 8*rmcc)/15
+        combined_loss = (loss + inv_auc + 2*inv_accuracy + 4*inv_f1_score + 8*rmcc)/16
         combined_loss.__name__ = name
         
         return combined_loss
@@ -1031,9 +1037,10 @@ class ekoptim():
         model.compile(optimizer=opt,
                loss={'state_output':self.custom_loss, 'trend_output':'mse'},
                metrics={'state_output':['accuracy',self.multiclass_f1,'categorical_accuracy',
-                        tfa.metrics.F1Score(num_classes=9, average='macro'),
-                        tf.keras.losses.CategoricalCrossentropy(from_logits=False),
-                        self.multiclass_mcc],
+                                        tfa.metrics.F1Score(num_classes=9, average='macro'),
+                                        tf.keras.losses.CategoricalCrossentropy(from_logits=False),
+                                        self.multiclass_mcc,
+                                        tf.keras.metrics.AUC(name='auc')],
                         'trend_output':tf.keras.metrics.RootMeanSquaredError()})
         #tfa.metrics.F1Score(num_classes=9, average='macro')
         #model.compile(optimizer=opt, loss='mape')
