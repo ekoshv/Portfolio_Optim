@@ -996,7 +996,7 @@ class ekoptim():
         # Calculate AUC
         auc = tf.keras.metrics.AUC()
         auc.update_state(y_true, y_pred)
-        auc_result = auc.result().numpy()
+        auc_result = auc.result()
         inv_auc = 1.0 - auc_result
         
         # Combine the loss and inverse of the accuracy and F1
