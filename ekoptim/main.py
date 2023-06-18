@@ -826,9 +826,10 @@ class ekoptim():
 
     def create_model(self, image_height, image_width, filters = 128):
         input_layer = tf.keras.layers.Input(shape=(image_height, image_width, 1))
-    
-        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=9, strides=1,
-                                    padding="same", activation="relu")(input_layer)
+        smn = min(min(image_height, image_width),(int(2*self.Dqp/3)-1))
+        x = tf.keras.layers.Conv2D(filters=filters,
+                                   kernel_size=smn, strides=1,
+                                   padding="same", activation="relu")(input_layer)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
     
