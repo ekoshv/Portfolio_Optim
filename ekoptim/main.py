@@ -599,7 +599,6 @@ class ekoptim():
         dfp['dayofweek'] = dfp.index.dayofweek/7
         dfp['dayofmonth'] = dfp.index.day/31
         dfp['monthofyear'] = dfp.index.month/12
-        return dfp
     
     def apply_moving_horizon_norm(self, dfs, spn, tile_size, xrnd= 0):
         try:
@@ -692,16 +691,16 @@ class ekoptim():
                     #--- past_data
                     x.append(qpst_dt_tiled)#0
                     x.append(qpast_data.loc[:, 'ROCS':].fillna(0))#1
-                    x[-1] = self.norm_date(x[-1])
+                    self.norm_date(x[-1])
                     x.append(qpst_dt_w_tiled)#2
                     #--- Gold
                     x.append(past_gld_tiled)
                     x.append(past_gld.loc[:, 'ROCS':].fillna(0))
-                    x[-1] = self.norm_date(x[-1])
+                    self.norm_date(x[-1])
                     #--- Oil
                     x.append(past_oil_tiled)
                     x.append(past_oil.loc[:, 'ROCS':].fillna(0))#5
-                    x[-1] = self.norm_date(x[-1])
+                    self.norm_date(x[-1])
                 
                 df.at[df.index[i-1], 'state'] = state
                 if(self.test_predata_signal):
