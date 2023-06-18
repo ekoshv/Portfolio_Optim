@@ -593,9 +593,7 @@ class ekoptim():
             for price in ['open', 'high', 'low', 'close']:
                 diff = dfp[price] - dfp[ma]
                 #dfp[f'{price}_{ma}'] = diff / dfp[ma]
-                dfp.loc[:, f'{price}_{ma}'] = diff / dfp[ma]
-        
-        return dfp
+                dfp[ f'{price}_{ma}'] = diff / dfp[ma]
 
     def norm_date(self, dfp):
         dfp['dayofweek'] = dfp.index.dayofweek/7
@@ -686,9 +684,9 @@ class ekoptim():
                     past_oil_tiled = np.tile(past_oil_normalized, tile_size)
                     past_oil_tiled += np.random.uniform(-xrnd/5, xrnd/5, past_oil_tiled.shape)                
                     
-                    qpast_data = self.more_data(qpast_data)
-                    past_gld = self.more_data(past_gld)
-                    past_oil = self.more_data(past_oil)
+                    self.more_data(qpast_data)
+                    self.more_data(past_gld)
+                    self.more_data(past_oil)
                 
                     #--- Gathering input Data ---
                     #--- past_data
