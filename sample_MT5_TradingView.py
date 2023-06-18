@@ -303,6 +303,5 @@ if __name__ == "__main__":
     optimizerTV.load_model_fit()
     optimizerTV.predict_all(inps_select = [0,1], filters=32)
     betax = optimizerTV.Predicted_Rates
-    xeta = pd.DataFrame([(x[0].squeeze(),x[1].squeeze()) for x in betax])
 #%%
     mt5.shutdown()
