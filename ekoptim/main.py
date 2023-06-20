@@ -994,14 +994,14 @@ class ekoptim():
         rmcc = 0.5*(1.0 + self.multiclass_mcc(y_true, y_pred))
         rmcc = 1.0 - rmcc
     
-        # # Calculate AUC #+ inv_auc
-        # auc = tf.keras.metrics.AUC()
-        # auc.update_state(y_true, y_pred)
-        # auc_result = auc.result()
-        # inv_auc = 1.0 - auc_result
+        # Calculate AUC #+ inv_auc
+        auc = tf.keras.metrics.AUC()
+        auc.update_state(y_true, y_pred)
+        auc_result = auc.result()
+        inv_auc = 1.0 - tf.reduce_mean(auc_result)
         
         # Combine the loss and inverse of the accuracy and F1
-        combined_loss = (loss  + 2*inv_accuracy + 4*inv_f1_score + 8*rmcc)/15
+        combined_loss = (loss + inv_auc + 2*inv_accuracy + 4*inv_f1_score + 8*rmcc)/16
         combined_loss.__name__ = name
         
         return combined_loss

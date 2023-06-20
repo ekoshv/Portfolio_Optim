@@ -282,7 +282,7 @@ if __name__ == "__main__":
     xlh = -xhl
     xll = -xhh
     optimizerTV.Prepare_Data(tile_size=(n_t,int(n_t*Dqp/4)),xrnd=1e-3,#(n*Dqp->m=n*Dqp/4)
-                             Selected_symbols=selected_symb[0],
+                             Selected_symbols=selected_symb,
                              Dqp=Dqp, Dyp=Dyp, Dyf=Dyf, Thi=1,
                              hh=xhh,#
                              hl=xhl,#
@@ -295,8 +295,8 @@ if __name__ == "__main__":
     optimizerTV.draw_states(cetax[kappa])
     bex = [x for x in alphax if x['dati'].date() == datetime.date(2022,5,5)]
 #%%
-    optimizerTV.NNmake(inps_select = [0,1,2], learning_rate=0.001, epochs=300, batch_size=32,
-                       model_simple=True,
+    optimizerTV.NNmake(inps_select = [0,1,2], learning_rate=0.003, epochs=300, batch_size=32,
+                       model_simple=False,
                        k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=128,
                        load_train=False)
 #%%  
