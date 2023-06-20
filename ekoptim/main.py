@@ -93,6 +93,8 @@ class ekoptim():
             self.full_rates = full_rates
             self.new_full_rates = []
             self.nnmodel = tf.keras.Sequential()
+            self.intg_alp = 0.001
+            self.prev_integ_coloss = 0
     
         except Exception as e:
             print(f"An error occurred: {e}")
@@ -993,15 +995,12 @@ class ekoptim():
         # Calculate Matthews Correlation Coefficient (MCC)
         rmcc = 0.5*(1.0 + self.multiclass_mcc(y_true, y_pred))
         rmcc = 1.0 - rmcc
-    
-        # Calculate AUC #+ inv_auc
-        auc = tf.keras.metrics.AUC()
-        auc.update_state(y_true, y_pred)
-        auc_result = auc.result()
-        inv_auc = 1.0 - tf.reduce_mean(auc_result)
         
         # Combine the loss and inverse of the accuracy and F1
-        combined_loss = (loss + inv_auc + 2*inv_accuracy + 4*inv_f1_score + 8*rmcc)/16
+        combined_loss = ((loss + 2*inv_accuracy + 4*inv_f1_score + 8*rmcc)/16+
+                         self.intg_alp*self.prev_integ_coloss)
+        self.prev_integ_coloss += combined_loss
+        self.prev_integ_coloss *= abs(combined_loss)
         combined_loss.__name__ = name
         
         return combined_loss
