@@ -652,6 +652,7 @@ class ekoptim():
                     qpast_data_normalized_w, lng = self.decompose_and_flatten(qpast_data_normalized,
                                                                               'db1')
                     qpst_dt_w_tiled = np.tile(qpast_data_normalized_w, (8,2))
+                    qpst_dt_w_tiled += np.random.uniform(-xrnd/5, xrnd/5, qpst_dt_w_tiled.shape)
                     
                     # Extract data from gold and oil using index of qpast_data and fill missing rows with NaN
                     #--- Gold ---
@@ -826,18 +827,18 @@ class ekoptim():
 
     def create_model(self, image_height, image_width, filters = 128):
         input_layer = tf.keras.layers.Input(shape=(image_height, image_width, 1))
-        smn = min(min(image_height, image_width),(int(2*self.Dqp/3)-1))
-        print("--------------------")
-        print(f"Kernel Size: {smn}")
-        print("--------------------")
-        x = tf.keras.layers.Conv2D(filters=filters,
-                                   kernel_size=smn, strides=1,
-                                   padding="same", activation="relu")(input_layer)
-        x = tf.keras.layers.BatchNormalization()(x)
-        x = tf.keras.layers.Dropout(0.2)(x)
+        # smn = min(min(image_height, image_width),(int(2*self.Dqp/3)-1))
+        # print("--------------------")
+        # print(f"Kernel Size: {smn}")
+        # print("--------------------")
+        # x = tf.keras.layers.Conv2D(filters=filters,
+        #                            kernel_size=smn, strides=1,
+        #                            padding="same", activation="relu")(input_layer)
+        # x = tf.keras.layers.BatchNormalization()(x)
+        # x = tf.keras.layers.Dropout(0.2)(x)
 
         x = tf.keras.layers.Conv2D(filters=filters, kernel_size=9, strides=1,
-                                    padding="same", activation="relu")(x)
+                                    padding="same", activation="relu")(input_layer)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
     
