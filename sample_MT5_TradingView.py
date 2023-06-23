@@ -289,13 +289,33 @@ if __name__ == "__main__":
                              lh=xlh,#
                              ll=xll, test=False) #None
 #%%
-    kappa = -1
+    kappa = 5
     alphax = optimizerTV.HNrates[kappa]
     cetax = optimizerTV.selected_rates
     optimizerTV.draw_states(cetax[kappa])
     bex = [x for x in alphax if x['dati'].date() == datetime.date(2022,5,5)]
+
+#%%    
+    # Put the data you need in a dictionary
+    data = {
+        'optimizerTV': optimizerTV,
+        'rates_TV': rates_TV,
+        'rates_MT5': rates_MT5,
+        'selected_symb': selected_symb,
+        # Add all the variables you need
+    }
+    
+    # Get the current date and time
+    now = datetime.datetime.now()
+    
+    # Format the date and time as a string
+    date_time = now.strftime("%Y%m%d_%H%M%S")
+    
+    # Save the data to a file
+    with open(f'data_full_{date_time}.pkl', 'wb') as f:
+        dill.dump(data, f)
 #%%
-    optimizerTV.NNmake(inps_select = [0,1,2], learning_rate=0.003, epochs=300, batch_size=32,
+    optimizerTV.NNmake(inps_select = [0,1,2], learning_rate=0.001, epochs=300, batch_size=32,
                        model_simple=False,
                        k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=128,
                        load_train=False)
