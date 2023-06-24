@@ -289,7 +289,7 @@ if __name__ == "__main__":
                              lh=xlh,#
                              ll=xll, test=False) #None
 #%%
-    kappa = 5
+    kappa = -1
     alphax = optimizerTV.HNrates[kappa]
     cetax = optimizerTV.selected_rates
     optimizerTV.draw_states(cetax[kappa])
