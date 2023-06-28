@@ -654,7 +654,7 @@ class ekoptim():
                     qpst_dt_tiled += np.random.uniform(-xrnd/5, xrnd/5, qpst_dt_tiled.shape)
                     qpast_data_normalized_w, lng = self.decompose_and_flatten(qpast_data_normalized,
                                                                               'db1')
-                    qpst_dt_w_tiled = np.tile(qpast_data_normalized_w, (8,2))
+                    qpst_dt_w_tiled = np.tile(qpast_data_normalized_w, (8,1))
                     qpst_dt_w_tiled += np.random.uniform(-xrnd/10, xrnd/10, qpst_dt_w_tiled.shape)
                     
                     # Extract data from gold and oil using index of qpast_data and fill missing rows with NaN

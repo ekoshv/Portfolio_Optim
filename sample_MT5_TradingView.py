@@ -282,14 +282,14 @@ if __name__ == "__main__":
     xlh = -xhl
     xll = -xhh
     optimizerTV.Prepare_Data(tile_size=(n_t,int(n_t*Dqp/4)),xrnd=1e-3,#(n*Dqp->m=n*Dqp/4)
-                             Selected_symbols=selected_symb,
+                             Selected_symbols=selected_symb[0],
                              Dqp=Dqp, Dyp=Dyp, Dyf=Dyf, Thi=1,
                              hh=xhh,#
                              hl=xhl,#
                              lh=xlh,#
                              ll=xll, test=False) #None
 #%%
-    kappa = -1
+    kappa = 0
     alphax = optimizerTV.HNrates[kappa]
     cetax = optimizerTV.selected_rates
     optimizerTV.draw_states(cetax[kappa])
