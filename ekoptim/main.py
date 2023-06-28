@@ -596,9 +596,12 @@ class ekoptim():
                 dfp[ f'{price}_{ma}'] = diff / dfp[ma]
 
     def norm_date(self, dfp):
-        dfp['dayofweek'] = dfp.index.dayofweek/7
-        dfp['dayofmonth'] = dfp.index.day/31
-        dfp['monthofyear'] = dfp.index.month/12
+        column_names = ['dayofweek', 'dayofmonth', 'monthofyear']
+        dfx = pd.DataFrame(columns=column_names)
+        dfx['dayofweek'] = dfp.index.dayofweek/7
+        dfx['dayofmonth'] = dfp.index.day/31
+        dfx['monthofyear'] = dfp.index.month/12
+        return dfx.to_numpy()
     
     def apply_moving_horizon_norm(self, dfs, spn, tile_size, xrnd= 0):
         try:
@@ -692,16 +695,16 @@ class ekoptim():
                     #--- past_data
                     x.append(qpst_dt_tiled)#0
                     x.append(qpast_data.loc[:, 'ROCS':].fillna(0))#1
-                    self.norm_date(x[-1])
                     x.append(qpst_dt_w_tiled)#2
                     #--- Gold
-                    x.append(past_gld_tiled)
-                    x.append(past_gld.loc[:, 'ROCS':].fillna(0))
-                    self.norm_date(x[-1])
+                    x.append(past_gld_tiled)#3
+                    x.append(past_gld.loc[:, 'ROCS':].fillna(0))#4
                     #--- Oil
-                    x.append(past_oil_tiled)
-                    x.append(past_oil.loc[:, 'ROCS':].fillna(0))#5
-                    self.norm_date(x[-1])
+                    x.append(past_oil_tiled)#5
+                    x.append(past_oil.loc[:, 'ROCS':].fillna(0))#6
+                    #--- date calculations
+                    datemx = np.tile(self.norm_date(x[-1]),(1,3))
+                    x.append(datemx)#7
                 
                 df.at[df.index[i-1], 'state'] = state
                 if(self.test_predata_signal):
@@ -816,6 +819,26 @@ class ekoptim():
             # Add the ROC values to the DataFrame
             df['ROCG'] = ROCG
             df.insert(close_idx + 7, 'ROCG', df.pop('ROCG'))
+            #---Fast Stochastic Oscillator
+            fk, fd = talib.STOCH(df['high'], df['low'],df['close'],
+                                 fastk_period=14, slowk_period=3,
+                                 slowk_matype=0, slowd_period=3,
+                                 slowd_matype=0)
+            # Add the Stoch values to the DataFrame
+            df['FastStoch_K'] = fk
+            df.insert(close_idx + 8, 'FastStoch_K', df.pop('FastStoch_K'))
+            df['FastStoch_d'] = fd
+            df.insert(close_idx + 9, 'FastStoch_d', df.pop('FastStoch_d'))
+            #---Slow Stochastic Oscillator
+            sk, sd = talib.STOCH(df['high'], df['low'],df['close'],
+                                 fastk_period=42, slowk_period=9,
+                                 slowk_matype=0, slowd_period=9,
+                                 slowd_matype=0)
+            # Add the Stoch values to the DataFrame
+            df['SlowStoch_K'] = sk
+            df.insert(close_idx + 10, 'SlowStoch_K', df.pop('SlowStoch_K'))
+            df['SlowStoch_d'] = sd
+            df.insert(close_idx + 11, 'SlowStoch_d', df.pop('SlowStoch_d'))
             
             df.name = snam
         #rates, spn, tile_size, xrnd=0
@@ -836,8 +859,11 @@ class ekoptim():
         #                            padding="same", activation="relu")(input_layer)
         # x = tf.keras.layers.BatchNormalization()(x)
         # x = tf.keras.layers.Dropout(0.2)(x)
-
-        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=9, strides=1,
+        smn = min(min(image_height, image_width),9)
+        print("--------------------")
+        print(f"Kernel Size: {smn}")
+        print("--------------------")
+        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=smn, strides=1,
                                     padding="same", activation="relu")(input_layer)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
@@ -921,7 +947,7 @@ class ekoptim():
             x = tf.keras.layers.BatchNormalization()(x)
             xe = tf.keras.layers.Dropout(0.3)(x)
     
-            x1 = tf.keras.layers.Dense(5*self.Dyf, activation="relu")(xe)
+            x1 = tf.keras.layers.Dense(5*self.Dyf, activation="linear")(xe)
             x1 = tf.keras.layers.BatchNormalization()(x1)
             x1 = tf.keras.layers.Dropout(0.3)(x1)
             # -- Output 1
