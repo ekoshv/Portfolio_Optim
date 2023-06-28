@@ -640,9 +640,7 @@ class ekoptim():
                 #---Data for Deep learning Preparation---
                 x = []
                 if(not self.test_predata_signal):
-                    qpast_data = df[['open','high','low','close',
-                                    'GSMA','MSMA','SSMA',
-                                    'ROCS', 'ROCM', 'ROCG']].iloc[i-self.Dqp:i]
+                    qpast_data = df[self.main_columns].iloc[i-self.Dqp:i]
                     qpsdt_HH = qpast_data[['open','high','low','close']].max(axis=0)['high']
                     qpsdt_LL = qpast_data[['open','high','low','close']].min(axis=0)['low']
                     qpast_data_normalized, mindf, maxdf = self.normalize(qpast_data[['open',
@@ -659,9 +657,7 @@ class ekoptim():
                     
                     # Extract data from gold and oil using index of qpast_data and fill missing rows with NaN
                     #--- Gold ---
-                    past_gld = gld[['open','high','low','close',
-                                    'GSMA','MSMA','SSMA',
-                                    'ROCS', 'ROCM', 'ROCG']].reindex(qpast_data.index)
+                    past_gld = gld[self.main_columns].reindex(qpast_data.index)
                     past_gld_HH = past_gld[['open','high','low','close']].max(axis=0)['high']
                     past_gld_LL = past_gld[['open','high','low','close']].min(axis=0)['low']
                     past_gld_normalized, mindf, maxdf = self.normalize(past_gld[['open',
@@ -673,9 +669,7 @@ class ekoptim():
                     past_gld_tiled = np.tile(past_gld_normalized, tile_size)
                     past_gld_tiled += np.random.uniform(-xrnd/5, xrnd/5, past_gld_tiled.shape)
                     #--- Oil ---
-                    past_oil = oil[['open','high','low','close',
-                                    'GSMA','MSMA','SSMA',
-                                    'ROCS', 'ROCM', 'ROCG']].reindex(qpast_data.index)
+                    past_oil = oil[self.main_columns].reindex(qpast_data.index)
                     past_oil_HH = past_oil[['open','high','low','close']].max(axis=0)['high']
                     past_oil_LL = past_oil[['open','high','low','close']].min(axis=0)['low']
                     past_oil_normalized, mindf, maxdf = self.normalize(past_oil[['open',
@@ -825,9 +819,9 @@ class ekoptim():
                                  slowk_matype=0, slowd_period=3,
                                  slowd_matype=0)
             # Add the Stoch values to the DataFrame
-            df['FastStoch_K'] = fk
+            df['FastStoch_K'] = fk/100
             df.insert(close_idx + 8, 'FastStoch_K', df.pop('FastStoch_K'))
-            df['FastStoch_d'] = fd
+            df['FastStoch_d'] = fd/100
             df.insert(close_idx + 9, 'FastStoch_d', df.pop('FastStoch_d'))
             #---Slow Stochastic Oscillator
             sk, sd = talib.STOCH(df['high'], df['low'],df['close'],
@@ -835,11 +829,16 @@ class ekoptim():
                                  slowk_matype=0, slowd_period=9,
                                  slowd_matype=0)
             # Add the Stoch values to the DataFrame
-            df['SlowStoch_K'] = sk
+            df['SlowStoch_K'] = sk/100
             df.insert(close_idx + 10, 'SlowStoch_K', df.pop('SlowStoch_K'))
-            df['SlowStoch_d'] = sd
+            df['SlowStoch_d'] = sd/100
             df.insert(close_idx + 11, 'SlowStoch_d', df.pop('SlowStoch_d'))
             
+            self.main_columns = ['open','high','low','close',
+                            'GSMA','MSMA','SSMA',
+                            'ROCS', 'ROCM', 'ROCG',
+                            'FastStoch_K', 'FastStoch_d',
+                            'SlowStoch_K', 'SlowStoch_d']
             df.name = snam
         #rates, spn, tile_size, xrnd=0
         self.HNrates = self.Hrz_Nrm(rates=srates, spn=spn,
