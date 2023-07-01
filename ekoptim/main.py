@@ -1059,7 +1059,7 @@ class ekoptim():
         #***************************** 7.0 at least :-( *****
         #tf.keras.mixed_precision.set_global_policy('mixed_float16')
         #*****************************
-        # Compile the model with mean squared error loss
+        # Compile the model
         opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         model.compile(optimizer=opt,
                loss={'state_output':self.custom_loss, 'trend_output':'mse'},
