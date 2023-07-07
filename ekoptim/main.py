@@ -1091,19 +1091,37 @@ class ekoptim():
         
         if back_test_en:
             for i in self.inps_select:
-                lst_data = np.array([d['past_data'][i] for lst in self.HNrates for d in lst])
-                train_size = int((1 - bt_ratio) * len(lst_data))
-                print(f"*Back Test days: {train_size}")
-                X.append(np.expand_dims(lst_data[:train_size], axis=-1))
-                X_Back_Test.append(np.expand_dims(lst_data[train_size:], axis=-1))
+                X_temp = []
+                X_Back_Test_temp = []
+                for lst in self.HNrates:
+                    lst_data = np.array([d['past_data'][i] for d in lst])
+                    train_size = int((1 - bt_ratio) * len(lst_data))
+                    btd = len(lst_data)-train_size
+                    print(f"* Back Test days: {btd}")
+                    X_temp.extend(lst_data[:train_size])
+                    X_Back_Test_temp.extend(lst_data[train_size:])
                 
-            state_data = np.array([d['state'] for lst in self.HNrates for d in lst])
-            trend_data = np.array([d['trend'] for lst in self.HNrates for d in lst])
-            
-            y_state = state_data[:train_size]
-            y_trend = trend_data[:train_size]
-            y_state_Back_Test = state_data[train_size:]
-            y_trend_Back_Test = trend_data[train_size:]
+                X.append(np.expand_dims(np.array(X_temp), axis=-1))
+                X_Back_Test.append(np.expand_dims(np.array(X_Back_Test_temp), axis=-1))
+        
+            y_state_temp = []
+            y_trend_temp = []
+            y_state_Back_Test_temp = []
+            y_trend_Back_Test_temp = []
+            for lst in self.HNrates:
+                state_data = np.array([d['state'] for d in lst])
+                trend_data = np.array([d['trend'] for d in lst])
+                train_size = int((1 - bt_ratio) * len(state_data))
+                
+                y_state_temp.extend(state_data[:train_size])
+                y_trend_temp.extend(trend_data[:train_size])
+                y_state_Back_Test_temp.extend(state_data[train_size:])
+                y_trend_Back_Test_temp.extend(trend_data[train_size:])
+                
+            y_state = np.array(y_state_temp)
+            y_trend = np.array(y_trend_temp)
+            y_state_Back_Test = np.array(y_state_Back_Test_temp)
+            y_trend_Back_Test = np.array(y_trend_Back_Test_temp)
         else:
             for i in self.inps_select:
                 X.append(np.array([d['past_data'][i] for lst in self.HNrates for d in lst]))
@@ -1111,6 +1129,8 @@ class ekoptim():
                 
             y_state = np.array([d['state'] for lst in self.HNrates for d in lst])
             y_trend = np.array([d['trend'] for lst in self.HNrates for d in lst])
+        
+
         #y = y_state, y_trend
 
         train_indices, test_indices = next(iter(ShuffleSplit(n_splits=1, test_size=0.33).split(X[0])))
