@@ -1035,7 +1035,8 @@ class ekoptim():
     def NNmake(self, model=None, inps_select = [0,1], model_simple=False,
                learning_rate=0.001, epochs=100, batch_size=32, k_n=None,
                f1_method = 'micro', f1_w = 'False', mcc_w = False, filters = 128,
-               load_train=False):
+               load_train=False,
+               back_test_en = False, bt_ratio=0.33, back_test_as_val_en=False):
         self.inps_select = inps_select
         self.simple_model = model_simple
         self.f1_method = f1_method
@@ -1082,15 +1083,34 @@ class ekoptim():
    
         # Train the model on the data in new_rates_lists
         X = []
-        for i in self.inps_select:
-            X.append(np.array([d['past_data'][i] for lst in self.HNrates for d in lst]))
-            X[-1] = np.expand_dims(X[-1], axis=-1)
-        # X0 = np.array([d['past_data'][0] for lst in self.HNrates for d in lst])
+        X_Back_Test = []
+        y_state = []
+        y_trend = []
+        y_state_Back_Test = []
+        y_trend_Back_Test = []
         
-        # X0 = np.expand_dims(X0, axis=-1)
-        
-        y_state = np.array([d['state'] for lst in self.HNrates for d in lst])
-        y_trend = np.array([d['trend'] for lst in self.HNrates for d in lst])
+        if back_test_en:
+            for i in self.inps_select:
+                lst_data = np.array([d['past_data'][i] for lst in self.HNrates for d in lst])
+                train_size = int((1 - bt_ratio) * len(lst_data))
+                
+                X.append(np.expand_dims(lst_data[:train_size], axis=-1))
+                X_Back_Test.append(np.expand_dims(lst_data[train_size:], axis=-1))
+                
+            state_data = np.array([d['state'] for lst in self.HNrates for d in lst])
+            trend_data = np.array([d['trend'] for lst in self.HNrates for d in lst])
+            
+            y_state = state_data[:train_size]
+            y_trend = trend_data[:train_size]
+            y_state_Back_Test = state_data[train_size:]
+            y_trend_Back_Test = trend_data[train_size:]
+        else:
+            for i in self.inps_select:
+                X.append(np.array([d['past_data'][i] for lst in self.HNrates for d in lst]))
+                X[-1] = np.expand_dims(X[-1], axis=-1)
+                
+            y_state = np.array([d['state'] for lst in self.HNrates for d in lst])
+            y_trend = np.array([d['trend'] for lst in self.HNrates for d in lst])
         #y = y_state, y_trend
 
         train_indices, test_indices = next(iter(ShuffleSplit(n_splits=1, test_size=0.33).split(X[0])))
@@ -1102,7 +1122,8 @@ class ekoptim():
             X_test.append(X_ts)
         y_state_train, y_state_test = y_state[train_indices], y_state[test_indices]
         y_trend_train, y_trend_test = y_trend[train_indices], y_trend[test_indices]
- 
+        
+        # SMOTE
         self.k_n=5
         if k_n is not None:
             self.k_n = k_n 
@@ -1132,6 +1153,7 @@ class ekoptim():
         # Fit the label encoder on the training labels and transform both train and test labels
         y_state_train_encoded = label_encoder.transform(y_state_train)
         y_state_test_encoded  = label_encoder.transform(y_state_test)
+        y_state_Back_Test_encoded = label_encoder.transform(y_state_Back_Test)
         
         # Get the number of unique classes
         num_classes = len(unique_labels)
@@ -1154,13 +1176,22 @@ class ekoptim():
         #
         # Calculate sample weights based on class weights
         sample_weights = np.array([class_weight_dict[label] for label in y_state_train_encoded])
-        model.fit(X_train,
-                  (y_state_train_one_hot, y_trend_train), epochs=epochs, batch_size=batch_size,
-                  shuffle=True,
-                  validation_data=(X_test,
-                                   (y_state_test_one_hot, y_trend_test)),
-                  callbacks=[tensorboard_callback, checkpoint_callback],
-                  sample_weight=sample_weights)
+        if (back_test_as_val_en and back_test_en):
+            model.fit(X_train,
+                      (y_state_train_one_hot, y_trend_train), epochs=epochs, batch_size=batch_size,
+                      shuffle=True,
+                      validation_data=(X_Back_Test,
+                                       (y_state_Back_Test_encoded, y_trend_Back_Test)),
+                      callbacks=[tensorboard_callback, checkpoint_callback],
+                      sample_weight=sample_weights)
+        else:
+            model.fit(X_train,
+                      (y_state_train_one_hot, y_trend_train), epochs=epochs, batch_size=batch_size,
+                      shuffle=True,
+                      validation_data=(X_test,
+                                       (y_state_test_one_hot, y_trend_test)),
+                      callbacks=[tensorboard_callback, checkpoint_callback],
+                      sample_weight=sample_weights)
         #class_weight=class_weight_dict
         #validation_split=0.33,
         # Load the best model weights  
