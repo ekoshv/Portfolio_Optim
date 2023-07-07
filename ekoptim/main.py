@@ -1093,7 +1093,7 @@ class ekoptim():
             for i in self.inps_select:
                 lst_data = np.array([d['past_data'][i] for lst in self.HNrates for d in lst])
                 train_size = int((1 - bt_ratio) * len(lst_data))
-                
+                print(f"*Back Test days: {train_size}")
                 X.append(np.expand_dims(lst_data[:train_size], axis=-1))
                 X_Back_Test.append(np.expand_dims(lst_data[train_size:], axis=-1))
                 
@@ -1157,11 +1157,11 @@ class ekoptim():
         
         # Get the number of unique classes
         num_classes = len(unique_labels)
-        
+        print(f"* Number of classes: {num_classes}")
         # Convert the encoded class labels to one-hot encoding
         y_state_train_one_hot = tf.keras.utils.to_categorical(y_state_train_encoded, num_classes=num_classes)
         y_state_test_one_hot = tf.keras.utils.to_categorical(y_state_test_encoded, num_classes=num_classes)
-        
+        y_state_Back_Test_one_hot = tf.keras.utils.to_categorical(y_state_Back_Test_encoded, num_classes=num_classes)
         # Compute the class weights
         class_weights = class_weight.compute_class_weight('balanced', classes=unique_labels, y=y_state_train)
         class_weight_dict = dict(zip(encoded_labels, class_weights))
@@ -1181,7 +1181,7 @@ class ekoptim():
                       (y_state_train_one_hot, y_trend_train), epochs=epochs, batch_size=batch_size,
                       shuffle=True,
                       validation_data=(X_Back_Test,
-                                       (y_state_Back_Test_encoded, y_trend_Back_Test)),
+                                       (y_state_Back_Test_one_hot, y_trend_Back_Test)),
                       callbacks=[tensorboard_callback, checkpoint_callback],
                       sample_weight=sample_weights)
         else:

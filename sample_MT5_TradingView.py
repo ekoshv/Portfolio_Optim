@@ -277,12 +277,12 @@ if __name__ == "__main__":
     Dyp = 16 # past days (not used)
     Dyf = 14 # future days
     n_t = 2 # tile size
-    xhh = 0.3 # Percentage Threshold
-    xhl = 0.43*xhh    
+    xhh = 0.15 # Percentage Threshold
+    xhl = 0.53*xhh    
     xlh = -xhl
     xll = -xhh
     optimizerTV.Prepare_Data(tile_size=(n_t,int(n_t*Dqp/4)),xrnd=1e-3,#(n*Dqp->m=n*Dqp/4)
-                             Selected_symbols=selected_symb[0],
+                             Selected_symbols=selected_symb[0:2],
                              Dqp=Dqp, Dyp=Dyp, Dyf=Dyf, Thi=1,
                              hh=xhh,#
                              hl=xhl,#
@@ -315,10 +315,11 @@ if __name__ == "__main__":
     with open(f'data_full_{date_time}.pkl', 'wb') as f:
         dill.dump(data, f)
 #%%
-    optimizerTV.NNmake(inps_select = [0,1,2], learning_rate=0.001, epochs=300, batch_size=32,
+    optimizerTV.NNmake(inps_select = [0,1,2], learning_rate=0.001, epochs=1, batch_size=32,
                        model_simple=False,
-                       k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=128,
-                       load_train=False)
+                       k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=64,
+                       load_train=False,
+                       back_test_en = True, bt_ratio=0.33, back_test_as_val_en=True)
 #%%  
     optimizerTV.load_model_fit()
     optimizerTV.predict_all(inps_select = [0,1], filters=32)
