@@ -847,7 +847,7 @@ class ekoptim():
         # self.mz = self.HNrates[0][0]['past_data'][0].shape[0]
         # self.nz = self.HNrates[0][0]['past_data'][0].shape[1]
 
-    def create_model(self, image_height, image_width, filters = 128):
+    def create_model(self, image_height, image_width, filters = 128, dSize=1024):
         input_layer = tf.keras.layers.Input(shape=(image_height, image_width, 1))
         # smn = min(min(image_height, image_width),(int(2*self.Dqp/3)-1))
         # print("--------------------")
@@ -884,11 +884,15 @@ class ekoptim():
         
         x = tf.keras.layers.GlobalAveragePooling2D()(x)
     
-        x = tf.keras.layers.Dense(1024, activation="relu")(x)
+        x = tf.keras.layers.Dense(dSize, activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.5)(x)
 
-        x = tf.keras.layers.Dense(1024, activation="relu")(x)
+        x = tf.keras.layers.Dense(dSize, activation="relu")(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Dropout(0.5)(x)
+
+        x = tf.keras.layers.Dense(dSize, activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         output_layer = tf.keras.layers.Dropout(0.5)(x)
     
@@ -924,13 +928,14 @@ class ekoptim():
     
         return input_layer, output_layer
 
-    def create_modelX(self, filters=128):
+    def create_modelX(self, filters=128, dSize=1024):
         inputs = []
         outputs = []
 
         if(not self.simple_model):
             for i in range(0,len(self.inps_select)):
-                inpu , outp = self.create_model(self.mz[i], self.nz[i], filters = filters)
+                inpu , outp = self.create_model(self.mz[i], self.nz[i],
+                                                filters = filters, dSize=dSize)
                 inputs.append(inpu)
                 outputs.append(outp)
             # input0, output0 = self.create_model(self.mz0, self.nz0, filters = filters)
@@ -938,11 +943,15 @@ class ekoptim():
 
             combined_output = Concatenate()(outputs)#
             
-            x = tf.keras.layers.Dense(1024, activation="relu")(combined_output)
+            x = tf.keras.layers.Dense(dSize, activation="relu")(combined_output)
+            x = tf.keras.layers.BatchNormalization()(x)
+            x = tf.keras.layers.Dropout(0.3)(x)
+
+            x = tf.keras.layers.Dense(dSize, activation="relu")(combined_output)
             x = tf.keras.layers.BatchNormalization()(x)
             x = tf.keras.layers.Dropout(0.3)(x)
     
-            x = tf.keras.layers.Dense(1024, activation="relu")(x)
+            x = tf.keras.layers.Dense(dSize, activation="relu")(x)
             x = tf.keras.layers.BatchNormalization()(x)
             xe = tf.keras.layers.Dropout(0.3)(x)
     
@@ -954,7 +963,11 @@ class ekoptim():
                                                  name='state_output',
                                                  activation="softmax")(x1)
             # -- Output 2
-            x2 = tf.keras.layers.Dense(1024, activation="relu")(xe)
+            x2 = tf.keras.layers.Dense(dSize, activation="relu")(xe)
+            x2 = tf.keras.layers.BatchNormalization()(x2)
+            x2 = tf.keras.layers.Dropout(0.3)(x2)
+
+            x2 = tf.keras.layers.Dense(dSize, activation="relu")(x2)
             x2 = tf.keras.layers.BatchNormalization()(x2)
             x2 = tf.keras.layers.Dropout(0.3)(x2)
     
@@ -1034,7 +1047,8 @@ class ekoptim():
     
     def NNmake(self, model=None, inps_select = [0,1], model_simple=False,
                learning_rate=0.001, epochs=100, batch_size=32, k_n=None,
-               f1_method = 'micro', f1_w = 'False', mcc_w = False, filters = 128,
+               f1_method = 'micro', f1_w = 'False', mcc_w = False,
+               filters = 128, dSize=1024,
                load_train=False,
                back_test_en = False, bt_ratio=0.33, back_test_as_val_en=False):
         self.inps_select = inps_select
@@ -1056,7 +1070,7 @@ class ekoptim():
         # self.mz0 = self.HNrates[0][0]['past_data'][0].shape[0]
         # self.nz0 = self.HNrates[0][0]['past_data'][0].shape[1] 
 
-        model = self.create_modelX(filters = filters)
+        model = self.create_modelX(filters = filters, dSize=dSize)
         #***************************** 7.0 at least :-( *****
         #tf.keras.mixed_precision.set_global_policy('mixed_float16')
         #*****************************
