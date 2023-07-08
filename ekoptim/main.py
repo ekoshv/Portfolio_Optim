@@ -947,7 +947,7 @@ class ekoptim():
             x = tf.keras.layers.BatchNormalization()(x)
             x = tf.keras.layers.Dropout(0.3)(x)
 
-            x = tf.keras.layers.Dense(dSize, activation="relu")(combined_output)
+            x = tf.keras.layers.Dense(dSize, activation="relu")(x)
             x = tf.keras.layers.BatchNormalization()(x)
             x = tf.keras.layers.Dropout(0.3)(x)
     
