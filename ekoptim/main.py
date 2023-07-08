@@ -1132,8 +1132,11 @@ class ekoptim():
         
 
         #y = y_state, y_trend
-
-        train_indices, test_indices = next(iter(ShuffleSplit(n_splits=1, test_size=0.33).split(X[0])))
+        if (back_test_as_val_en and back_test_en):
+            testsize=0.01
+        else:
+            testsize=0.33
+        train_indices, test_indices = next(iter(ShuffleSplit(n_splits=1, test_size=testsize).split(X[0])))
         X_train = []
         X_test = []
         for xi in X:
