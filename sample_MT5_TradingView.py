@@ -317,7 +317,7 @@ if __name__ == "__main__":
 #%%
     optimizerTV.NNmake(inps_select = [0,1,7], learning_rate=0.001, epochs=100, batch_size=32,
                        model_simple=False,
-                       k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=128,
+                       k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=128, dSize=2048,
                        load_train=False,
                        back_test_en = True, bt_ratio=0.33, back_test_as_val_en=True)
 #%%  
