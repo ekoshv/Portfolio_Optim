@@ -1136,7 +1136,7 @@ class ekoptim():
             testsize=0.01
         else:
             testsize=0.33
-        train_indices, test_indices = next(iter(ShuffleSplit(n_splits=1, test_size=testsize).split(X[0])))
+        train_indices, test_indices = next(iter(ShuffleSplit(n_splits=5, test_size=testsize).split(X[0])))
         X_train = []
         X_test = []
         for xi in X:
