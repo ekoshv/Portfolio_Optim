@@ -315,11 +315,11 @@ if __name__ == "__main__":
     with open(f'data_full_{date_time}.pkl', 'wb') as f:
         dill.dump(data, f)
 #%%
-    optimizerTV.NNmake(inps_select = [0,1,7], learning_rate=0.001, epochs=100, batch_size=32,
+    optimizerTV.NNmake(inps_select = [0,1,3,4,5,6,7], learning_rate=0.001, epochs=200, batch_size=32,
                        model_simple=False,
-                       k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=128, dSize=2048,
+                       k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=64, dSize=256,
                        load_train=False,
-                       back_test_en = True, bt_ratio=0.33, back_test_as_val_en=True)
+                       back_test_en = True, bt_ratio=0.1, back_test_as_val_en=True)
 #%%  
     optimizerTV.load_model_fit()
     optimizerTV.predict_all(inps_select = [0,1], filters=32)
