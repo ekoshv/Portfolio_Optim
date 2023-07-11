@@ -1075,7 +1075,6 @@ class ekoptim():
         self.f1_w = f1_w
         self.mcc_w = mcc_w
         self.num_filters = filters
-        self.raw_data = raw_data
         self.k_n=5
         if k_n is not None:
             self.k_n = k_n
