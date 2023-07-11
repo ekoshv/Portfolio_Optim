@@ -609,12 +609,6 @@ class ekoptim():
             gld = dfs[1]
             oil = dfs[2]
             new_df = []
-            # if isinstance(smb, str):
-            #     smb_col = smb
-            # elif isinstance(smb, int):
-            #     smb_col = df.columns[smb]
-            # else:
-            #     print("smb should be either a string or an integer.")
     
             for i in range(max(self.Dyp, self.Dqp)+self.SMAP[0]+1, len(df)-self.Dyf+1, self.Thi):
                 #---Signal/State---
@@ -686,19 +680,27 @@ class ekoptim():
                     self.more_data(past_oil)
                 
                     #--- Gathering input Data ---
-                    #--- past_data
-                    x.append(qpst_dt_tiled)#0
-                    x.append(qpast_data.loc[:, 'ROCS':].fillna(0))#1
-                    x.append(qpst_dt_w_tiled)#2
-                    #--- Gold
-                    x.append(past_gld_tiled)#3
-                    x.append(past_gld.loc[:, 'ROCS':].fillna(0))#4
-                    #--- Oil
-                    x.append(past_oil_tiled)#5
-                    x.append(past_oil.loc[:, 'ROCS':].fillna(0))#6
-                    #--- date calculations
-                    datemx = np.tile(self.norm_date(x[-1]),(1,3))
-                    x.append(datemx)#7
+                    if(self.raw_data):
+                        x.append(qpast_data_normalized)#0
+                        x.append(qpast_data.loc[:,['FastStoch_K', 'FastStoch_d',
+                                                   'SlowStoch_K', 'SlowStoch_d']].fillna(0))#1
+                        datemx = np.tile(self.norm_date(x[-1]),(1,3))
+                        x.append(datemx)#7
+                        
+                    else:
+                        #--- past_data
+                        x.append(qpst_dt_tiled)#0
+                        x.append(qpast_data.loc[:, 'ROCS':].fillna(0))#1
+                        x.append(qpst_dt_w_tiled)#2
+                        #--- Gold
+                        x.append(past_gld_tiled)#3
+                        x.append(past_gld.loc[:, 'ROCS':].fillna(0))#4
+                        #--- Oil
+                        x.append(past_oil_tiled)#5
+                        x.append(past_oil.loc[:, 'ROCS':].fillna(0))#6
+                        #--- date calculations
+                        datemx = np.tile(self.norm_date(x[-1]),(1,3))
+                        x.append(datemx)#7
                 
                 df.at[df.index[i-1], 'state'] = state
                 if(self.test_predata_signal):
@@ -866,21 +868,36 @@ class ekoptim():
                                     padding="same", activation="relu")(input_layer)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
-    
-        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=7, strides=1,
+        
+        smn = min(min(image_height, image_width),7)
+        print("--------------------")
+        print(f"Kernel Size: {smn}")
+        print("--------------------")
+        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=smn, strides=1,
                                     padding="same", activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
-    
-        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=5, strides=1,
+        
+        smn = min(min(image_height, image_width),5)
+        print("--------------------")
+        print(f"Kernel Size: {smn}")
+        print("--------------------")
+        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=smn, strides=1,
                                     padding="same", activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
-
-        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=3, strides=1,
+        
+        smn = min(min(image_height, image_width),3)
+        print("--------------------")
+        print(f"Kernel Size: {smn}")
+        print("--------------------")
+        x = tf.keras.layers.Conv2D(filters=filters, kernel_size=smn, strides=1,
                                     padding="same", activation="relu")(x)
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Dropout(0.2)(x)
+        print("--------------------")
+        print("********************")
+        print("--------------------")
         
         x = tf.keras.layers.GlobalAveragePooling2D()(x)
     
@@ -1045,7 +1062,7 @@ class ekoptim():
         
         return combined_loss
     
-    def NNmake(self, model=None, inps_select = [0,1], model_simple=False,
+    def NNmake(self, model=None, raw_data=False, inps_select = [0,1], model_simple=False,
                learning_rate=0.001, epochs=100, batch_size=32, k_n=None,
                f1_method = 'micro', f1_w = 'False', mcc_w = False,
                filters = 128, dSize=1024,
@@ -1057,6 +1074,7 @@ class ekoptim():
         self.f1_w = f1_w
         self.mcc_w = mcc_w
         self.num_filters = filters
+        self.raw_data = raw_data
         self.k_n=5
         if k_n is not None:
             self.k_n = k_n
