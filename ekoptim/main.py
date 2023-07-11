@@ -684,8 +684,7 @@ class ekoptim():
                         x.append(qpast_data_normalized)#0
                         x.append(qpast_data.loc[:,['FastStoch_K', 'FastStoch_d',
                                                    'SlowStoch_K', 'SlowStoch_d']].fillna(0))#1
-                        datemx = np.tile(self.norm_date(x[-1]),(1,3))
-                        x.append(datemx)#7
+                        x.append(self.norm_date(x[-1]))#2
                         
                     else:
                         #--- past_data
@@ -748,6 +747,7 @@ class ekoptim():
 
     def Prepare_Data(self, symb='close', spn=1, tile_size=(2,2), xrnd=0,
                      Selected_symbols=None,
+                     raw_data = False,
                      Dqp=32, Dyp=2, Dyf=8, Thi=3,
                      SMAP=[144,45,12],
                      hh=0.01,#
@@ -768,6 +768,7 @@ class ekoptim():
         self.flh=lh
         self.fll=ll
         self.test_predata_signal = test
+        self.raw_data = raw_data
         
         srates = []
         if Selected_symbols is None:
@@ -1062,7 +1063,7 @@ class ekoptim():
         
         return combined_loss
     
-    def NNmake(self, model=None, raw_data=False, inps_select = [0,1], model_simple=False,
+    def NNmake(self, model=None, inps_select = [0,1], model_simple=False,
                learning_rate=0.001, epochs=100, batch_size=32, k_n=None,
                f1_method = 'micro', f1_w = 'False', mcc_w = False,
                filters = 128, dSize=1024,
