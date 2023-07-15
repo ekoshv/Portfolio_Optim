@@ -1064,8 +1064,8 @@ class ekoptim():
         return combined_loss
     
     def NNmake(self, model=None, inps_select = [0,1], model_simple=False,
-               learning_rate=0.001, epochs=100, batch_size=32, k_n=None,
-               f1_method = 'micro', f1_w = 'False', mcc_w = False,
+               learning_rate=0.001, epochs=100, batch_size=32, val_size=0.33,
+               k_n=None, f1_method = 'micro', f1_w = 'False', mcc_w = False,
                filters = 128, dSize=1024,
                load_train=False,
                back_test_en = False, bt_ratio=0.33, back_test_as_val_en=False):
@@ -1135,7 +1135,9 @@ class ekoptim():
                 
                 X.append(np.expand_dims(np.array(X_temp), axis=-1))
                 X_Back_Test.append(np.expand_dims(np.array(X_Back_Test_temp), axis=-1))
-        
+                self.ts_X_Back_Test = X_Back_Test
+            
+            self.ts_X = X
             y_state_temp = []
             y_trend_temp = []
             y_state_Back_Test_temp = []
@@ -1158,7 +1160,7 @@ class ekoptim():
             for i in self.inps_select:
                 X.append(np.array([d['past_data'][i] for lst in self.HNrates for d in lst]))
                 X[-1] = np.expand_dims(X[-1], axis=-1)
-                
+       
             y_state = np.array([d['state'] for lst in self.HNrates for d in lst])
             y_trend = np.array([d['trend'] for lst in self.HNrates for d in lst])
         
@@ -1167,7 +1169,7 @@ class ekoptim():
         if (back_test_as_val_en and back_test_en):
             testsize=0.01
         else:
-            testsize=0.33
+            testsize=val_size
         train_indices, test_indices = next(iter(ShuffleSplit(n_splits=5, test_size=testsize).split(X[0])))
         X_train = []
         X_test = []

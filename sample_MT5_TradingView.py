@@ -282,7 +282,8 @@ if __name__ == "__main__":
     xlh = -xhl
     xll = -xhh
     optimizerTV.Prepare_Data(tile_size=(n_t,int(n_t*Dqp/4)),xrnd=1e-3,#(n*Dqp->m=n*Dqp/4)
-                             Selected_symbols=selected_symb[0:2],
+                             Selected_symbols=selected_symb,
+                             raw_data = True,
                              Dqp=Dqp, Dyp=Dyp, Dyf=Dyf, Thi=1,
                              hh=xhh,#
                              hl=xhl,#
@@ -315,8 +316,8 @@ if __name__ == "__main__":
     with open(f'data_full_{date_time}.pkl', 'wb') as f:
         dill.dump(data, f)
 #%%
-    optimizerTV.NNmake(inps_select = [0,1,3,4,5,6,7], learning_rate=0.001, epochs=200, batch_size=32,
-                       model_simple=False,
+    optimizerTV.NNmake(inps_select = [0,1,2], learning_rate=0.001, epochs=3, batch_size=32,
+                       model_simple=False, val_size=0.6, 
                        k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=64, dSize=256,
                        load_train=False,
                        back_test_en = True, bt_ratio=0.1, back_test_as_val_en=True)
