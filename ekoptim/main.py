@@ -1254,11 +1254,17 @@ class ekoptim():
         # Load the best model weights  
         model.load_weights(filepath)
         
-        # Evaluate the model on the test set
-        score = model.evaluate(X_test,
-                               (y_state_test_one_hot, y_trend_test))
-        #---
-        print(score)
+        if(back_test_en):
+            score = model.evaluate(X_Back_Test,
+                                   (y_state_Back_Test_one_hot, y_trend_Back_Test))
+            #---
+            print(f"Back Test Score: {score}")
+        else:
+            # Evaluate the model on the test set
+            score = model.evaluate(X_test,
+                                   (y_state_test_one_hot, y_trend_test))
+            #---
+            print(f"Test Score: {score}")
         
         self.nnmodel = model
 
