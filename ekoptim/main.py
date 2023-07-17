@@ -978,9 +978,7 @@ class ekoptim():
             x1 = tf.keras.layers.BatchNormalization()(x1)
             x1 = tf.keras.layers.Dropout(0.3)(x1)
             # -- Output 1
-            state_output = tf.keras.layers.Dense(9,
-                                                 name='state_output',
-                                                 activation="softmax")(x1)
+            state_output = tf.keras.layers.Dense(9,name='state_output')(x1)
             # -- Output 2
             x2 = tf.keras.layers.Dense(dSize, activation="relu")(xe)
             x2 = tf.keras.layers.BatchNormalization()(x2)
@@ -1017,9 +1015,7 @@ class ekoptim():
             x1 = tf.keras.layers.BatchNormalization()(x1)
             x1 = tf.keras.layers.Dropout(0.3)(x1)
             # -- Output 1
-            state_output = tf.keras.layers.Dense(9,
-                                                 name='state_output',
-                                                 activation="softmax")(x1)
+            state_output = tf.keras.layers.Dense(9,name='state_output')(x1)
             # -- Output 2
             x2 = tf.keras.layers.Dense(128, activation="relu")(xe)
             x2 = tf.keras.layers.BatchNormalization()(x2)
@@ -1039,7 +1035,7 @@ class ekoptim():
     def custom_loss(self, y_true, y_pred, num_classes=9, average='macro', name="custom_loss"):
         # Calculate the CategoricalCrossentropy loss
         self.n_classes = num_classes
-        sce_loss = tf.keras.losses.CategoricalCrossentropy(from_logits=False)
+        sce_loss = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
         loss = sce_loss(y_true, y_pred)
         
         # Calculate the accuracy
@@ -1099,7 +1095,7 @@ class ekoptim():
                loss={'state_output':self.custom_loss, 'trend_output':'mse'},
                metrics={'state_output':['accuracy',self.multiclass_f1,'categorical_accuracy',
                                         tfa.metrics.F1Score(num_classes=9, average='macro'),
-                                        tf.keras.losses.CategoricalCrossentropy(from_logits=False),
+                                        tf.keras.losses.CategoricalCrossentropy(from_logits=True),
                                         self.multiclass_mcc,
                                         tf.keras.metrics.AUC(name='auc')],
                         'trend_output':tf.keras.metrics.RootMeanSquaredError()})
