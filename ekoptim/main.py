@@ -844,6 +844,7 @@ class ekoptim():
                             'SlowStoch_K', 'SlowStoch_d']
             df.name = snam
         #rates, spn, tile_size, xrnd=0
+        self.srates = srates
         self.HNrates = self.Hrz_Nrm(rates=srates, spn=spn,
                                     tile_size=tile_size,
                                     xrnd=xrnd)            
