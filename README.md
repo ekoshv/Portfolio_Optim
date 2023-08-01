@@ -2,7 +2,7 @@ The ekoptim class is a portfolio optimization tool written in Python. It provide
 
 Here's a brief overview of the key methods in the class:
 
-#Key Methods
+# Key Methods
 
 load_model: This method loads a pre-trained neural network model from a specified file path. The model is used for prediction tasks.
 load_model_fit: This method also loads a pre-trained model, but it creates the model structure first by calling the create_modelX method.
@@ -14,7 +14,7 @@ optiselect: This method selects which optimization method to use based on the pr
 calculate_metrics: This method calculates various portfolio metrics like risk, return, Sharpe ratio, Sortino ratio, CVAR, and maximum drawdown.
 frontPlot: This method uses Monte Carlo simulation to generate the efficient frontier and plots it. The efficient frontier shows the set of optimal portfolios that offer the highest expected return for a defined level of risk.
 
-#Usage
+# Usage
 
 A sample usage of the ekoptim class can be seen in the provided sample_MT5_TradingView.py script. This script demonstrates how to use the ekoptim class to perform various tasks including connecting to MetaTrader 5, retrieving historical data, performing portfolio optimization, calculating portfolio metrics, and visualizing the results.
 
