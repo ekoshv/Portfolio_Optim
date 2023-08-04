@@ -1,65 +1,33 @@
-# Portfolio_Optim
+The ekoptim class is a portfolio optimization tool written in Python. It provides methods for portfolio optimization, data normalization, prediction, and visualization. This class is primarily used for financial portfolio optimization, which includes maximizing returns, minimizing risk, and optimizing the Sharpe ratio.
 
- Portfolio Optimizer
- 
-# Installation
+Here's a brief overview of the key methods in the class:
 
-This module is installed via pip:
+# Key Methods
 
-pip install --upgrade --no-cache-dir git+https://github.com/ekoshv/Portfolio_Optim.git
+load_model: This method loads a pre-trained neural network model from a specified file path. The model is used for prediction tasks.
+load_model_fit: This method also loads a pre-trained model, but it creates the model structure first by calling the create_modelX method.
+predict_next: Given a set of input data, this method uses the loaded model to predict the next state.
+predict_all: This method loops through all dataframes in full_rates to predict the next values for all of them.
+draw_states: This method visualizes the states of the provided dataframe using a candlestick chart.
+Optim_...: A set of methods for portfolio optimization. These methods are differentiated by their objective functions and constraints, such as maximizing return, minimizing risk, or balancing the two based on the Sharpe ratio.
+optiselect: This method selects which optimization method to use based on the provided argument.
+calculate_metrics: This method calculates various portfolio metrics like risk, return, Sharpe ratio, Sortino ratio, CVAR, and maximum drawdown.
+frontPlot: This method uses Monte Carlo simulation to generate the efficient frontier and plots it. The efficient frontier shows the set of optimal portfolios that offer the highest expected return for a defined level of risk.
 
-# ekoptim class documentation
-The ekoptim class is used to optimize a portfolio based on a number of inputs. It uses optimization functions to calculate the weights of assets to maximize certain criteria such as return or Sharpe ratio.
+# Usage
 
-# Dependencies
-numpy
-math
-scipy
-sklearn
-# Parameters
-returns: An array of asset returns. It should have shape (days, assets).
-risk_free_rate: A float representing the risk-free rate.
-target_SR: A float representing the target Sharpe ratio.
-target_Return: A float representing the target return.
-target_Volat: A float representing the target volatility.
-max_weight: A float representing the maximum weight of any asset.
-toler: A float representing the optimization tolerance.
-# Class Functions
-__init__(self, returns, risk_free_rate, target_SR, target_Return, target_Volat, max_weight, toler)
-This function initializes the class instance with input parameters.
+A sample usage of the ekoptim class can be seen in the provided sample_MT5_TradingView.py script. This script demonstrates how to use the ekoptim class to perform various tasks including connecting to MetaTrader 5, retrieving historical data, performing portfolio optimization, calculating portfolio metrics, and visualizing the results.
 
-risk_cnt(self, w)
-This function calculates the risk (volatility) of a portfolio given the weights of each asset in the portfolio.
+The script starts by instantiating the ekoptim class and collecting necessary input parameters from the user, such as the total equity, type of filter, group or path name, oil name, gold name, historical days, and whether the length of MetaTrader 5 data matches TradingView data.
 
-sharpe_ratio_cnt(self, w)
-This function calculates the Sharpe ratio of a portfolio given the weights of each asset in the portfolio.
+Then it performs data retrieval and preprocessing using the TradingViewfeed and MetaTrader 5 API to retrieve historical data for the specified symbols. The data is then preprocessed, including filling missing values and calculating returns.
 
-return_cnt(self, w)
-This function calculates the return of a portfolio given the weights of each asset in the portfolio.
+Next, the script performs portfolio optimization using the optiselect method of the ekoptim class. The user is given a choice to select an optimization type that suits their needs.
 
-sortino_ratio_cnt(self, w)
-This function calculates the Sortino ratio of a portfolio given the weights of each asset in the portfolio.
+After obtaining the optimized weights, the script calculates various portfolio metrics using the calculate_metrics method and prints them out for the user to see.
 
-Optim_return_nl(self)
-This function runs an optimization algorithm to maximize the return of a portfolio subject to the constraints defined in the constraints attribute of the class.
+The script also visualizes the efficient frontier using the frontPlot method and saves the data, including the optimizer object and historical data, to a pickle file using the dill library.
 
-Optim_return_cnt_sharpe(self)
-This function runs an optimization algorithm to maximize the return of a portfolio subject to the constraints defined in the constraints attribute of the class, as well as a constraint on the Sharpe ratio.
+In the last part of the script, the script prepares data for deep learning, visualizes the states of the selected symbols using the draw_states method, creates a neural network model using the NNmake method, loads and fits the model using the load_model_fit method, and predicts the next values for all symbols using the predict_all method.
 
-Optim_return_cnt_volat(self)
-This function runs an optimization algorithm to maximize the return of a portfolio subject to the constraints defined in the constraints attribute of the class, as well as a constraint on the volatility.
-
-# Attributes
-returns: An array of asset returns. It should have shape (days, assets).
-target_SR: A float representing the target Sharpe ratio.
-target_Return: A float representing the target return.
-target_Volat: A float representing the target volatility.
-max_weight: A float representing the maximum weight of any asset.
-n: An integer representing the number of assets.
-days: An integer representing the number of days.
-w0: An array representing the initial weights of each asset.
-durc: A float representing the duration.
-risk_free_rate: A float representing the risk-free rate.
-toler: A float representing the optimization tolerance.
-bounds: A list of tuples representing the upper and lower bounds of each asset weight.
-constraints: A list of dictionaries representing the constraints on the optimization (x+-15%). The constraints include a sum-to-one constraint, constraints on the return, Sharpe ratio, volatility, and maximum weight of each asset.
+Please refer to the provided sample_MT5_TradingView.py script for a detailed understanding of how to use the ekoptim class in a real-world scenario.

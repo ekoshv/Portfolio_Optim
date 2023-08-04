@@ -1,13 +1,25 @@
+#%%
 import MetaTrader5 as mt5
 import numpy as np
 import pandas as pd
 #import matplotlib.pyplot as plt
-from sklearn.covariance import LedoitWolf
 #from concurrent.futures import ThreadPoolExecutor
 from ekoptim import ekoptim
 from ekoView import TradingViewfeed, Interval
 import datetime
 from tqdm import tqdm
+import traceback
+from sklearn.covariance import LedoitWolf
+import dill
+# import types
+# from pathlib import Path
+
+def can_be_pickled(obj):
+    try:
+        dill.dumps(obj)
+        return True
+    except:
+        return False
 
 def connect_to_metatrader(path, username, password, server):
     # initialize connection to the MetaTrader 5 terminal
@@ -61,12 +73,17 @@ if __name__ == "__main__":
         symbols = mt5.symbols_get()
         filtered_symbols = filter_symbols_by_path(symbols, Path_Name)
         allsymb = [s.name for s in filtered_symbols]
+    oil = input("Enter the Oil name: e.g.(.BrentCrude):")
+    oil_smb = mt5.symbol_info(oil)
+    gold = input("Enter the Gold name: e.g.(XAUUSD):")
+    gold_smb = mt5.symbol_info(gold)
     History_Days = int(input("How many historical days: "))
-    #is_weighted = bool(input("Do you want it to be weighted(True/False): "))
-    
-    returns_list = []
+    mt5same = input("Length of MT5 as of TradingView?(True/False): ")
+    mt5same = True if mt5same.lower() == "true" else False
+#%%    
+    returns_TV = []
     returns_MT5 = []
-    rates_list = []
+    rates_TV = []
     rates_MT5 = []
     begindate = (datetime.datetime.today()-
                  datetime.timedelta(days=(int(1.1*History_Days*365/252))))
@@ -79,36 +96,68 @@ if __name__ == "__main__":
                                 exchange=Exg, 
                                 interval= Interval.in_daily, 
                                 n_bars=History_Days,
-                                ctype="dividends")
-            ratemt5 = mt5.copy_rates_from_pos(s.name, mt5.TIMEFRAME_D1, 0, History_Days)
+                                ctype="splits")
+            datamt5 = mt5.copy_rates_from_pos(s.name, mt5.TIMEFRAME_D1, 0, History_Days)
             #print(rates)
             if(len(rates)>=round(0.75*History_Days) and
+               (len(datamt5)>=round(0.75*History_Days) or not mt5same) and
                (rates.index[0] >= begindate)):
+                print('***',len(rates),', ',rates.index[0],', ',s.name)
                 rates[s.name] = ((rates['close']).
                                  interpolate(method='polynomial', order=2)).pct_change()
                 rates[s.name] = rates[s.name].interpolate(method='polynomial', order=2)
                 rates[s.name] = rates[s.name].fillna(0)
-                rates_list.append(rates)
-                returns_list.append(rates[s.name])
+                rates_TV.append(rates)
+                returns_TV.append(rates[s.name])
                 
-                data = pd.DataFrame(data=ratemt5, columns=["time", "open", "high", "low",
+                data = pd.DataFrame(data=datamt5, columns=["time", "open", "high", "low",
                                                          "close", "tick_volume", "spread", "real_volume"])
                 # convert time in seconds into the datetime format
                 data['time']=pd.to_datetime(data['time'], unit='s')
+                data.set_index('time', inplace=True)
                 data[s.name] = data["close"].pct_change()
                 data[s.name] = data[s.name].fillna(0)
                 rates_MT5.append(data)
                 returns_MT5.append(data[s.name])
-        except:
+        except Exception as e:
             print("---------")
-            print("An exception occurred: ", s.name)
+            print(f"An error occurred in downloading {s.name}: {e}")
+            traceback.print_exc()
             print("---------")
     
-    returnsTV = pd.concat(returns_list, axis=1)
+    for s in tqdm([gold_smb, oil_smb]):
+        try:
+            datamt5 = mt5.copy_rates_from_pos(s.name, mt5.TIMEFRAME_D1, 0, History_Days)
+            data = pd.DataFrame(data=datamt5, columns=["time", "open", "high", "low",
+                                                     "close", "tick_volume", "spread", "real_volume"])
+            # convert time in seconds into the datetime format
+            data['time']=pd.to_datetime(data['time'], unit='s')
+            data.set_index('time', inplace=True)
+            data[s.name] = data["close"].pct_change()
+            data[s.name] = data[s.name].fillna(0)
+            rates_MT5.append(data)
+            returns_MT5.append(data[s.name])
+        except Exception as e:
+            print("---------")
+            print(f"An error occurred in downloading {s.name}: {e}")
+            traceback.print_exc()
+            print("---------")
+            
+    returnsTV = pd.concat(returns_TV, axis=1)
     returnsMT5= pd.concat(returns_MT5, axis=1)
     returnsTV.fillna(0,inplace=True)
     returnsMT5.fillna(0,inplace=True)
+    
+    # rates_MT5_cnt = pd.concat(rates_MT5, axis=1)
+    # # Find the first non-NaN row
+    # first_valid_index = rates_MT5_cnt.apply(lambda x: x.first_valid_index()).max()
 
+    # # Find the last non-NaN row
+    # last_valid_index = rates_MT5_cnt.apply(lambda x: x.last_valid_index()).min()
+
+    # # Slice the DataFrame from the first non-NaN row to the last non-NaN row
+    # clean_rates_MT5_cnt = rates_MT5_cnt.loc[first_valid_index:last_valid_index]
+    # #clean_rates_MT5_cnt = clean_rates_MT5_cnt.interpolate(method='polynomial', order=3)
         
     risk_free_rate = 0.03
     tol = None
@@ -135,7 +184,9 @@ if __name__ == "__main__":
     otp_sel = int(input("Which type of opt you wish: "))
 #%%
     optimizerTV = ekoptim(returnsTV, risk_free_rate, target_SR,
-                        target_Return, target_Volat, max_weight,tol)
+                        target_Return, target_Volat, max_weight,tol,
+                        full_rates = rates_MT5)
+
 #%%
     print("Optimization started, please wait...")
     optimized_weights_TV = optimizerTV.optiselect(otp_sel)
@@ -159,17 +210,21 @@ if __name__ == "__main__":
     for i, weight in enumerate(optimized_weights_TV):
         try:
             symbol_info = mt5.symbol_info(returnsTV.columns[i])
-            if (weight>threshold and not(symbol_info.volume_min*symbol_info.bid>
+            if symbol_info.bid<=0:
+                kapla=rates_MT5[i]['close'][-1]
+            else:
+                kapla=symbol_info.bid
+            if (weight>threshold and not(symbol_info.volume_min*kapla>
                                           1.1*total_equity*weight)):#
-                # print("Name: ",symbol_info.name,", Bid: ",
-                #       symbol_info.bid,", step: ",symbol_info.volume_step)
+                print("Name: ",symbol_info.name,", Bid: ",
+                      kapla,", step: ",symbol_info.volume_step)
                 equity_div_x = {"symbol": symbol_info.name,"Weight":round(weight*10000)/100,
                                 "Allocation": round(max(symbol_info.volume_min,
-                                                  round(total_equity*weight/symbol_info.bid,
+                                                  round(total_equity*weight/kapla,
                                                         -int(np.floor(np.log10(symbol_info.volume_step))+
-                                                              1)+1))*symbol_info.bid),
+                                                              1)+1))*kapla),
                                 "Volume": max(symbol_info.volume_min,
-                                              round(total_equity*weight/symbol_info.bid,
+                                              round(total_equity*weight/kapla,
                                                                           -int(np.floor(np.log10(symbol_info.volume_step))+
                                                                                 1)+1))}
                 returns_selected.append(returnsTV[returnsTV.columns[i]])
@@ -190,6 +245,7 @@ if __name__ == "__main__":
     equity_div_df.sort_values(by="Weight",inplace=True, ignore_index=True)
     returns_selected = pd.concat(returns_selected, axis=1)
     xyz = optimizerTV.cov2corr(100*LedoitWolf().fit(returns_selected).covariance_)
+    selected_symb = equity_div_df['symbol'].tolist()
     print("------------------")
     print(equity_div_df)
     print("------------------")
@@ -197,5 +253,78 @@ if __name__ == "__main__":
     # use Monte Carlo simulation to generate multiple sets of random weights
     optimizerTV.frontPlot(optimized_weights_TV, save=False)
     # shut down connection to the MetaTrader 5 terminal
+#%%    
+    # Put the data you need in a dictionary
+    data = {
+        'optimizerTV': optimizerTV,
+        'rates_TV': rates_TV,
+        'rates_MT5': rates_MT5,
+        'selected_symb': selected_symb,
+        # Add all the variables you need
+    }
+    
+    # Get the current date and time
+    now = datetime.datetime.now()
+    
+    # Format the date and time as a string
+    date_time = now.strftime("%Y%m%d_%H%M%S")
+    
+    # Save the data to a file
+    with open(f'data_{date_time}.pkl', 'wb') as f:
+        dill.dump(data, f)
+#%%
+    Dqp = 32 # past days for deep learning    
+    Dyp = 16 # past days (not used)
+    Dyf = 14 # future days
+    n_t = 2 # tile size
+    xhh = 0.15 # Percentage Threshold
+    xhl = 0.53*xhh    
+    xlh = -xhl
+    xll = -xhh
+    optimizerTV.Prepare_Data(tile_size=(n_t,int(n_t*Dqp/4)),xrnd=1e-3,#(n*Dqp->m=n*Dqp/4)
+                             Selected_symbols=selected_symb,
+                             raw_data = True,
+                             Dqp=Dqp, Dyp=Dyp, Dyf=Dyf, Thi=1,
+                             hh=xhh,#
+                             hl=xhl,#
+                             lh=xlh,#
+                             ll=xll, test=False) #None
+#%%
+    kappa = 2
+    alphax = optimizerTV.HNrates[kappa]
+    cetax = optimizerTV.selected_rates
+    optimizerTV.draw_states(cetax[kappa])
+    bex = [x for x in alphax if x['dati'].date() == datetime.date(2022,5,5)]
+
+#%%    
+    # Put the data you need in a dictionary
+    data = {
+        'optimizerTV': optimizerTV,
+        'rates_TV': rates_TV,
+        'rates_MT5': rates_MT5,
+        'selected_symb': selected_symb,
+        # Add all the variables you need
+    }
+    
+    # Get the current date and time
+    now = datetime.datetime.now()
+    
+    # Format the date and time as a string
+    date_time = now.strftime("%Y%m%d_%H%M%S")
+    
+    # Save the data to a file
+    with open(f'data_full_{date_time}.pkl', 'wb') as f:
+        dill.dump(data, f)
+#%%
+    optimizerTV.NNmake(inps_select = [0,1,2], learning_rate=0.001, epochs=3, batch_size=32,
+                       model_simple=False, val_size=0.6, 
+                       k_n=None, f1_method='macro', f1_w=False, mcc_w=False, filters=64, dSize=256,
+                       load_train=False,
+                       back_test_en = True, bt_ratio=0.1, back_test_as_val_en=True)
+#%%  
+    optimizerTV.load_model_fit()
+    optimizerTV.predict_all(inps_select = [0,1], filters=32)
+    betax = optimizerTV.Predicted_Rates
+    xeta = pd.DataFrame([(x[0].squeeze(),x[1].squeeze()) for x in betax])
 #%%
     mt5.shutdown()
