@@ -393,7 +393,7 @@ class ekoptim():
                 'CVAR': self.cvar_cnt(w, alpha),
                 'MXDDP': self.maximum_drawdown_cnt(w)}
 
-    def frontPlot(self, w, alpha=0.95, save=False):
+    def frontPlot(self, w, alpha_cvar=0.95, save=False):
         try:
             # Use Monte Carlo simulation to generate multiple sets of random weights
             num_portfolios = 500
@@ -417,7 +417,7 @@ class ekoptim():
                 sharpe_ratios_listx.append(sharpe_ratiox)
     
             # Calculate the optimized metrics
-            metrics = self.calculate_metrics(w, alpha)
+            metrics = self.calculate_metrics(w, alpha_cvar)
     
             # Prepare data for plotting
             data = {'Volatility': volatilities_listx, 'Return': returns_listx, 'Sharpe Ratio': sharpe_ratios_listx}
