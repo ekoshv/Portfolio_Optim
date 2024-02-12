@@ -4,6 +4,7 @@ patch_sklearn()
 import math
 from scipy.optimize import minimize
 from scipy.stats import norm
+from scipy.stats import beta
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
@@ -14,13 +15,15 @@ import traceback
 
 class ekoptim():
     def __init__(self, returns, risk_free_rate,
-                 target_SR, target_Return, target_Volat,
+                 target_SR, target_Return,
+                 target_Volat, cvar_alpha,
                  max_weight, toler):
         try:
             self.returns = returns  # Set returns
             self.target_SR = target_SR  # Set target Sharpe Ratio
             self.target_Return = target_Return  # Set target return
             self.target_Volat = target_Volat  # Set target volatility
+            self.cvar_alpha = cvar_alpha # Set Alpha tail of CVaR
             self.max_weight = max_weight  # Set maximum weight
             self.n = returns.shape[1]  # Number of assets
             self.days = returns.shape[0]  # Number of days
@@ -105,6 +108,96 @@ class ekoptim():
             traceback.print_exc()
             return None
 
+    # Custom distribution based on Beta distribution
+    def custom_distribution(self, x, a=2, b=5):
+        """
+        Calculate the PDF and CDF of the custom distribution for a given x.
+        
+        Parameters:
+        - x: The value at which to calculate the PDF and CDF.
+        - a: The alpha parameter for the Beta distribution.
+        - b: The beta parameter for the Beta distribution.
+        
+        Returns:
+        - pdf: The probability density function value at x.
+        - cdf: The cumulative distribution function value at x.
+        """
+        pdf = beta.pdf(x, a, b)
+        cdf = beta.cdf(x, a, b)
+        return pdf, cdf    
+    
+    def find_var_point_custom(self, alpha, a=2, b=5):
+        """
+        Find the Value at Risk (VaR) point for a given confidence level alpha using the custom distribution.
+        
+        Parameters:
+        - alpha: The confidence level (e.g., 0.95 for 95% confidence).
+        - a, b: Parameters of the beta distribution.
+        
+        Returns:
+        - var_point: The Value at Risk point from the custom distribution.
+        """
+        # Calculate the inverse CDF (quantile) at 1 - alpha for the custom distribution
+        var_point = beta.ppf(1 - alpha, a, b)
+        return var_point
+    
+    def normalize_data(self, data):
+        """
+        Normalize data to the [0, 1] interval.
+        
+        Parameters:
+        - data: The data to normalize, as a numpy array.
+        
+        Returns:
+        - normalized_data: The normalized data.
+        """
+        data_min = np.min(data)
+        data_max = np.max(data)
+        normalized_data = (data - data_min) / (data_max - data_min)
+        return normalized_data, data_min, data_max
+    
+    def fit_beta_distribution(self, data):
+        """
+        Fit a beta distribution to the data and return the estimated parameters.
+        
+        Parameters:
+        - data: The data to fit, normalized to the [0, 1] interval.
+        
+        Returns:
+        - a, b: The estimated parameters of the beta distribution.
+        """
+        a, b, _, _ = beta.fit(data, floc=0, fscale=1)  # Fix the location to 0 and scale to 1
+        return a, b
+
+    
+    def cvar_ctm_pdf_cnt(self, w, alpha):
+        try:
+            # Calculate the portfolio return
+            portfolio_return = w.T @ self.returns.mean() * self.days - self.risk_free_rate
+    
+            # Calculate the portfolio volatility using the LedoitWolf covariance matrix
+            covariance_matrix = LedoitWolf().fit(self.returns).covariance_
+            portfolio_volatility = np.sqrt(w.T @ covariance_matrix @ w) * np.sqrt(self.days)
+            
+            # self.returns is a numpy array of portfolio returns
+            normalized_returns, data_min, data_max = self.normalize_data(self.returns)
+            a, b = self.fit_beta_distribution(normalized_returns)
+            
+            # Find the VaR point using the custom distribution
+            var_point = self.find_var_point_custom(alpha, a, b)
+    
+            # Calculate the PDF and CDF at the VaR point for the custom distribution
+            pdf, cdf = self.custom_distribution(var_point, a, b)
+            portfolio_es = -1 / alpha * (1 - cdf) * pdf * portfolio_volatility
+    
+            # Calculate the conditional value-at-risk (CVaR) of the portfolio
+            portfolio_cvar = portfolio_return - portfolio_es
+    
+            return portfolio_cvar
+        except Exception as e:
+            print(f"An error occurred in cvar_cnt_custom: {e}")
+            return None
+    
     def cvar_cnt(self, w, alpha):
         try:
             # Calculate the conditional value-at-risk (CVaR) of the portfolio
