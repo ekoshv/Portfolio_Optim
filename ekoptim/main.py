@@ -195,7 +195,7 @@ class ekoptim():
     
             return portfolio_cvar
         except Exception as e:
-            print(f"An error occurred in cvar_cnt_custom: {e}")
+            print(f"An error occurred in cvar_ctm_pdf_cnt: {e}")
             return None
     
     def cvar_cnt(self, w, alpha):
