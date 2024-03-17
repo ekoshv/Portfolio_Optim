@@ -21,6 +21,6 @@ setup(
         "setuptools",
         "pandas",
         "scipy",
-        "sklearn"
+        "scikit-learn"
     ],
 )
